@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bookshelf</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Google Identity Services -- loaded once, used by GoogleSignInButton -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script>
+      // Force dark caret on focus for all light-background inputs
+      document.addEventListener("focusin", function(e) {
+        var el = e.target;
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          // Only override caret on light backgrounds (not the PDF viewer dark toolbar)
+          var bg = window.getComputedStyle(el).backgroundColor;
+          var isDark = bg && bg !== "rgba(0, 0, 0, 0)" && bg !== "transparent" &&
+            (function(c) {
+              var m = c.match(/\d+/g);
+              if (!m) return false;
+              // Perceived brightness formula
+              return (m[0]*0.299 + m[1]*0.587 + m[2]*0.114) < 128;
+            })(bg);
+          el.style.caretColor = isDark ? "white" : "#1e293b";
+        }
+      }, true);
+    </script>
+  </head>
+  <body class="bg-paper-50 text-gray-900 antialiased">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

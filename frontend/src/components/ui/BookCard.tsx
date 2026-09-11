@@ -1,0 +1,51 @@
+import { Link } from "react-router-dom";
+import { BookOpen, Layers } from "lucide-react";
+import type { BookListItem } from "@/types";
+import { formatDistanceToNow } from "date-fns";
+
+interface Props {
+  book: BookListItem;
+}
+
+export function BookCard({ book }: Props) {
+  return (
+    <Link
+      to={`/books/${book.id}`}
+      className="card group flex flex-col hover:shadow-md transition-shadow duration-200 overflow-hidden"
+    >
+      {/* Cover */}
+      <div className="aspect-[3/4] bg-paper-100 flex items-center justify-center overflow-hidden">
+        {book.cover_url ? (
+          <img
+            src={book.cover_url}
+            alt={book.title}
+            className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
+          />
+        ) : (
+          <div className="flex flex-col items-center gap-2 text-paper-400">
+            <BookOpen className="w-12 h-12" />
+            <span className="text-xs">No cover</span>
+          </div>
+        )}
+      </div>
+
+      {/* Meta */}
+      <div className="p-4 flex flex-col gap-1 flex-1">
+        <h3 className="font-serif text-base font-semibold text-ink-900 line-clamp-2 leading-snug">
+          {book.title}
+        </h3>
+        <p className="text-sm text-gray-500">{book.author}</p>
+        {book.description && (
+          <p className="text-xs text-gray-400 mt-1 line-clamp-2">{book.description}</p>
+        )}
+        <div className="mt-auto pt-3 flex items-center justify-between text-xs text-gray-400">
+          <span className="flex items-center gap-1">
+            <Layers className="w-3.5 h-3.5" />
+            {book.edition_count} {book.edition_count === 1 ? "edition" : "editions"}
+          </span>
+          <span>{formatDistanceToNow(new Date(book.created_at), { addSuffix: true })}</span>
+        </div>
+      </div>
+    </Link>
+  );
+}

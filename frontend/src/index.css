@@ -1,0 +1,334 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    scroll-behavior: smooth;
+  }
+
+  /* ── Dark mode ────────────────────────────────────────────────────────────
+     Only override layout backgrounds and text. Never touch icon containers,
+     badge elements, or anything with explicit color meaning.
+  ── */
+  html.dark {
+    color-scheme: dark;
+  }
+
+  /* Page backgrounds */
+  html.dark body,
+  html.dark #root {
+    background-color: #0f1117;
+    color: #e2e8f0;
+  }
+
+  /* Navbar */
+  html.dark header.sticky {
+    background-color: #1a1f2e;
+    border-bottom-color: #2d3748;
+  }
+
+  /* Cards -- the .card class only */
+  html.dark .card {
+    background-color: #1a1f2e;
+    border-color: #2d3748;
+  }
+
+  /* Form inputs */
+  html.dark .input {
+    background-color: #1e2535;
+    border-color: #4a5568;
+    color: #e2e8f0;
+  }
+
+  /* Headings in ink colors */
+  html.dark .text-ink-900 { color: #f0f4f8; }
+  html.dark .text-ink-800 { color: #e2e8f0; }
+  html.dark .text-ink-700 { color: #cbd5e0; }
+
+  /* Secondary text */
+  html.dark .text-gray-700 { color: #cbd5e0; }
+  html.dark .text-gray-600 { color: #a0aec0; }
+  html.dark .text-gray-500 { color: #718096; }
+
+  /* Comment body text -- needs to be clearly readable */
+  html.dark .text-gray-700,
+  html.dark p.text-sm.text-gray-700 {
+    color: #cbd5e0;
+  }
+
+  /* Section backgrounds used as page sections */
+  html.dark section.bg-paper-100,
+  html.dark section.bg-white {
+    background-color: #13171f;
+  }
+
+
+
+  /* Dividers */
+  html.dark .border-paper-200 { border-color: #2d3748; }
+  html.dark .bg-paper-200 { background-color: #2d3748; }
+
+  /* Hover states on nav items */
+  html.dark .hover\:bg-paper-100:hover { background-color: #2d3748; }
+
+  /* Settings sidebar active tab -- should be dark blue not white */
+  html.dark .bg-ink-100 {
+    background-color: #1e3a5f;
+  }
+  html.dark .text-ink-800 {
+    color: #90cdf4;
+  }
+
+  /* Appearance tab cards -- dark background, NOT white */
+  html.dark .rounded-xl.border-2 {
+    background-color: #1a1f2e;
+  }
+  html.dark .rounded-xl.border-2.border-ink-600 {
+    background-color: #1e3a5f;
+    border-color: #3b82f6;
+  }
+
+  /* Page badges in comments */
+  html.dark .page-badge {
+    background-color: #1e3a5f !important;
+    color: #90cdf4 !important;
+  }
+
+  /* bg-ink-100 used for active sort buttons, active settings tabs, page badges */
+  html.dark .bg-ink-100 {
+    background-color: #1e3a5f !important;
+  }
+  html.dark .text-ink-700 {
+    color: #90cdf4 !important;
+  }
+
+  /* bg-ink-50 hover states */
+  html.dark .hover\:bg-ink-50:hover,
+  html.dark .bg-ink-50 {
+    background-color: #172042 !important;
+  }
+
+  /* Landing page section backgrounds -- preserve light/dark contrast between sections */
+  html.dark .landing-section-alt {
+    background-color: #1a1f2e !important; /* slightly lighter -- mirrors bg-paper-100 */
+  }
+
+  html.dark .landing-section-main {
+    background-color: #0f1117 !important; /* darker base -- mirrors bg-white */
+  }
+
+  /* Reading page right panel (discussion + bookmarks) */
+  html.dark .discussion-panel {
+    background-color: #13171f !important;
+    border-color: #2d3748 !important;
+  }
+
+  html.dark .discussion-panel * {
+    border-color: #2d3748;
+  }
+
+  /* Override white backgrounds inside discussion panel */
+  html.dark .discussion-panel .bg-white,
+  html.dark .discussion-panel .bg-paper-50,
+  html.dark .discussion-panel .bg-paper-100 {
+    background-color: #1a1f2e !important;
+  }
+
+  /* Comment text inside panel */
+  html.dark .discussion-panel .text-gray-700,
+  html.dark .discussion-panel .text-ink-900,
+  html.dark .discussion-panel .text-ink-800,
+  html.dark .discussion-panel p {
+    color: #cbd5e0 !important;
+  }
+
+  /* Secondary text */
+  html.dark .discussion-panel .text-gray-400,
+  html.dark .discussion-panel .text-gray-500 {
+    color: #718096 !important;
+  }
+
+  /* Scrollable comment list area */
+  html.dark .discussion-panel .overflow-y-auto {
+    background-color: #13171f !important;
+  }
+
+  /* Inputs inside panel */
+  html.dark .discussion-panel input,
+  html.dark .discussion-panel textarea {
+    background-color: #1e2535 !important;
+    color: #e2e8f0 !important;
+    border-color: #4a5568 !important;
+  }
+
+  /* Comment box background (bg-paper-50 section) */
+  html.dark .bg-paper-50 {
+    background-color: #1a1f2e !important;
+  }
+
+  /* Bookmark panel items */
+  html.dark .hover\:bg-paper-50:hover {
+    background-color: #1e2535 !important;
+  }
+
+  /* btn-secondary in dark mode -- dark background, light text */
+  html.dark .btn-secondary {
+    background-color: #1e2535 !important;
+    color: #a5b4fc !important;
+    border-color: #3730a3 !important;
+  }
+  html.dark .btn-secondary:hover {
+    background-color: #2d3748 !important;
+  }
+
+  /* Delete button in dark mode -- keep red text, give it a dark red background */
+  html.dark .border-red-200 {
+    border-color: #7f1d1d !important;
+  }
+  html.dark .text-red-600,
+  html.dark .hover\:text-red-500 {
+    color: #fc8181 !important;
+  }
+  html.dark .hover\:bg-red-50:hover {
+    background-color: #2d1515 !important;
+  }
+  /* Edition row delete button */
+  html.dark .px-2.py-1\.5.text-xs.font-medium.text-red-600.border.border-red-200 {
+    background-color: #2d1515 !important;
+    border-color: #7f1d1d !important;
+  }
+
+  /* Comment box write area */
+  html.dark textarea.input,
+  html.dark .bg-white.rounded-lg {
+    background-color: #1e2535;
+    color: #e2e8f0;
+  }
+
+  /* Prose text in comment bodies and general readable text */
+  html.dark .whitespace-pre-wrap,
+  html.dark p.text-sm,
+  html.dark .text-sm.text-gray-700 {
+    color: #cbd5e0 !important;
+  }
+
+  /* UserProfile recent comments text */
+  html.dark .text-gray-700 {
+    color: #cbd5e0 !important;
+  }
+
+  /* Only force dark caret on light-background inputs.
+     Dark-background inputs (e.g. PDF viewer toolbar) manage their own caret color. */
+  input:not([data-dark-bg]), textarea:not([data-dark-bg]) {
+    caret-color: #1e293b;
+  }
+
+  /* Override Chrome autofill styles that reset caret to white */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active,
+  textarea:-webkit-autofill,
+  select:-webkit-autofill {
+    caret-color: #1e293b;
+    -webkit-text-fill-color: #111827 !important;
+    /* Use a very long transition to prevent Chrome's blue autofill background flash */
+    -webkit-box-shadow: 0 0 0px 1000px white inset !important;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+
+  body {
+    @apply bg-paper-50 text-gray-900 font-sans;
+  }
+
+  h1, h2, h3 {
+    @apply font-serif;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center gap-2 px-4 py-2 bg-ink-700 text-white text-sm font-medium
+           rounded-md hover:bg-ink-800 transition-colors duration-150 disabled:opacity-50
+           disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center gap-2 px-4 py-2 bg-white text-ink-700 text-sm font-medium
+           border border-ink-200 rounded-md hover:bg-ink-50 transition-colors duration-150;
+  }
+
+  .input {
+    @apply w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-sm
+           placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-ink-500
+           focus:border-transparent transition-shadow duration-150;
+    caret-color: #1e293b;
+    color: #111827;
+  }
+
+  .label {
+    @apply block text-sm font-medium text-gray-700 mb-1;
+  }
+
+  .card {
+    @apply bg-white border border-paper-200 rounded-lg shadow-sm;
+  }
+
+  .page-badge {
+    @apply inline-flex items-center px-2 py-0.5 text-xs font-medium bg-ink-100
+           text-ink-700 rounded cursor-pointer hover:bg-ink-200 transition-colors;
+  }
+}
+
+/* ── PDF.js text layer ────────────────────────────────────────────────────── */
+/* Makes text selectable and copyable over the canvas render */
+.textLayer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  line-height: 1.0;
+  text-size-adjust: none;
+  forced-color-adjust: none;
+}
+
+.textLayer span,
+.textLayer br {
+  color: transparent;
+  position: absolute;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0% 0%;
+}
+
+.textLayer span::selection,
+.textLayer br::selection {
+  background: rgba(0, 100, 255, 0.25);
+  color: transparent;
+}
+
+.textLayer .highlight {
+  background: rgba(255, 200, 0, 0.4);
+  border-radius: 1px;
+}
+
+.textLayer .highlight.appended {
+  position: initial;
+}
+
+.textLayer .highlight.begin {
+  border-radius: 4px 0 0 4px;
+}
+
+.textLayer .highlight.end {
+  border-radius: 0 4px 4px 0;
+}
+
+.textLayer .highlight.middle {
+  border-radius: 0;
+}
+
+.textLayer .highlight.selected {
+  background: rgba(0, 100, 255, 0.25);
+}
