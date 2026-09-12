@@ -10,7 +10,6 @@ import {
   Upload, Plus, X, CheckCircle, Link2, Download,
 } from "lucide-react";
 import { useBook, useUploadCover, useAddEdition, useDeleteBook } from "@/hooks/useBooks";
-import { useAuthStore } from "@/stores/authStore";
 import { formatDistanceToNow, format } from "date-fns";
 import toast from "react-hot-toast";
 import type { Edition } from "@/types";
