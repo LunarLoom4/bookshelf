@@ -52,7 +52,7 @@ async def get_user_profile(username: str, db: AsyncSession = Depends(get_db)):
     comments_result = await db.execute(
         select(Comment)
         .options(selectinload(Comment.author))
-        .where(Comment.user_id == user.id)
+        .where(Comment.user_id == user.id, Comment.is_deleted.is_(False))
         .order_by(Comment.created_at.desc())
         .limit(20)
     )

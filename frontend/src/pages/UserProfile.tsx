@@ -217,29 +217,28 @@ export default function UserProfile() {
         <h2 className="font-serif text-xl font-semibold text-ink-900 mb-4 flex items-center gap-2">
           <MessageSquare className="w-5 h-5 text-ink-400" />
           Recent comments
-          <span className="text-sm font-normal font-sans text-gray-400">({recent_comments.length})</span>
+          <span className="text-sm font-normal font-sans text-gray-400">
+            ({recent_comments.filter(c => !c.is_deleted).length})
+          </span>
         </h2>
-        {recent_comments.length === 0 ? (
+        {recent_comments.filter(c => !c.is_deleted).length === 0 ? (
           <p className="text-sm text-gray-400">No comments yet.</p>
         ) : (
           <div className="flex flex-col gap-3">
-            {recent_comments.map((comment) => (
+            {recent_comments.filter(c => !c.is_deleted).map((comment) => (
               <Link
                 key={comment.id}
                 to={`/read/${comment.edition_id}`}
-                className="card p-4 hover:shadow-md hover:border-ink-200 transition-all group"
+                className="card p-4 hover:shadow-md hover:border-ink-200 transition-all block"
               >
-                <p className="text-sm text-gray-700 leading-relaxed line-clamp-2">
+                <p className="text-sm text-gray-700 leading-relaxed line-clamp-2 mb-2">
                   {comment.body}
                 </p>
-                <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
+                <div className="flex items-center gap-2 text-xs text-gray-400">
                   {comment.page_number != null && (
-                    <span className="page-badge">p. {comment.page_number}</span>
+                    <span className="page-badge">{`p. ${comment.page_number}`}</span>
                   )}
-                  <span className="flex items-center gap-1">
-                    <Calendar className="w-3 h-3" />
-                    {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
-                  </span>
+                  <span>{formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}</span>
                 </div>
               </Link>
             ))}
