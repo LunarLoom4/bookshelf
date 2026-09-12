@@ -39,6 +39,34 @@ async def create_book_with_edition(
     if len(pdf_bytes) > settings.max_pdf_bytes:
         raise HTTPException(status_code=413, detail=f"PDF exceeds {settings.MAX_PDF_SIZE_MB}MB limit")
 
+    # Duplicate check: same title + author (case-insensitive) means the book already exists
+    from sqlalchemy import func as sqlfunc
+    existing_book_result = await db.execute(
+        select(Book).where(
+            sqlfunc.lower(Book.title) == title.strip().lower(),
+            sqlfunc.lower(Book.author) == author.strip().lower(),
+        )
+    )
+    existing_book = existing_book_result.scalar_one_or_none()
+    if existing_book:
+        # Check if this specific edition already exists too
+        existing_edition_result = await db.execute(
+            select(Edition).where(
+                Edition.book_id == existing_book.id,
+                Edition.edition_number == edition_number,
+            )
+        )
+        existing_edition = existing_edition_result.scalar_one_or_none()
+        if existing_edition:
+            raise HTTPException(
+                status_code=409,
+                detail=f"DUPLICATE_EDITION:{existing_book.id}:Edition {edition_number} of this book already exists on Bookshelf.",
+            )
+        raise HTTPException(
+            status_code=409,
+            detail=f"DUPLICATE_BOOK:{existing_book.id}:This book already exists on Bookshelf. You can add a new edition from its page.",
+        )
+
     # Upload PDF to R2
     pdf_key, pdf_url = storage.upload_pdf(pdf_bytes, pdf_file.filename or "upload.pdf")
 

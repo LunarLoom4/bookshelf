@@ -112,7 +112,18 @@ export default function Upload() {
       toast.success("Book uploaded!");
       navigate(`/books/${book.id}`);
     } catch (e: any) {
-      toast.error(e.response?.data?.detail || "Upload failed");
+      const detail: string = e.response?.data?.detail || "";
+      if (detail.startsWith("DUPLICATE_BOOK:") || detail.startsWith("DUPLICATE_EDITION:")) {
+        // Parse out the book ID and message from the detail string
+        const parts = detail.split(":");
+        const bookId = parts[1];
+        const message = parts.slice(2).join(":");
+        toast.error(message, { duration: 5000 });
+        // Redirect to the existing book after a brief delay so the toast is readable
+        setTimeout(() => navigate(`/books/${bookId}`), 1500);
+      } else {
+        toast.error(detail || "Upload failed");
+      }
     }
   };
 
