@@ -41,6 +41,7 @@ export default function ReadingPage() {
   const viewerRef = useRef<PDFViewerHandle>(null);
   const { isAuthenticated } = useAuthStore();
   const [currentPage, setCurrentPage] = useState(1);
+  const currentPageRef = useRef(1); // ref so we can read it in event listeners without stale closure
   const [sort, setSort] = useState<SortMode>("newest");
   const [activeTab, setActiveTab] = useState<PanelTab>("discussion");
   const progressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -107,21 +108,38 @@ export default function ReadingPage() {
   const createComment = useCreateComment(editionId);
   const voteComment = useVoteComment(editionId);
 
-  // Jump to saved page once PDF and progress are both loaded
+  // Restore saved progress once PDF iframe loads
+  // We use a ref to ensure we only restore once (not on every re-render)
+  const progressRestoredRef = useRef(false);
   useEffect(() => {
-    if (savedProgress?.last_page && savedProgress.last_page > 1) {
+    if (progressRestoredRef.current) return;
+    if (!savedProgress?.last_page || savedProgress.last_page <= 1) return;
+    if (!viewerRef.current) return;
+    // Small delay to ensure iframe is mounted and ready
+    const t = setTimeout(() => {
       viewerRef.current?.goToPage(savedProgress.last_page);
-    }
+      currentPageRef.current = savedProgress.last_page;
+      setCurrentPage(savedProgress.last_page);
+      progressRestoredRef.current = true;
+    }, 800);
+    return () => clearTimeout(t);
   }, [savedProgress?.last_page]);
 
-  // Debounced progress save: fires 3s after the user stops turning pages
-  // Keep a stable ref to saveProgress.mutate so the callback doesn't recreate
-  // every render (useMutation returns a new object each render; .mutate is stable
-  // but putting the whole object in deps would be wrong)
+  // Save progress immediately when called with a page number
   const saveProgressMutate = saveProgress.mutate;
+
+  const saveCurrentProgress = useCallback((page: number) => {
+    if (!isAuthenticated || page < 1) return;
+    currentPageRef.current = page;
+    setCurrentPage(page);
+    saveProgressMutate(page);
+  }, [isAuthenticated, saveProgressMutate]);
+
+  // handlePageChange: called when user manually sets a page (kept for CommentBox)
   const handlePageChange = useCallback(
     (page: number) => {
       setCurrentPage(page);
+      currentPageRef.current = page;
       if (!isAuthenticated) return;
       if (progressTimerRef.current) clearTimeout(progressTimerRef.current);
       progressTimerRef.current = setTimeout(() => {
@@ -130,6 +148,24 @@ export default function ReadingPage() {
     },
     [isAuthenticated, saveProgressMutate]
   );
+
+  // Save progress when the user leaves the page (back button, tab close, navigate away)
+  useEffect(() => {
+    const saveOnLeave = () => {
+      if (isAuthenticated && currentPageRef.current > 0) {
+        saveProgressMutate(currentPageRef.current);
+      }
+    };
+    // visibilitychange covers: switching tabs, minimizing, pressing Back
+    document.addEventListener("visibilitychange", saveOnLeave);
+    // beforeunload covers: closing the tab
+    window.addEventListener("beforeunload", saveOnLeave);
+    return () => {
+      document.removeEventListener("visibilitychange", saveOnLeave);
+      window.removeEventListener("beforeunload", saveOnLeave);
+      saveOnLeave(); // also save on React unmount (navigating within the SPA)
+    };
+  }, [isAuthenticated, saveProgressMutate]);
 
   // Clean up debounce timer on unmount
   useEffect(() => {
@@ -142,11 +178,13 @@ export default function ReadingPage() {
 
   const handleJumpToPage = useCallback((page: number) => {
     if (!data) return;
+    // Save progress immediately when user jumps to a specific page
+    saveCurrentProgress(page);
     // Reload the iframe at the target page using #page=N fragment.
     // This reloads the PDF but lands directly on the correct page.
     // Chrome/Edge/Firefox all honour the #page=N fragment on load.
     viewerRef.current?.goToPage(page);
-  }, [data]);
+  }, [data, saveCurrentProgress]);
 
   const handleCommentDeleted = useCallback(() => {
     // Invalidate ALL comment queries for this edition including nested reply queries
