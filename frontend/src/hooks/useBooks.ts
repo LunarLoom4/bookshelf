@@ -9,6 +9,7 @@ export function useBooks(skip = 0, limit = 20) {
   return useQuery({
     queryKey: [BOOKS_KEY, "list", skip, limit],
     queryFn: () => booksApi.list(skip, limit).then((r) => r.data),
+    staleTime: 5 * 60 * 1000, // 5 minutes -- book list rarely changes
   });
 }
 
@@ -17,6 +18,7 @@ export function useBookSearch(q: string) {
     queryKey: [BOOKS_KEY, "search", q],
     queryFn: () => booksApi.search(q).then((r) => r.data),
     enabled: q.length > 0,
+    staleTime: 5 * 60 * 1000, // 5 minutes -- search results stable
   });
 }
 
@@ -24,6 +26,7 @@ export function useBook(bookId: number) {
   return useQuery({
     queryKey: [BOOKS_KEY, bookId],
     queryFn: () => booksApi.get(bookId).then((r) => r.data),
+    staleTime: 5 * 60 * 1000, // 5 minutes -- mutations invalidate cache explicitly
   });
 }
 

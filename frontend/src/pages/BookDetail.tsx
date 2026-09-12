@@ -1,4 +1,5 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { BookDetailSkeleton } from "@/components/ui/Skeleton";
 import { useRef, useState } from "react";
 import {
   BookOpen, Layers, User, Calendar, Globe, FileText,
@@ -330,11 +331,7 @@ export default function BookDetail() {
   const { user } = useAuthStore();
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center py-24">
-        <div className="w-8 h-8 border-4 border-ink-200 border-t-ink-600 rounded-full animate-spin" />
-      </div>
-    );
+    return <BookDetailSkeleton />;
   }
 
   if (error || !book) {
@@ -361,6 +358,8 @@ export default function BookDetail() {
             <img
               src={book.cover_url}
               alt={book.title}
+              loading="lazy"
+              decoding="async"
               className="w-full rounded-lg shadow-md object-cover aspect-[3/4]"
             />
           ) : (
