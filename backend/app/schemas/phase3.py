@@ -71,10 +71,24 @@ class ReadingListUpdate(BaseModel):
     is_public: bool | None = None
 
 
+class BookSummary(BaseModel):
+    """Minimal book data embedded in reading list items."""
+    id: int
+    title: str
+    author: str
+    description: str | None
+    cover_url: str | None
+    created_at: datetime
+    edition_count: int = 0
+
+    model_config = {"from_attributes": True}
+
+
 class ReadingListItemResponse(BaseModel):
     id: int
     book_id: int
     added_at: datetime
+    book: BookSummary | None = None
 
     model_config = {"from_attributes": True}
 

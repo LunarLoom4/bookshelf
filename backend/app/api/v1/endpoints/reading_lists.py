@@ -124,7 +124,37 @@ async def get_list(
     if not reading_list.is_public:
         if not current_user or current_user.id != reading_list.user_id:
             raise HTTPException(status_code=403, detail="This list is private")
-    return ReadingListDetailResponse.model_validate(reading_list)
+
+    # Fetch book details for all items in one query
+    book_ids = [item.book_id for item in reading_list.items]
+    books_by_id: dict = {}
+    if book_ids:
+        from sqlalchemy import func as sqlfunc
+        from app.models.edition import Edition
+        books_result = await db.execute(
+            select(Book, sqlfunc.count(Edition.id).label("edition_count"))
+            .outerjoin(Edition, Edition.book_id == Book.id)
+            .where(Book.id.in_(book_ids))
+            .group_by(Book.id)
+        )
+        for row in books_result.all():
+            book, edition_count = row
+            summary = BookSummary(
+                id=book.id,
+                title=book.title,
+                author=book.author,
+                description=book.description,
+                cover_url=book.cover_url,
+                created_at=book.created_at,
+                edition_count=edition_count,
+            )
+            books_by_id[book.id] = summary
+
+    # Build response with embedded book data
+    response = ReadingListDetailResponse.model_validate(reading_list)
+    for item in response.items:
+        item.book = books_by_id.get(item.book_id)
+    return response
 
 
 @router.patch("/{list_id}", response_model=ReadingListResponse)

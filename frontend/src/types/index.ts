@@ -107,8 +107,10 @@ export interface ReadingListItem {
   id: number;
   book_id: number;
   added_at: string;
+  book?: BookListItem | null;
 }
 
 export interface ReadingListDetail extends Omit<ReadingList, 'item_count'> {
+  user_id: number;
   items: ReadingListItem[];
 }

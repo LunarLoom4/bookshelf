@@ -222,9 +222,9 @@ export function CommentThread({
           <button
             onClick={() => isAuthenticated && onVote(comment.id, 1)}
             disabled={!isAuthenticated}
-            className={`p-0.5 rounded transition-colors ${
+            className={`p-0.5 rounded transition-all duration-150 active:scale-125 ${
               comment.user_vote === 1
-                ? "text-amber-500"
+                ? "text-amber-500 scale-110"
                 : "text-gray-300 hover:text-amber-400 disabled:cursor-default"
             }`}
             title="Upvote"
@@ -236,14 +236,14 @@ export function CommentThread({
             : comment.vote_score < 0 ? "text-red-400"
             : "text-gray-400"
           }`}>
-            {comment.vote_score}
+            <span className="tabular-nums transition-all duration-200">{comment.vote_score}</span>
           </span>
           <button
             onClick={() => isAuthenticated && onVote(comment.id, -1)}
             disabled={!isAuthenticated}
-            className={`p-0.5 rounded transition-colors ${
+            className={`p-0.5 rounded transition-all duration-150 active:scale-125 ${
               comment.user_vote === -1
-                ? "text-red-400"
+                ? "text-red-400 scale-110"
                 : "text-gray-300 hover:text-red-300 disabled:cursor-default"
             }`}
             title="Downvote"

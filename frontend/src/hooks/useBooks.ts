@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { booksApi, commentsApi, progressApi, bookmarksApi, readingListsApi } from "@/api";
+import type { Comment } from "@/types";
 
 export const BOOKS_KEY = "books";
 export const COMMENTS_KEY = "comments";
@@ -105,7 +106,50 @@ export function useVoteComment(editionId: number) {
   return useMutation({
     mutationFn: ({ commentId, value }: { commentId: number; value: 1 | -1 }) =>
       commentsApi.vote(editionId, commentId, value).then((r) => r.data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: [COMMENTS_KEY, editionId] }),
+
+    // Optimistic update: change score and user_vote INSTANTLY in cache before
+    // the server responds. If the server fails, roll back to previous state.
+    onMutate: async ({ commentId, value }) => {
+      // Cancel any in-flight refetches so they don't overwrite our optimistic update
+      await qc.cancelQueries({ queryKey: [COMMENTS_KEY, editionId] });
+
+      // Snapshot the current cache for rollback
+      const previousData = qc.getQueriesData({ queryKey: [COMMENTS_KEY, editionId] });
+
+      // Apply optimistic update to all matching cache entries (top-level + replies)
+      qc.setQueriesData(
+        { queryKey: [COMMENTS_KEY, editionId], exact: false },
+        (old: Comment[] | undefined) => {
+          if (!old) return old;
+          return old.map((c) => {
+            if (c.id !== commentId) return c;
+            const prevVote = c.user_vote;
+            // Toggle: same value = remove vote; different value = change vote
+            const newVote = prevVote === value ? null : value;
+            const scoreDelta = newVote === null
+              ? -(prevVote ?? 0)          // removing vote
+              : prevVote === null
+                ? value                   // new vote
+                : value * 2;              // switching vote direction
+            return { ...c, user_vote: newVote, vote_score: c.vote_score + scoreDelta };
+          });
+        }
+      );
+
+      return { previousData };
+    },
+
+    // On server error, roll back to snapshot
+    onError: (_err, _vars, context) => {
+      if (context?.previousData) {
+        context.previousData.forEach(([queryKey, data]) => {
+          qc.setQueryData(queryKey, data);
+        });
+      }
+    },
+
+    // Always refetch after mutation settles to sync with server truth
+    onSettled: () => qc.invalidateQueries({ queryKey: [COMMENTS_KEY, editionId] }),
   });
 }
 

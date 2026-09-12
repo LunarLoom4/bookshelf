@@ -120,7 +120,12 @@ function ReadingListsSection({ username }: { username: string }) {
                   ) : (
                     <Lock className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
                   )}
-                  <span className="font-medium text-sm text-ink-900 truncate">{list.name}</span>
+                  <Link
+                    to={`/lists/${list.id}`}
+                    className="font-medium text-sm text-ink-900 truncate hover:text-ink-600 hover:underline"
+                  >
+                    {list.name}
+                  </Link>
                 </div>
                 <p className="text-xs text-gray-400">
                   {list.item_count} {list.item_count === 1 ? "book" : "books"} ·{" "}
