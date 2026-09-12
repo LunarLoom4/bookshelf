@@ -386,16 +386,29 @@ export default function BookDetail() {
               {book.description}
             </p>
           )}
-          <p className="text-xs text-gray-400 mt-auto pt-3">
-            Added {format(new Date(book.created_at), "MMMM d, yyyy")}
-          </p>
+          <div className="flex items-center gap-1.5 mt-auto pt-3 flex-wrap">
+            <span className="text-xs text-gray-400">
+              Added on {format(new Date(book.created_at), "MMMM d, yyyy")}
+            </span>
+            {book.uploader_username && (
+              <>
+                <span className="text-xs text-gray-300">by</span>
+                <Link
+                  to={`/u/${book.uploader_username}`}
+                  className="text-xs text-ink-600 hover:text-ink-800 font-medium hover:underline"
+                >
+                  {book.uploader_username}
+                </Link>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Editions */}
       <div>
         <div className="flex items-start justify-between mb-4">
-          <h2 className="font-serif text-xl font-semibold text-ink-900 flex items-center gap-2">
+          <h2 className="font-serif text-xl font-semibold text-ink-900 flex items-center gap-2 whitespace-nowrap">
             <Layers className="w-5 h-5 text-ink-400" />
             {book.editions.length} {book.editions.length === 1 ? "edition" : "editions"}
           </h2>

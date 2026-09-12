@@ -21,7 +21,9 @@ export default function Browse() {
         <div>
           <h1 className="font-serif text-3xl font-semibold text-ink-900">Browse books</h1>
           <p className="text-sm text-gray-500 mt-1">
-            {allBooks ? `${allBooks.length} books uploaded` : ""}
+            {debouncedQuery
+              ? (books ? `${books.length} ${books.length === 1 ? "book" : "books"} found` : "Searching...")
+              : (allBooks ? `${allBooks.length} ${allBooks.length === 1 ? "book" : "books"} uploaded` : "")}
           </p>
         </div>
 

@@ -369,4 +369,12 @@ async def get_book(book_id: int, db: AsyncSession = Depends(get_db)):
     book = result.scalar_one_or_none()
     if not book:
         raise HTTPException(status_code=404, detail="Book not found")
-    return book
+    # Attach uploader username for display on the book detail page
+    response = BookResponse.model_validate(book)
+    if book.uploader_id:
+        user_result = await db.execute(
+            select(User.username).where(User.id == book.uploader_id)
+        )
+        username = user_result.scalar_one_or_none()
+        response.uploader_username = username
+    return response

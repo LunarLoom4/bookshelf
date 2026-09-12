@@ -24,6 +24,7 @@ class BookResponse(BaseModel):
     description: str | None
     cover_url: str | None
     uploader_id: int | None
+    uploader_username: str | None = None
     created_at: datetime
     editions: list[EditionResponse] = []
 
