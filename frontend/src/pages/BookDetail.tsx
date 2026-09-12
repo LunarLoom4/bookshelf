@@ -329,6 +329,7 @@ export default function BookDetail() {
   const navigate = useNavigate();
   const { data: book, isLoading, error } = useBook(Number(bookId));
   const { user } = useAuthStore();
+  const [copied, setCopied] = useState(false); // must be before early returns
 
   if (isLoading) {
     return <BookDetailSkeleton />;
@@ -346,7 +347,6 @@ export default function BookDetail() {
   }
 
   const isOwner = user?.id === book.uploader_id;
-  const [copied, setCopied] = useState(false);
   const existingNums = book.editions.map((e) => e.edition_number);
 
   return (

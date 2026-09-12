@@ -1,5 +1,6 @@
 import { usePostLoginToast } from "@/hooks/usePostLoginToast";
 import { Link } from "react-router-dom";
+import { ScrollToTop } from "@/components/ui/ScrollToTop";
 import { BookOpen, MessageSquare, Layers, Download, Bookmark, List } from "lucide-react";
 import { useBooks } from "@/hooks/useBooks";
 import { BookCard } from "@/components/ui/BookCard";
@@ -144,6 +145,7 @@ export default function Landing() {
           </div>
         </section>
       )}
+      <ScrollToTop />
     </div>
   );
 }
