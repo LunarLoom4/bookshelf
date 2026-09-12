@@ -261,7 +261,16 @@ function AddEditionPanel({ bookId, existingNums }: { bookId: number; existingNum
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div className="mb-2">
+          <label className="label">Publisher</label>
+          <input
+            value={publisher}
+            onChange={(e) => setPublisher(e.target.value)}
+            className="input"
+            placeholder="e.g. McGraw-Hill Education"
+          />
+        </div>
+        <div className="grid grid-cols-3 gap-2">
           <div>
             <label className="label">Edition # <span className="text-red-400">*</span></label>
             <input
@@ -281,14 +290,6 @@ function AddEditionPanel({ bookId, existingNums }: { bookId: number; existingNum
               max={2100}
               value={year}
               onChange={(e) => setYear(e.target.value)}
-              className="input"
-            />
-          </div>
-          <div>
-            <label className="label">Publisher</label>
-            <input
-              value={publisher}
-              onChange={(e) => setPublisher(e.target.value)}
               className="input"
             />
           </div>
@@ -393,13 +394,13 @@ export default function BookDetail() {
 
       {/* Editions */}
       <div>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-start justify-between mb-4">
           <h2 className="font-serif text-xl font-semibold text-ink-900 flex items-center gap-2">
             <Layers className="w-5 h-5 text-ink-400" />
             {book.editions.length} {book.editions.length === 1 ? "edition" : "editions"}
           </h2>
-          {/* Actions row */}
-          <div className="flex items-center gap-2">
+          {/* Actions: stacked on small screens, row on large */}
+          <div className="flex flex-wrap items-center gap-2 justify-end">
             <AddToListPanel bookId={book.id} />
             {user && (
               <AddEditionPanel bookId={book.id} existingNums={existingNums} />

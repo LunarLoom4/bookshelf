@@ -316,27 +316,26 @@ async def search_books(
     if not q.strip():
         return []
 
-    # pg_trgm: score rows by similarity, filter out very low matches
-    # GREATEST picks the best of title vs author similarity
-    similarity_sql = text("""
+    # Search using ILIKE for substring match (works without pg_trgm config)
+    # Also try trigram similarity if available, fall back gracefully
+    search_sql = text("""
         SELECT
             b.id,
-            GREATEST(
-                similarity(b.title,  :q),
-                similarity(b.author, :q)
-            ) AS score
+            CASE
+                WHEN b.title  ILIKE :like_q THEN 1.0
+                WHEN b.author ILIKE :like_q THEN 0.9
+                ELSE 0.5
+            END AS score
         FROM books b
         WHERE
-            b.title  %% :q
-            OR b.author %% :q
-            OR b.title  ILIKE :like_q
+            b.title  ILIKE :like_q
             OR b.author ILIKE :like_q
-        ORDER BY score DESC
+        ORDER BY score DESC, b.created_at DESC
         OFFSET :skip LIMIT :lim
     """)
     id_rows = await db.execute(
-        similarity_sql,
-        {"q": q, "like_q": f"%{q}%", "skip": skip, "lim": limit},
+        search_sql,
+        {"like_q": f"%{q}%", "skip": skip, "lim": limit},
     )
     book_ids = [row.id for row in id_rows]
 

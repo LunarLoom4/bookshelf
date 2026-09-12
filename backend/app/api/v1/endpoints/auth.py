@@ -36,7 +36,7 @@ from collections import defaultdict
 _login_attempts: dict[str, list[float]] = defaultdict(list)
 _MAX_ATTEMPTS = 5        # max failed attempts
 _WINDOW_SECONDS = 300    # per 5-minute window
-_LOCKOUT_SECONDS = 900   # 15-minute lockout after max attempts
+_LOCKOUT_SECONDS = 300   # 5-minute lockout after max attempts
 
 
 def _check_rate_limit(identifier: str) -> None:

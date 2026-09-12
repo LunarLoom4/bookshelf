@@ -28,7 +28,7 @@ export default function Browse() {
         <div className="sm:ml-auto relative w-full sm:w-72">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
           <input
-            type="search"
+            type="text"
             placeholder="Search by title or author..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
