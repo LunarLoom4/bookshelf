@@ -78,5 +78,10 @@ export function GoogleSignInButton({ onCredential, label = "Continue with Google
 
   if (!clientId) return null;
 
-  return <div ref={containerRef} className="w-full" />;
+  return (
+    <div
+      ref={containerRef}
+      className="w-full google-signin-btn"
+    />
+  );
 }

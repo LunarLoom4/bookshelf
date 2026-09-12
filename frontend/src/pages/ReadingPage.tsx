@@ -239,9 +239,20 @@ export default function ReadingPage() {
   const topLevelComments = comments.filter((c) => c.parent_id === null);
 
   return (
-    <div className="flex h-[calc(100vh-56px)] overflow-hidden">
+    <div className="flex flex-col md:flex-row h-[calc(100vh-56px)] overflow-hidden">
       {/* ── Left: PDF viewer (draggable) ──────────────────────────────────── */}
-      <div ref={pdfPanelRef} className="flex flex-col" style={{ width: `${pdfWidthPct}%`, minWidth: 0 }}>
+      <div
+        ref={pdfPanelRef}
+        className="flex flex-col min-h-0"
+        style={{
+          // On desktop: use percentage width from drag handle
+          // On mobile: full width, fixed height (60vh for PDF, rest for comments)
+          width: window.innerWidth >= 768 ? `${pdfWidthPct}%` : "100%",
+          height: window.innerWidth < 768 ? "60vh" : undefined,
+          minWidth: 0,
+          flexShrink: window.innerWidth >= 768 ? undefined : 0,
+        }}
+      >
         <div className="flex items-center gap-2 px-3 py-2 bg-gray-900 text-gray-300 text-xs border-b border-gray-700 flex-shrink-0">
           <Link
             to={`/books/${book.id}`}
@@ -290,14 +301,14 @@ export default function ReadingPage() {
       <div
         ref={dragHandleRef}
         onMouseDown={handleDragStart}
-        className="w-1.5 flex-shrink-0 bg-gray-300 hover:bg-ink-500 active:bg-ink-600 cursor-col-resize transition-colors duration-100"
+        className="hidden md:block w-1.5 flex-shrink-0 bg-gray-300 hover:bg-ink-500 active:bg-ink-600 cursor-col-resize transition-colors duration-100"
         title="Drag to resize panels"
       />
 
       {/* ── Right: Discussion + Bookmarks panel ────────────────────────────── */}
       <div
         ref={rightPanelRef}
-        className="flex flex-col border-l border-paper-200 bg-white discussion-panel"
+        className="flex flex-col border-t md:border-t-0 md:border-l border-paper-200 bg-white discussion-panel flex-1 min-h-0"
         style={{ width: `${100 - pdfWidthPct}%`, minWidth: 0 }}
       >
         {/* Tab bar */}

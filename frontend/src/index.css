@@ -279,6 +279,29 @@
     @apply inline-flex items-center px-2 py-0.5 text-xs font-medium bg-ink-100
            text-ink-700 rounded cursor-pointer hover:bg-ink-200 transition-colors;
   }
+
+  /* Google Sign-In button -- remove white rectangle in dark mode.
+     Google renders an iframe; we can't style its internals but we can
+     make the container transparent and clip the Google-injected border. */
+  .google-signin-btn {
+    @apply rounded-lg overflow-hidden;
+    /* Force the Google iframe to fill the container width cleanly */
+    line-height: 0;
+  }
+
+  /* In dark mode, the iframe background bleeds through -- clip it */
+  html.dark .google-signin-btn {
+    border-radius: 8px;
+    overflow: hidden;
+    /* The iframe Google injects has a white bg -- we clip it to the button shape */
+    isolation: isolate;
+  }
+
+  html.dark .google-signin-btn > div,
+  html.dark .google-signin-btn iframe {
+    border-radius: 8px !important;
+    overflow: hidden !important;
+  }
 }
 
 /* ── PDF.js text layer ────────────────────────────────────────────────────── */

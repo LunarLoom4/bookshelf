@@ -190,6 +190,8 @@ async def google_login(payload: GoogleLoginRequest, db: AsyncSession = Depends(g
         )
     except ValueError as exc:
         raise HTTPException(status_code=401, detail=f"Invalid Google token: {exc}")
+    except Exception as exc:
+        raise HTTPException(status_code=401, detail=f"Google Sign-In failed: {exc}")
 
     google_id: str = idinfo["sub"]
     email: str = idinfo["email"]
