@@ -10,6 +10,7 @@ export default defineConfig({
   server: {
     host: "0.0.0.0",
     port: 5173,
+    allowedHosts: "all",
     // Fix Cross-Origin-Opener-Policy blocking Google Sign-In popup
     headers: {
       "Cross-Origin-Opener-Policy": "same-origin-allow-popups",
