@@ -26,7 +26,7 @@ function ThemeToggle() {
         style={{ opacity: isDark ? 1 : 0.35 }} />
       {/* Dark: thumb LEFT covers sun. Light: thumb RIGHT covers moon. */}
       <span className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 pointer-events-none"
-        style={{ transform: isDark ? "translateX(2px)" : "translateX(24px)" }}
+        style={{ transform: isDark ? "translateX(2px)" : "translateX(-2px)" }}
       />
     </button>
   );
