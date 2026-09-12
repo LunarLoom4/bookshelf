@@ -43,7 +43,7 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-paper-200 shadow-sm">
-      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
+      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between relative">
         {/* Brand */}
         <Link to="/" className="flex items-center gap-2 font-serif text-lg font-semibold text-ink-800">
           <BookOpen className="w-5 h-5 text-ink-600" />
@@ -51,7 +51,7 @@ export function Navbar() {
         </Link>
 
         {/* Center links */}
-        <div className="hidden sm:flex items-center gap-6">
+        <div className="hidden sm:flex items-center gap-6 absolute left-1/2 -translate-x-1/2">
           <Link to="/browse" className="flex items-center gap-1.5 text-sm text-gray-600 hover:text-ink-700 transition-colors">
             <Search className="w-4 h-4" />
             Browse
