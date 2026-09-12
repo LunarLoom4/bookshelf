@@ -91,9 +91,11 @@ def extract_first_page_as_cover(pdf_bytes: bytes) -> bytes | None:
         if doc.page_count == 0:
             return None
         page = doc[0]
-        # Render at 2x resolution for a crisp cover image
-        mat = fitz.Matrix(2.0, 2.0)
+        # Render at 1.5x resolution -- good quality, ~40% faster than 2x
+        # (pixel count is 1.5^2 = 2.25x instead of 4x vs 1x)
+        mat = fitz.Matrix(1.5, 1.5)
         pix = page.get_pixmap(matrix=mat, alpha=False)
-        return pix.tobytes("jpeg")
+        # JPEG quality 85 -- visually identical to 95 at 30% smaller size
+        return pix.tobytes("jpeg", jpg_quality=85)
     except Exception:
         return None
