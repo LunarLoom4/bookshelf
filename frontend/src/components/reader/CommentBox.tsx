@@ -5,13 +5,14 @@ import { Hash } from "lucide-react";
 
 interface Props {
   onSubmit: (body: string, pageNumber?: number, parentId?: number) => Promise<void>;
+  onChange?: (value: string) => void; // 9: called on every keystroke for unsaved-comment tracking
   parentId?: number;
   currentPage?: number;
   placeholder?: string;
   autoFocusPage?: boolean;
 }
 
-export function CommentBox({ onSubmit, parentId, currentPage, placeholder, autoFocusPage }: Props) {
+export function CommentBox({ onSubmit, parentId, currentPage, placeholder, autoFocusPage, onChange }: Props) {
   const { isAuthenticated } = useAuthStore();
   const [body, setBody] = useState("");
   const [pageNumber, setPageNumber] = useState<string>(currentPage ? String(currentPage) : "");
@@ -42,6 +43,7 @@ export function CommentBox({ onSubmit, parentId, currentPage, placeholder, autoF
     try {
       const pn = pageNumber ? parseInt(pageNumber, 10) : undefined;
       await onSubmit(body.trim(), isNaN(pn!) ? undefined : pn, parentId);
+      onChange?.(""); // 9: clear unsaved tracking after successful submit
       setBody("");
       setPageNumber("");
       pageFieldDirty.current = false;
@@ -54,7 +56,7 @@ export function CommentBox({ onSubmit, parentId, currentPage, placeholder, autoF
     <form onSubmit={handleSubmit} className="flex flex-col gap-2">
       <textarea
         value={body}
-        onChange={(e) => setBody(e.target.value)}
+        onChange={(e) => { setBody(e.target.value); onChange?.(e.target.value); }}
         placeholder={placeholder || "Write a comment..."}
         rows={3}
         className="input resize-none text-sm"

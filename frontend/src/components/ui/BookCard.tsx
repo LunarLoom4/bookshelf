@@ -54,7 +54,12 @@ export function BookCard({ book }: Props) {
         </h3>
         <p className="text-sm text-gray-500">{book.author}</p>
         {book.description && (
-          <p className="text-xs text-gray-400 mt-1 line-clamp-2">{book.description}</p>
+          <p
+            className="text-xs text-gray-400 mt-1 line-clamp-2 cursor-help"
+            title={book.description}
+          >
+            {book.description}
+          </p>
         )}
         <div className="mt-auto pt-3 flex items-center justify-between text-xs text-gray-400">
           <span className="flex items-center gap-1">

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import { ScrollToTop } from "@/components/ui/ScrollToTop";
 import { useQuery } from "@tanstack/react-query";
 import { BookOpen, MessageSquare, Calendar, List, Lock, Globe, Trash2, Plus } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
@@ -245,6 +246,7 @@ export default function UserProfile() {
           </div>
         )}
       </section>
+      <ScrollToTop />
     </div>
   );
 }

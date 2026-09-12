@@ -33,7 +33,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <Navbar />
-      <Toaster position="bottom-right" toastOptions={{ className: "font-sans text-sm" }} />
+      <Toaster position="bottom-left" toastOptions={{ className: "font-sans text-sm" }} />
       <main>
         <Suspense fallback={<PageLoader />}>
           <Routes>

@@ -3,6 +3,7 @@ import { Search, X, BookOpen } from "lucide-react";
 import { useBooks, useBookSearch } from "@/hooks/useBooks";
 import { BookCard } from "@/components/ui/BookCard";
 import { BookCardSkeleton } from "@/components/ui/Skeleton";
+import { ScrollToTop } from "@/components/ui/ScrollToTop";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useAuthStore } from "@/stores/authStore";
 import { Link } from "react-router-dom";
@@ -141,6 +142,7 @@ export default function Browse() {
           )}
         </div>
       )}
+      <ScrollToTop />
     </div>
   );
 }

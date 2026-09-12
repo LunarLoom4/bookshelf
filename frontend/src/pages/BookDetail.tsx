@@ -3,7 +3,7 @@ import { BookDetailSkeleton } from "@/components/ui/Skeleton";
 import { useRef, useState } from "react";
 import {
   BookOpen, Layers, User, Calendar, Globe, FileText,
-  Upload, Plus, X, CheckCircle,
+  Upload, Plus, X, CheckCircle, Link2,
 } from "lucide-react";
 import { useBook, useUploadCover, useAddEdition, useDeleteBook } from "@/hooks/useBooks";
 import { useAuthStore } from "@/stores/authStore";
@@ -346,6 +346,7 @@ export default function BookDetail() {
   }
 
   const isOwner = user?.id === book.uploader_id;
+  const [copied, setCopied] = useState(false);
   const existingNums = book.editions.map((e) => e.edition_number);
 
   return (
@@ -376,10 +377,25 @@ export default function BookDetail() {
           <h1 className="font-serif text-3xl font-semibold text-ink-900 leading-tight">
             {book.title}
           </h1>
-          <p className="text-gray-500 flex items-center gap-1.5">
-            <User className="w-4 h-4" />
-            {book.author}
-          </p>
+          <div className="flex items-center gap-3">
+            <p className="text-gray-500 flex items-center gap-1.5">
+              <User className="w-4 h-4" />
+              {book.author}
+            </p>
+            {/* 12: Copy link */}
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(window.location.href);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+              }}
+              className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-ink-600 transition-colors"
+              title="Copy link to this book"
+            >
+              <Link2 className="w-3 h-3" />
+              {copied ? "Copied!" : "Copy link"}
+            </button>
+          </div>
           {book.description && (
             <p className="text-sm text-gray-600 leading-relaxed mt-2 max-w-xl">
               {book.description}

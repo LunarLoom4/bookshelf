@@ -36,20 +36,56 @@ type PanelTab = "discussion" | "bookmarks";
 const PROGRESS_DEBOUNCE_MS = 3000;
 
 export default function ReadingPage() {
+  const navigate = useNavigate();
   const { editionId: editionIdStr } = useParams<{ editionId: string }>();
   const editionId = Number(editionIdStr);
   const viewerRef = useRef<PDFViewerHandle>(null);
   const { isAuthenticated } = useAuthStore();
   const [currentPage, setCurrentPage] = useState(1);
   const currentPageRef = useRef(1); // ref so we can read it in event listeners without stale closure
-  const [sort, setSort] = useState<SortMode>("newest");
+  const unsavedCommentRef = useRef(""); // 9: tracks if user has unsaved text in comment box
+  // 15: Restore sort preference from localStorage
+  const [sort, setSort] = useState<SortMode>(() => {
+    const saved = localStorage.getItem("bookshelf-sort-pref");
+    return (saved === "top" || saved === "newest") ? saved : "newest";
+  });
   const [activeTab, setActiveTab] = useState<PanelTab>("discussion");
   const progressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [pdfWidthPct, setPdfWidthPct] = useState(DEFAULT_PDF_PCT);
+  // 14: Restore panel width from localStorage
+  const [pdfWidthPct, setPdfWidthPct] = useState(() => {
+    const saved = localStorage.getItem("bookshelf-panel-width");
+    const pct = saved ? Number(saved) : DEFAULT_PDF_PCT;
+    return pct >= 30 && pct <= 80 ? pct : DEFAULT_PDF_PCT;
+  });
   const [isPdfFullscreen, setIsPdfFullscreen] = useState(false);
   const isDragging = useRef(false);
   const dragStartX = useRef(0);
   const dragStartPct = useRef(DEFAULT_PDF_PCT);
+
+  // 6: Escape key = go back to book page (when not in fullscreen)
+  // 9: Warn before leaving if comment box has unsaved text
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !document.fullscreenElement) {
+        if (unsavedCommentRef.current.trim()) {
+          if (!window.confirm("You have an unsaved comment. Leave anyway?")) return;
+        }
+        navigate(-1);
+      }
+    };
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (unsavedCommentRef.current.trim()) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [navigate]);
 
   // Sync fullscreen state on Escape key
   useEffect(() => {
@@ -95,6 +131,8 @@ export default function ReadingPage() {
       window.removeEventListener("mouseup", onUp);
       // Commit final value to React state only once on release
       setPdfWidthPct(next);
+      // 14: Persist panel width for next visit
+      localStorage.setItem("bookshelf-panel-width", String(next));
     };
 
     window.addEventListener("mousemove", onMove);
@@ -259,7 +297,7 @@ export default function ReadingPage() {
             className="flex items-center gap-1 hover:text-white transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
-            <span className="truncate max-w-[160px]">{book.title}</span>
+            <span className="truncate max-w-[120px] sm:max-w-[200px] md:max-w-[260px]">{book.title}</span>
           </Link>
           <span className="text-gray-600">/</span>
           <span>Edition {edition.edition_number}</span>
@@ -347,7 +385,7 @@ export default function ReadingPage() {
           <>
             <div className="flex-shrink-0 px-3 py-1.5 border-b border-paper-200 flex items-center justify-end gap-1 discussion-panel">
               <button
-                onClick={() => setSort("newest")}
+                onClick={() => { setSort("newest"); localStorage.setItem("bookshelf-sort-pref", "newest"); }}
                 className={`flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors ${
                   sort === "newest" ? "bg-ink-100 text-ink-700" : "text-gray-400 hover:text-ink-600"
                 }`}
@@ -356,7 +394,7 @@ export default function ReadingPage() {
                 Newest
               </button>
               <button
-                onClick={() => setSort("top")}
+                onClick={() => { setSort("top"); localStorage.setItem("bookshelf-sort-pref", "top"); }}
                 className={`flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors ${
                   sort === "top" ? "bg-ink-100 text-ink-700" : "text-gray-400 hover:text-ink-600"
                 }`}
@@ -366,7 +404,11 @@ export default function ReadingPage() {
               </button>
             </div>
             <div className="flex-shrink-0 px-4 py-3 border-b border-paper-200 bg-paper-50">
-              <CommentBox onSubmit={handleNewComment} currentPage={currentPage} />
+              <CommentBox
+                onSubmit={handleNewComment}
+                currentPage={currentPage}
+                onChange={(val) => { unsavedCommentRef.current = val; }}
+              />
             </div>
             <div className="flex-1 overflow-y-auto px-4 divide-y divide-paper-100">
               {loadingComments ? (
