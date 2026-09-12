@@ -86,7 +86,6 @@ async def create_book_with_edition(
 
     if cover_bytes_validated:
         # User provided a cover -- upload PDF and cover IN PARALLEL
-        # Both are independent operations; no need to wait for one before the other.
         try:
             results = await asyncio.gather(
                 loop.run_in_executor(
@@ -107,16 +106,39 @@ async def create_book_with_edition(
         except Exception as exc:
             raise HTTPException(status_code=500, detail="Upload to storage failed") from exc
     else:
-        # No cover provided -- upload PDF only; cover generated in background by Celery
+        # No cover provided -- generate from page 1 synchronously in a thread,
+        # then upload both PDF and generated cover in parallel.
         try:
-            pdf_key, pdf_url = await loop.run_in_executor(
+            # Step 1: generate cover bytes from PDF (CPU-bound, run in thread)
+            thumb = await loop.run_in_executor(
                 None,
-                lambda: storage.upload_pdf(pdf_bytes, pdf_file.filename or "upload.pdf")
+                lambda: storage.extract_first_page_as_cover(pdf_bytes)
             )
+
+            if thumb:
+                # Step 2: upload PDF and generated cover IN PARALLEL
+                results = await asyncio.gather(
+                    loop.run_in_executor(
+                        None,
+                        lambda: storage.upload_pdf(pdf_bytes, pdf_file.filename or "upload.pdf")
+                    ),
+                    loop.run_in_executor(
+                        None,
+                        lambda: storage.upload_cover(thumb, "cover.jpg", "image/jpeg")
+                    ),
+                )
+                (pdf_key, pdf_url) = results[0]
+                (cover_key, cover_url) = results[1]
+            else:
+                # PyMuPDF failed to render -- upload PDF only
+                pdf_key, pdf_url = await loop.run_in_executor(
+                    None,
+                    lambda: storage.upload_pdf(pdf_bytes, pdf_file.filename or "upload.pdf")
+                )
+                cover_key = None
+                cover_url = None
         except Exception as exc:
             raise HTTPException(status_code=500, detail="Upload to storage failed") from exc
-        cover_key = None
-        cover_url = None
 
     book = Book(
         title=title.strip(),
@@ -148,12 +170,6 @@ async def create_book_with_edition(
         select(Book).options(selectinload(Book.editions)).where(Book.id == book.id)
     )
     created_book = result.scalar_one()
-
-    # If no cover was provided, dispatch Celery task to generate one from page 1.
-    # The user gets the book response immediately without waiting for PyMuPDF (~3-5s).
-    if not cover_key:
-        from app.tasks import generate_cover_for_edition
-        generate_cover_for_edition.delay(edition.id, pdf_key, book.id)
 
     return created_book
 
