@@ -1,8 +1,57 @@
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, Component } from "react";
+import type { ReactNode, ErrorInfo } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { Navbar } from "@/components/layout/Navbar";
 import { useAuthStore } from "@/stores/authStore";
+
+// Error boundary that catches chunk load failures (e.g. after a new deployment)
+// and forces a hard reload so the user gets the latest version automatically.
+class ChunkErrorBoundary extends Component<
+  { children: ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, _info: ErrorInfo) {
+    // If a chunk fails to load (404 after deployment), reload the page once.
+    // The sessionStorage flag prevents an infinite reload loop.
+    const isChunkError =
+      error.message.includes("Failed to fetch dynamically imported module") ||
+      error.message.includes("Importing a module script failed") ||
+      error.message.includes("Unable to preload CSS") ||
+      error.name === "ChunkLoadError";
+
+    if (isChunkError && !sessionStorage.getItem("chunk-reload")) {
+      sessionStorage.setItem("chunk-reload", "1");
+      window.location.reload();
+    }
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-center px-4">
+          <p className="text-gray-500 text-sm">Something went wrong loading this page.</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="btn-primary py-2 text-sm"
+          >
+            Reload page
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 // Lazy-loaded pages
 const Landing = lazy(() => import("@/pages/Landing"));
@@ -35,6 +84,7 @@ export default function App() {
       <Navbar />
       <Toaster position="bottom-left" toastOptions={{ className: "font-sans text-sm" }} />
       <main>
+        <ChunkErrorBoundary>
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<Landing />} />
@@ -56,6 +106,7 @@ export default function App() {
             />
           </Routes>
         </Suspense>
+        </ChunkErrorBoundary>
       </main>
     </BrowserRouter>
   );
