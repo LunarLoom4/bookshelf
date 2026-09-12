@@ -386,22 +386,15 @@ export default function BookDetail() {
               {book.description}
             </p>
           )}
-          <div className="flex items-center gap-1.5 mt-auto pt-3 flex-wrap">
-            <span className="text-xs text-gray-400">
-              Added on {format(new Date(book.created_at), "MMMM d, yyyy")}
-            </span>
+          <p className="text-xs text-gray-400 mt-auto pt-3">
+            Added on {format(new Date(book.created_at), "MMMM d, yyyy")}
             {book.uploader_username && (
-              <>
-                <span className="text-xs text-gray-300">by</span>
-                <Link
-                  to={`/u/${book.uploader_username}`}
-                  className="text-xs text-ink-600 hover:text-ink-800 font-medium hover:underline"
-                >
-                  {book.uploader_username}
-                </Link>
-              </>
+              <> by <Link
+                to={`/u/${book.uploader_username}`}
+                className="text-ink-600 hover:text-ink-800 font-medium hover:underline"
+              >{book.uploader_username}</Link></>
             )}
-          </div>
+          </p>
         </div>
       </div>
 

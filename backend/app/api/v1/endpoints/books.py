@@ -59,7 +59,7 @@ async def create_book_with_edition(
         book_title = existing_book.title if existing_book else "another book"
         raise HTTPException(
             status_code=409,
-            detail=f"DUPLICATE_EDITION:{existing_edition.book_id}:This exact PDF is already on Bookshelf as "{book_title}" (Edition {existing_edition.edition_number}).",
+            detail=f"DUPLICATE_EDITION:{existing_edition.book_id}:This exact PDF is already on Bookshelf as '{book_title}' (Edition {existing_edition.edition_number}).",
         )
 
     # Secondary check: same title + author with a different PDF.
@@ -208,7 +208,7 @@ async def add_edition(
         book_title = dup_book.title if dup_book else "another book"
         raise HTTPException(
             status_code=409,
-            detail=f"DUPLICATE_EDITION:{dup.book_id}:This exact PDF is already on Bookshelf as "{book_title}" (Edition {dup.edition_number}).",
+            detail=f"DUPLICATE_EDITION:{dup.book_id}:This exact PDF is already on Bookshelf as '{book_title}' (Edition {dup.edition_number}).",
         )
 
     pdf_key, pdf_url = storage.upload_pdf(pdf_bytes, pdf_file.filename or "upload.pdf")
