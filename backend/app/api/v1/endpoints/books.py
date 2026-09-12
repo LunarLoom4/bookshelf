@@ -39,33 +39,33 @@ async def create_book_with_edition(
     if len(pdf_bytes) > settings.max_pdf_bytes:
         raise HTTPException(status_code=413, detail=f"PDF exceeds {settings.MAX_PDF_SIZE_MB}MB limit")
 
-    # Duplicate check: same title + author (case-insensitive) means the book already exists
+    # Content-based duplicate detection via SHA-256 hash of PDF bytes.
+    # The same PDF file always produces the same hash regardless of filename,
+    # uploader, or metadata typed into the form.
+    import hashlib
     from sqlalchemy import func as sqlfunc
-    existing_book_result = await db.execute(
-        select(Book).where(
-            sqlfunc.lower(Book.title) == title.strip().lower(),
-            sqlfunc.lower(Book.author) == author.strip().lower(),
-        )
+    pdf_hash = hashlib.sha256(pdf_bytes).hexdigest()
+
+    existing_edition_result = await db.execute(
+        select(Edition).where(Edition.pdf_hash == pdf_hash)
     )
-    existing_book = existing_book_result.scalar_one_or_none()
-    if existing_book:
-        # Check if this specific edition already exists too
-        existing_edition_result = await db.execute(
-            select(Edition).where(
-                Edition.book_id == existing_book.id,
-                Edition.edition_number == edition_number,
-            )
+    existing_edition = existing_edition_result.scalar_one_or_none()
+    if existing_edition:
+        # This exact PDF file is already in the database
+        existing_book_result = await db.execute(
+            select(Book).where(Book.id == existing_edition.book_id)
         )
-        existing_edition = existing_edition_result.scalar_one_or_none()
-        if existing_edition:
-            raise HTTPException(
-                status_code=409,
-                detail=f"DUPLICATE_EDITION:{existing_book.id}:Edition {edition_number} of this book already exists on Bookshelf.",
-            )
+        existing_book = existing_book_result.scalar_one_or_none()
+        book_title = existing_book.title if existing_book else "another book"
         raise HTTPException(
             status_code=409,
-            detail=f"DUPLICATE_BOOK:{existing_book.id}:This book already exists on Bookshelf. You can add a new edition from its page.",
+            detail=f"DUPLICATE_EDITION:{existing_edition.book_id}:This exact PDF is already on Bookshelf as "{book_title}" (Edition {existing_edition.edition_number}).",
         )
+
+    # Secondary check: same title + author with a different PDF.
+    # This could be a different edition or a different scan of the same book.
+    # We warn but do not block -- the uploader decides.
+    # (This check is handled on the frontend via a separate /check endpoint below.)
 
     # Upload PDF to R2
     pdf_key, pdf_url = storage.upload_pdf(pdf_bytes, pdf_file.filename or "upload.pdf")
@@ -112,6 +112,7 @@ async def create_book_with_edition(
         pdf_url=pdf_url,
         pdf_r2_key=pdf_key,
         file_size_bytes=len(pdf_bytes),
+        pdf_hash=pdf_hash,
         uploader_id=current_user.id,
     )
     db.add(edition)
@@ -195,6 +196,21 @@ async def add_edition(
     if len(pdf_bytes) > settings.max_pdf_bytes:
         raise HTTPException(status_code=413, detail=f"PDF exceeds {settings.MAX_PDF_SIZE_MB}MB limit")
 
+    # Hash-based duplicate check for add_edition too
+    import hashlib
+    pdf_hash = hashlib.sha256(pdf_bytes).hexdigest()
+    dup_result = await db.execute(
+        select(Edition).where(Edition.pdf_hash == pdf_hash)
+    )
+    dup = dup_result.scalar_one_or_none()
+    if dup:
+        dup_book = await db.get(Book, dup.book_id)
+        book_title = dup_book.title if dup_book else "another book"
+        raise HTTPException(
+            status_code=409,
+            detail=f"DUPLICATE_EDITION:{dup.book_id}:This exact PDF is already on Bookshelf as "{book_title}" (Edition {dup.edition_number}).",
+        )
+
     pdf_key, pdf_url = storage.upload_pdf(pdf_bytes, pdf_file.filename or "upload.pdf")
 
     edition = Edition(
@@ -206,6 +222,7 @@ async def add_edition(
         pdf_url=pdf_url,
         pdf_r2_key=pdf_key,
         file_size_bytes=len(pdf_bytes),
+        pdf_hash=pdf_hash,
         uploader_id=current_user.id,
     )
     db.add(edition)
