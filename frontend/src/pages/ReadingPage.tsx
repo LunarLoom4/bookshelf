@@ -64,17 +64,36 @@ export default function ReadingPage() {
         navigate(-1);
       }
     };
+
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (unsavedCommentRef.current.trim()) {
         e.preventDefault();
         e.returnValue = "";
       }
     };
+
+    // Intercept browser Back button (popstate fires when browser navigates back)
+    // Push a dummy history entry so we get a popstate event to intercept
+    window.history.pushState(null, "", window.location.href);
+    const handlePopState = () => {
+      if (unsavedCommentRef.current.trim()) {
+        if (!window.confirm("You have an unsaved comment. Leave anyway?")) {
+          // Re-push so the back button doesn't work without confirmation
+          window.history.pushState(null, "", window.location.href);
+          return;
+        }
+      }
+      // Allow navigation -- go back twice (once for our dummy entry, once for real back)
+      navigate(-1);
+    };
+
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("beforeunload", handleBeforeUnload);
+    window.addEventListener("popstate", handlePopState);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("beforeunload", handleBeforeUnload);
+      window.removeEventListener("popstate", handlePopState);
     };
   }, [navigate]);
 

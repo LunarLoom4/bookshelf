@@ -3,6 +3,7 @@ import { BookOpen, Layers } from "lucide-react";
 import type { BookListItem } from "@/types";
 import { formatDistanceToNow } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
+import { Tooltip } from "@/components/ui/Tooltip";
 import { booksApi } from "@/api";
 import { BOOKS_KEY } from "@/hooks/useBooks";
 
@@ -54,12 +55,11 @@ export function BookCard({ book }: Props) {
         </h3>
         <p className="text-sm text-gray-500">{book.author}</p>
         {book.description && (
-          <p
-            className="text-xs text-gray-400 mt-1 line-clamp-2 cursor-help"
-            title={book.description}
-          >
-            {book.description}
-          </p>
+          <Tooltip content={book.description}>
+            <p className="text-xs text-gray-400 mt-1 line-clamp-2">
+              {book.description}
+            </p>
+          </Tooltip>
         )}
         <div className="mt-auto pt-3 flex items-center justify-between text-xs text-gray-400">
           <span className="flex items-center gap-1">
