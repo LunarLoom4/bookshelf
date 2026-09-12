@@ -13,6 +13,7 @@ from app.models.book import Book
 from app.models.reading_list import ReadingList, ReadingListItem
 from app.models.user import User
 from app.schemas.phase3 import (
+    BookSummary,
     ReadingListCreate,
     ReadingListDetailResponse,
     ReadingListResponse,
