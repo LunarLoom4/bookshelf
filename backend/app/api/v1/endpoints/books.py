@@ -1,3 +1,4 @@
+import asyncio
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -67,30 +68,55 @@ async def create_book_with_edition(
     # We warn but do not block -- the uploader decides.
     # (This check is handled on the frontend via a separate /check endpoint below.)
 
-    # Upload PDF to R2
-    pdf_key, pdf_url = storage.upload_pdf(pdf_bytes, pdf_file.filename or "upload.pdf")
+    # Validate cover file bytes BEFORE starting any uploads
+    # so we can fail fast without wasting R2 bandwidth
+    cover_bytes_validated: bytes | None = None
+    cover_content_type_validated: str | None = None
+    if cover_file and cover_file.filename:
+        if cover_file.content_type not in ALLOWED_IMAGE_TYPES:
+            raise HTTPException(status_code=422, detail="Cover must be JPEG, PNG, or WebP")
+        cover_bytes_validated = await cover_file.read()
+        if len(cover_bytes_validated) > settings.max_cover_bytes:
+            raise HTTPException(status_code=413, detail=f"Cover exceeds {settings.MAX_COVER_SIZE_MB}MB limit")
+        cover_content_type_validated = cover_file.content_type
 
-    # Cover image: explicit upload or auto-generate from page 1
-    cover_key = None
-    cover_url = None
-    try:
-        if cover_file and cover_file.filename:
-            if cover_file.content_type not in ALLOWED_IMAGE_TYPES:
-                raise HTTPException(status_code=422, detail="Cover must be JPEG, PNG, or WebP")
-            cover_bytes = await cover_file.read()
-            if len(cover_bytes) > settings.max_cover_bytes:
-                raise HTTPException(status_code=413, detail=f"Cover exceeds {settings.MAX_COVER_SIZE_MB}MB limit")
-            cover_key, cover_url = storage.upload_cover(
-                cover_bytes, cover_file.filename, cover_file.content_type
+    # Run PDF upload in a thread so it doesn't block the async event loop.
+    # boto3 is synchronous; asyncio.to_thread() runs it on a thread pool.
+    loop = asyncio.get_running_loop()
+
+    if cover_bytes_validated:
+        # User provided a cover -- upload PDF and cover IN PARALLEL
+        # Both are independent operations; no need to wait for one before the other.
+        try:
+            results = await asyncio.gather(
+                loop.run_in_executor(
+                    None,
+                    lambda: storage.upload_pdf(pdf_bytes, pdf_file.filename or "upload.pdf")
+                ),
+                loop.run_in_executor(
+                    None,
+                    lambda: storage.upload_cover(
+                        cover_bytes_validated,
+                        cover_file.filename,
+                        cover_content_type_validated,
+                    )
+                ),
             )
-        else:
-            # No cover provided -- extract page 1 of the PDF as cover
-            thumb = storage.extract_first_page_as_cover(pdf_bytes)
-            if thumb:
-                cover_key, cover_url = storage.upload_cover(thumb, "cover.jpg", "image/jpeg")
-    except HTTPException:
-        storage.delete_object(pdf_key)
-        raise
+            (pdf_key, pdf_url) = results[0]
+            (cover_key, cover_url) = results[1]
+        except Exception as exc:
+            raise HTTPException(status_code=500, detail="Upload to storage failed") from exc
+    else:
+        # No cover provided -- upload PDF only; cover generated in background by Celery
+        try:
+            pdf_key, pdf_url = await loop.run_in_executor(
+                None,
+                lambda: storage.upload_pdf(pdf_bytes, pdf_file.filename or "upload.pdf")
+            )
+        except Exception as exc:
+            raise HTTPException(status_code=500, detail="Upload to storage failed") from exc
+        cover_key = None
+        cover_url = None
 
     book = Book(
         title=title.strip(),
@@ -121,7 +147,15 @@ async def create_book_with_edition(
     result = await db.execute(
         select(Book).options(selectinload(Book.editions)).where(Book.id == book.id)
     )
-    return result.scalar_one()
+    created_book = result.scalar_one()
+
+    # If no cover was provided, dispatch Celery task to generate one from page 1.
+    # The user gets the book response immediately without waiting for PyMuPDF (~3-5s).
+    if not cover_key:
+        from app.tasks import generate_cover_for_edition
+        generate_cover_for_edition.delay(edition.id, pdf_key, book.id)
+
+    return created_book
 
 
 @router.post("/{book_id}/cover", response_model=BookResponse)

@@ -5,7 +5,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import toast from "react-hot-toast";
 import { Upload as UploadIcon, FileText, X } from "lucide-react";
-import { useUploadBook } from "@/hooks/useBooks";
+import { booksApi } from "@/api";
+import { useAuthStore } from "@/stores/authStore";
+import { useQueryClient } from "@tanstack/react-query";
+import { BOOKS_KEY } from "@/hooks/useBooks";
 
 const schema = z.object({
   title: z.string().min(1, "Required").max(500),
@@ -80,9 +83,12 @@ function FileDrop({
 
 export default function Upload() {
   const navigate = useNavigate();
-  const uploadBook = useUploadBook();
+  const { accessToken } = useAuthStore();
+  const queryClient = useQueryClient();
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadPct, setUploadPct] = useState(0);
 
   const {
     register,
@@ -107,23 +113,32 @@ export default function Upload() {
     fd.append("pdf_file", pdfFile);
     if (coverFile) fd.append("cover_file", coverFile);
 
+    setUploading(true);
+    setUploadPct(0);
     try {
-      const book = await uploadBook.mutateAsync(fd);
+      const book = await booksApi.uploadWithProgress(
+        fd,
+        (pct) => setUploadPct(pct),
+        accessToken || "",
+      );
+      // Invalidate book list cache so Browse reflects the new book
+      queryClient.invalidateQueries({ queryKey: [BOOKS_KEY] });
       toast.success("Book uploaded!");
       navigate(`/books/${book.id}`);
     } catch (e: any) {
       const detail: string = e.response?.data?.detail || "";
       if (detail.startsWith("DUPLICATE_BOOK:") || detail.startsWith("DUPLICATE_EDITION:")) {
-        // Parse out the book ID and message from the detail string
         const parts = detail.split(":");
         const bookId = parts[1];
         const message = parts.slice(2).join(":");
         toast.error(message, { duration: 5000 });
-        // Redirect to the existing book after a brief delay so the toast is readable
         setTimeout(() => navigate(`/books/${bookId}`), 1500);
       } else {
         toast.error(detail || "Upload failed");
       }
+    } finally {
+      setUploading(false);
+      setUploadPct(0);
     }
   };
 
@@ -225,12 +240,26 @@ export default function Upload() {
           </div>
         </div>
 
+        {/* Progress bar -- shown while uploading */}
+        {uploading && (
+          <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+            <div
+              className="bg-ink-600 h-2 rounded-full transition-all duration-200"
+              style={{ width: `${uploadPct}%` }}
+            />
+          </div>
+        )}
+
         <button
           type="submit"
-          disabled={uploadBook.isPending || !pdfFile}
+          disabled={uploading || !pdfFile}
           className="btn-primary justify-center py-2.5 mt-2"
         >
-          {uploadBook.isPending ? "Uploading..." : "Upload book"}
+          {uploading
+            ? uploadPct < 100
+              ? `Uploading... ${uploadPct}%`
+              : "Processing..."
+            : "Upload book"}
         </button>
       </form>
     </div>

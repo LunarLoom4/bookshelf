@@ -34,6 +34,38 @@ export const booksApi = {
       headers: { "Content-Type": "multipart/form-data" },
     }),
 
+  // Upload with progress tracking via XMLHttpRequest.
+  // onProgress receives 0-100 percentage as upload bytes are sent.
+  uploadWithProgress: (
+    formData: FormData,
+    onProgress: (pct: number) => void,
+    token: string,
+  ): Promise<Book> =>
+    new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", "/api/v1/books/");
+      xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) {
+          onProgress(Math.round((e.loaded / e.total) * 100));
+        }
+      };
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve(JSON.parse(xhr.responseText) as Book);
+        } else {
+          try {
+            const err = JSON.parse(xhr.responseText);
+            reject({ response: { status: xhr.status, data: err } });
+          } catch {
+            reject({ response: { status: xhr.status, data: { detail: "Upload failed" } } });
+          }
+        }
+      };
+      xhr.onerror = () => reject({ response: { status: 0, data: { detail: "Network error" } } });
+      xhr.send(formData);
+    }),
+
   delete: (bookId: number) => api.delete(`/books/${bookId}`),
 
   uploadCover: (bookId: number, formData: FormData) =>

@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 
 from app.api.v1.router import api_router
 from app.core.config import settings
@@ -20,6 +21,10 @@ app = FastAPI(
     description="Public book PDF sharing and discussion platform",
     lifespan=lifespan,
 )
+
+# Compress responses >1KB with gzip -- reduces JSON transfer size by ~60-80%
+# minimum_size=1000 avoids compressing tiny responses where overhead > benefit
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 app.add_middleware(
     CORSMiddleware,

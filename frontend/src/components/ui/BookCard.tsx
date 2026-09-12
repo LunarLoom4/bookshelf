@@ -2,16 +2,32 @@ import { Link } from "react-router-dom";
 import { BookOpen, Layers } from "lucide-react";
 import type { BookListItem } from "@/types";
 import { formatDistanceToNow } from "date-fns";
+import { useQueryClient } from "@tanstack/react-query";
+import { booksApi } from "@/api";
+import { BOOKS_KEY } from "@/hooks/useBooks";
 
 interface Props {
   book: BookListItem;
 }
 
 export function BookCard({ book }: Props) {
+  const queryClient = useQueryClient();
+
+  const handleMouseEnter = () => {
+    // Prefetch the book detail when the user hovers the card.
+    // If data is already cached and fresh, this is a no-op.
+    queryClient.prefetchQuery({
+      queryKey: [BOOKS_KEY, book.id],
+      queryFn: () => booksApi.get(book.id).then((r) => r.data),
+      staleTime: 5 * 60 * 1000,
+    });
+  };
+
   return (
     <Link
       to={`/books/${book.id}`}
       className="card group flex flex-col hover:shadow-md transition-shadow duration-200 overflow-hidden"
+      onMouseEnter={handleMouseEnter}
     >
       {/* Cover */}
       <div className="aspect-[3/4] bg-paper-100 flex items-center justify-center overflow-hidden">
