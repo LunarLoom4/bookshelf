@@ -1,4 +1,6 @@
 import asyncio
+import time
+from collections import defaultdict
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,12 +10,33 @@ from app.core.deps import get_current_user
 from app.core.config import settings
 from app.db.session import get_db
 from app.models.book import Book
+from app.models.comment import Comment
 from app.models.edition import Edition
 from app.models.user import User
 from app.schemas.book import BookListItem, BookResponse
 from app.services import storage
 
 router = APIRouter(prefix="/books", tags=["books"])
+
+# Upload rate limiting: max 10 uploads per hour per user
+_upload_attempts: dict[int, list[float]] = defaultdict(list)
+_MAX_UPLOADS_PER_HOUR = 15
+_UPLOAD_WINDOW = 3600  # 1 hour in seconds
+
+def _check_upload_rate_limit(user_id: int) -> None:
+    now = time.time()
+    attempts = _upload_attempts[user_id]
+    # Remove attempts older than 1 hour
+    _upload_attempts[user_id] = [t for t in attempts if now - t < _UPLOAD_WINDOW]
+    if len(_upload_attempts[user_id]) >= _MAX_UPLOADS_PER_HOUR:
+        from fastapi import HTTPException, status
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"Upload limit reached. You can upload up to {_MAX_UPLOADS_PER_HOUR} books per hour. Please try again later.",
+        )
+
+def _record_upload(user_id: int) -> None:
+    _upload_attempts[user_id].append(time.time())
 
 ALLOWED_PDF_TYPES = {"application/pdf"}
 ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
@@ -33,12 +56,38 @@ async def create_book_with_edition(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    # 29: Rate limit uploads per user
+    _check_upload_rate_limit(current_user.id)
+
+    # 33: Input length validation on book metadata
+    title = title.strip()
+    author = author.strip()
+    if not title:
+        raise HTTPException(status_code=422, detail="Title is required")
+    if len(title) > 500:
+        raise HTTPException(status_code=422, detail="Title must be 500 characters or fewer")
+    if not author:
+        raise HTTPException(status_code=422, detail="Author is required")
+    if len(author) > 255:
+        raise HTTPException(status_code=422, detail="Author must be 255 characters or fewer")
+    if description and len(description) > 2000:
+        raise HTTPException(status_code=422, detail="Description must be 2,000 characters or fewer")
+    if publisher and len(publisher) > 255:
+        raise HTTPException(status_code=422, detail="Publisher must be 255 characters or fewer")
+    if language and len(language) > 30:
+        raise HTTPException(status_code=422, detail="Language must be 30 characters or fewer")
+
     # Validate PDF
     if pdf_file.content_type not in ALLOWED_PDF_TYPES:
         raise HTTPException(status_code=422, detail="Only PDF files are accepted")
     pdf_bytes = await pdf_file.read()
     if len(pdf_bytes) > settings.max_pdf_bytes:
         raise HTTPException(status_code=413, detail=f"PDF exceeds {settings.MAX_PDF_SIZE_MB}MB limit")
+
+    # 30: Magic byte validation -- check actual file content, not just MIME type
+    # A valid PDF always starts with %PDF (hex: 25 50 44 46)
+    if not pdf_bytes[:4] == b"%PDF":
+        raise HTTPException(status_code=422, detail="File does not appear to be a valid PDF")
 
     # Content-based duplicate detection via SHA-256 hash of PDF bytes.
     # The same PDF file always produces the same hash regardless of filename,
@@ -171,6 +220,8 @@ async def create_book_with_edition(
     )
     created_book = result.scalar_one()
 
+    # 29: Record this upload for rate limiting
+    _record_upload(current_user.id)
     return created_book
 
 
@@ -240,11 +291,18 @@ async def add_edition(
             status_code=409, detail=f"Edition {edition_number} already exists for this book"
         )
 
+    # 29: Rate limit additions per user (counts against same hourly quota)
+    _check_upload_rate_limit(current_user.id)
+
     if pdf_file.content_type not in ALLOWED_PDF_TYPES:
         raise HTTPException(status_code=422, detail="Only PDF files are accepted")
     pdf_bytes = await pdf_file.read()
     if len(pdf_bytes) > settings.max_pdf_bytes:
         raise HTTPException(status_code=413, detail=f"PDF exceeds {settings.MAX_PDF_SIZE_MB}MB limit")
+
+    # 30: Magic byte validation
+    if not pdf_bytes[:4] == b"%PDF":
+        raise HTTPException(status_code=422, detail="File does not appear to be a valid PDF")
 
     # Hash-based duplicate check for add_edition too
     import hashlib
@@ -277,6 +335,9 @@ async def add_edition(
     )
     db.add(edition)
     await db.commit()
+
+    # 29: Record this edition upload for rate limiting
+    _record_upload(current_user.id)
 
     result = await db.execute(
         select(Book).options(selectinload(Book.editions)).where(Book.id == book.id)
@@ -379,9 +440,11 @@ async def list_books(
     result = await db.execute(
         select(
             Book,
-            func.count(Edition.id).label("edition_count"),
+            func.count(Edition.id.distinct()).label("edition_count"),
+            func.count(Comment.id.distinct()).label("comment_count"),
         )
         .outerjoin(Edition, Edition.book_id == Book.id)
+        .outerjoin(Comment, (Comment.edition_id == Edition.id) & (Comment.is_deleted.is_(False)))
         .group_by(Book.id)
         .order_by(Book.created_at.desc())
         .offset(skip)
@@ -390,9 +453,51 @@ async def list_books(
     rows = result.all()
     books = []
     for row in rows:
-        book, edition_count = row
+        book, edition_count, comment_count = row
         item = BookListItem.model_validate(book)
         item.edition_count = edition_count
+        item.comment_count = comment_count
+        books.append(item)
+    return books
+
+
+@router.get("/popular", response_model=list[BookListItem])
+async def popular_books(
+    days: int = 7,
+    limit: int = 6,
+    db: AsyncSession = Depends(get_db),
+):
+    """Books with the most comments in the last N days."""
+    from datetime import datetime, timezone, timedelta
+    from sqlalchemy import and_
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+
+    result = await db.execute(
+        select(
+            Book,
+            func.count(Edition.id.distinct()).label("edition_count"),
+            func.count(Comment.id.distinct()).label("comment_count"),
+        )
+        .outerjoin(Edition, Edition.book_id == Book.id)
+        .outerjoin(
+            Comment,
+            and_(
+                Comment.edition_id == Edition.id,
+                Comment.is_deleted.is_(False),
+                Comment.created_at >= cutoff,
+            )
+        )
+        .group_by(Book.id)
+        .having(func.count(Comment.id.distinct()) > 0)
+        .order_by(func.count(Comment.id.distinct()).desc())
+        .limit(limit)
+    )
+    books = []
+    for row in result.all():
+        book, edition_count, comment_count = row
+        item = BookListItem.model_validate(book)
+        item.edition_count = edition_count
+        item.comment_count = comment_count
         books.append(item)
     return books
 
@@ -437,10 +542,15 @@ async def search_books(
     if not book_ids:
         return []
 
-    # Fetch full book rows with edition counts, preserving similarity order
+    # Fetch full book rows with edition and comment counts, preserving similarity order
     rows = await db.execute(
-        select(Book, func.count(Edition.id).label("edition_count"))
+        select(
+            Book,
+            func.count(Edition.id.distinct()).label("edition_count"),
+            func.count(Comment.id.distinct()).label("comment_count"),
+        )
         .outerjoin(Edition, Edition.book_id == Book.id)
+        .outerjoin(Comment, (Comment.edition_id == Edition.id) & (Comment.is_deleted.is_(False)))
         .where(Book.id.in_(book_ids))
         .group_by(Book.id)
     )
@@ -448,9 +558,10 @@ async def search_books(
     id_order = {bid: i for i, bid in enumerate(book_ids)}
     books = []
     for row in rows.all():
-        book, edition_count = row
+        book, edition_count, comment_count = row
         item = BookListItem.model_validate(book)
         item.edition_count = edition_count
+        item.comment_count = comment_count
         books.append(item)
     books.sort(key=lambda b: id_order.get(b.id, 999))
     return books

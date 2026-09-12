@@ -23,6 +23,8 @@ export const authApi = {
 export const booksApi = {
   list: (skip = 0, limit = 20) =>
     api.get<BookListItem[]>("/books/", { params: { skip, limit } }),
+  popular: (days = 7, limit = 6) =>
+    api.get<BookListItem[]>("/books/popular", { params: { days, limit } }),
 
   search: (q: string, skip = 0, limit = 20) =>
     api.get<BookListItem[]>("/books/search", { params: { q, skip, limit } }),

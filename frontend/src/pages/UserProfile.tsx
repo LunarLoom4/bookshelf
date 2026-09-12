@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ScrollToTop } from "@/components/ui/ScrollToTop";
 import { useQuery } from "@tanstack/react-query";
-import { BookOpen, MessageSquare, Calendar, List, Lock, Globe, Trash2, Plus } from "lucide-react";
+import { BookOpen, MessageSquare, Calendar, List, Lock, Globe, Trash2, Plus, BookMarked } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 import { usersApi } from "@/api";
 import { BookCard } from "@/components/ui/BookCard";
@@ -14,12 +14,13 @@ import {
 } from "@/hooks/useBooks";
 import { useAuthStore } from "@/stores/authStore";
 import { Avatar } from "@/components/ui/Avatar";
-import type { User, BookListItem, Comment, ReadingList } from "@/types";
+import type { User, BookListItem, Comment, ReadingList, CurrentlyReadingItem } from "@/types";
 
 interface UserProfileData {
   user: User;
   books_uploaded: BookListItem[];
   recent_comments: Comment[];
+  currently_reading?: CurrentlyReadingItem[];
 }
 
 function ReadingListsSection({ username }: { username: string }) {
@@ -177,7 +178,7 @@ export default function UserProfile() {
     );
   }
 
-  const { user, books_uploaded, recent_comments } = data;
+  const { user, books_uploaded, recent_comments, currently_reading = [] } = data;
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-10 flex flex-col gap-10">
@@ -194,6 +195,46 @@ export default function UserProfile() {
 
       {/* Reading lists */}
       <ReadingListsSection username={username!} />
+
+      {/* 17: Currently reading */}
+      {currently_reading.length > 0 && (
+        <section>
+          <h2 className="font-serif text-xl font-semibold text-ink-900 mb-4 flex items-center gap-2">
+            <BookMarked className="w-5 h-5 text-ink-400" />
+            Currently reading
+            <span className="text-sm font-normal font-sans text-gray-400">({currently_reading.length})</span>
+          </h2>
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+            {currently_reading.map((item: CurrentlyReadingItem) => (
+              <Link
+                key={item.edition_id}
+                to={`/read/${item.edition_id}`}
+                className="group flex flex-col gap-1.5"
+                title={`${item.book_title} — last read p.${item.last_page}`}
+              >
+                <div className="aspect-[3/4] rounded-md overflow-hidden bg-paper-100 relative">
+                  {item.book_cover_url ? (
+                    <img
+                      src={item.book_cover_url}
+                      alt={item.book_title}
+                      loading="lazy"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-paper-400">
+                      <BookOpen className="w-6 h-6" />
+                    </div>
+                  )}
+                  <span className="absolute bottom-1 right-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded font-mono">
+                    p.{item.last_page}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-600 line-clamp-2 leading-tight">{item.book_title}</p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Books uploaded */}
       <section>

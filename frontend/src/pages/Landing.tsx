@@ -1,5 +1,8 @@
 import { usePostLoginToast } from "@/hooks/usePostLoginToast";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { booksApi } from "@/api";
+import { BookCard } from "@/components/ui/BookCard";
 import { ScrollToTop } from "@/components/ui/ScrollToTop";
 import { BookOpen, MessageSquare, Layers, Download, Bookmark, List } from "lucide-react";
 import { useBooks } from "@/hooks/useBooks";
@@ -10,6 +13,11 @@ export default function Landing() {
   usePostLoginToast();
   const { data: books } = useBooks(0, 6);
   const { isAuthenticated } = useAuthStore();
+  const { data: popularBooks = [] } = useQuery({
+    queryKey: ["books", "popular"],
+    queryFn: () => booksApi.popular(7, 6).then((r) => r.data),
+    staleTime: 10 * 60 * 1000, // 10 min -- popular list changes slowly
+  });
 
   return (
     <div>
@@ -145,6 +153,25 @@ export default function Landing() {
           </div>
         </section>
       )}
+      {/* 25: Popular this week */}
+      {popularBooks.length > 0 && (
+        <section className="py-16 px-4 landing-section-alt">
+          <div className="max-w-5xl mx-auto">
+            <h2 className="font-serif text-2xl font-semibold text-ink-900 text-center mb-2">
+              Popular this week
+            </h2>
+            <p className="text-sm text-gray-500 text-center mb-8">
+              Most discussed books in the last 7 days
+            </p>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+              {popularBooks.map((book) => (
+                <BookCard key={book.id} book={book} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
       <ScrollToTop />
     </div>
   );

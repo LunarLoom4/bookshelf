@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { BookOpen, Layers } from "lucide-react";
+import { BookOpen, Layers, MessageSquare } from "lucide-react";
 import type { BookListItem } from "@/types";
 import { formatDistanceToNow } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
@@ -62,10 +62,18 @@ export function BookCard({ book }: Props) {
           </Tooltip>
         )}
         <div className="mt-auto pt-3 flex items-center justify-between text-xs text-gray-400">
-          <span className="flex items-center gap-1">
-            <Layers className="w-3.5 h-3.5" />
-            {book.edition_count} {book.edition_count === 1 ? "edition" : "editions"}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="flex items-center gap-1">
+              <Layers className="w-3 h-3" />
+              {book.edition_count}
+            </span>
+            {book.comment_count > 0 && (
+              <span className="flex items-center gap-1">
+                <MessageSquare className="w-3 h-3" />
+                {book.comment_count}
+              </span>
+            )}
+          </div>
           <span>{formatDistanceToNow(new Date(book.created_at), { addSuffix: true })}</span>
         </div>
       </div>

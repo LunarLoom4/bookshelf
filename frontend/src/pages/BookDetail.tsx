@@ -1,9 +1,13 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { LANGUAGES, isSeparator } from "@/constants/languages";
+import { useQuery } from "@tanstack/react-query";
+import { progressApi } from "@/api";
+import { useAuthStore } from "@/stores/authStore";
 import { BookDetailSkeleton } from "@/components/ui/Skeleton";
 import { useRef, useState } from "react";
 import {
   BookOpen, Layers, User, Calendar, Globe, FileText,
-  Upload, Plus, X, CheckCircle, Link2,
+  Upload, Plus, X, CheckCircle, Link2, Download,
 } from "lucide-react";
 import { useBook, useUploadCover, useAddEdition, useDeleteBook } from "@/hooks/useBooks";
 import { useAuthStore } from "@/stores/authStore";
@@ -27,6 +31,16 @@ function EditionRow({ edition, bookId, isOwner, onDelete }: {
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const deleteBook = useDeleteBook();
+  const { isAuthenticated } = useAuthStore();
+
+  // 20: Fetch reading progress for this edition
+  const { data: progress } = useQuery({
+    queryKey: ["progress", edition.id],
+    queryFn: () => progressApi.get(edition.id).then((r) => r.data),
+    enabled: isAuthenticated,
+    staleTime: 60_000,
+  });
+  const lastPage = progress?.last_page;
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -79,12 +93,33 @@ function EditionRow({ edition, bookId, isOwner, onDelete }: {
         </div>
       </div>
       <div className="flex items-center gap-2 flex-shrink-0 ml-4">
-        <Link
-          to={`/read/${edition.id}`}
-          className="btn-primary py-1.5 text-xs"
+        {/* 20: Continue from last page if progress exists */}
+        {lastPage && lastPage > 1 ? (
+          <Link
+            to={`/read/${edition.id}`}
+            className="btn-primary py-1.5 text-xs"
+            title={`Continue from page ${lastPage}`}
+          >
+            p.{lastPage} ▶
+          </Link>
+        ) : (
+          <Link
+            to={`/read/${edition.id}`}
+            className="btn-primary py-1.5 text-xs"
+          >
+            Read
+          </Link>
+        )}
+        {/* 26: Download PDF button */}
+        <a
+          href={`/api/v1/books/${bookId}/editions/${edition.id}/pdf`}
+          download={`${edition.edition_number ? "Edition-" + edition.edition_number : "book"}.pdf`}
+          className="btn-secondary py-1.5 text-xs flex items-center gap-1"
+          title="Download PDF"
+          onClick={(e) => e.stopPropagation()}
         >
-          Read
-        </Link>
+          <Download className="w-3.5 h-3.5" />
+        </a>
         {isOwner && (
           confirmDelete ? (
             <div className="flex items-center gap-1.5">
@@ -187,6 +222,7 @@ function AddEditionPanel({ bookId, existingNums }: { bookId: number; existingNum
   const [year, setYear] = useState("");
   const [publisher, setPublisher] = useState("");
   const [language, setLanguage] = useState("en");
+  const [languageCustom, setLanguageCustom] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const addEdition = useAddEdition(bookId);
 
@@ -215,7 +251,10 @@ function AddEditionPanel({ bookId, existingNums }: { bookId: number; existingNum
     fd.append("edition_number", String(num));
     if (year) fd.append("year", year);
     if (publisher) fd.append("publisher", publisher);
-    fd.append("language", language);
+    const finalLanguage = language === "other"
+      ? (languageCustom.trim() || "Other")
+      : language;
+    fd.append("language", finalLanguage);
     fd.append("pdf_file", pdfFile);
     try {
       await addEdition.mutateAsync(fd);
@@ -297,17 +336,24 @@ function AddEditionPanel({ bookId, existingNums }: { bookId: number; existingNum
           <div>
             <label className="label">Language</label>
             <select value={language} onChange={(e) => setLanguage(e.target.value)} className="input">
-              <option value="en">English</option>
-              <option value="es">Spanish</option>
-              <option value="fr">French</option>
-              <option value="de">German</option>
-              <option value="zh">Chinese</option>
-              <option value="hi">Hindi</option>
-              <option value="ar">Arabic</option>
-              <option value="pt">Portuguese</option>
-              <option value="ru">Russian</option>
-              <option value="ja">Japanese</option>
+              {LANGUAGES.map((lang) =>
+                isSeparator(lang.code) ? (
+                  <option key={lang.code} disabled value="">{lang.label}</option>
+                ) : (
+                  <option key={lang.code} value={lang.code}>{lang.label}</option>
+                )
+              )}
             </select>
+            {language === "other" && (
+              <input
+                type="text"
+                placeholder="Type language name in English..."
+                className="input mt-1"
+                maxLength={30}
+                value={languageCustom}
+                onChange={(e) => setLanguageCustom(e.target.value)}
+              />
+            )}
           </div>
         </div>
 

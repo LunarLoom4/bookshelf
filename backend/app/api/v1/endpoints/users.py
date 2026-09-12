@@ -9,15 +9,27 @@ from app.models.user import User
 from app.models.book import Book
 from app.models.edition import Edition
 from app.models.comment import Comment
+from app.models.reading_progress import ReadingProgress
 from app.schemas.auth import UserResponse
 from app.schemas.book import BookListItem
 from app.schemas.comment import CommentResponse
+
+
+class CurrentlyReadingItem(BaseModel):
+    edition_id: int
+    last_page: int
+    book_id: int
+    book_title: str
+    book_cover_url: str | None
+
+    model_config = {"from_attributes": True}
 
 
 class UserProfile(BaseModel):
     user: UserResponse
     books_uploaded: list[BookListItem]
     recent_comments: list[CommentResponse]
+    currently_reading: list[CurrentlyReadingItem] = []
 
     model_config = {"from_attributes": True}
 
@@ -58,8 +70,29 @@ async def get_user_profile(username: str, db: AsyncSession = Depends(get_db)):
     )
     comments = list(comments_result.scalars())
 
+    # 17: Currently reading -- editions the user has progress on, newest first
+    progress_result = await db.execute(
+        select(ReadingProgress, Book, Edition)
+        .join(Edition, Edition.id == ReadingProgress.edition_id)
+        .join(Book, Book.id == Edition.book_id)
+        .where(ReadingProgress.user_id == user.id)
+        .order_by(ReadingProgress.updated_at.desc())
+        .limit(6)
+    )
+    currently_reading = [
+        CurrentlyReadingItem(
+            edition_id=prog.edition_id,
+            last_page=prog.last_page,
+            book_id=book.id,
+            book_title=book.title,
+            book_cover_url=book.cover_url,
+        )
+        for prog, book, edition in progress_result.all()
+    ]
+
     return UserProfile(
         user=UserResponse.model_validate(user),
         books_uploaded=books,
         recent_comments=[CommentResponse.model_validate(c) for c in comments],
+        currently_reading=currently_reading,
     )

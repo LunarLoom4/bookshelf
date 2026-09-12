@@ -6,6 +6,7 @@ import { z } from "zod";
 import toast from "react-hot-toast";
 import { Upload as UploadIcon, FileText, X } from "lucide-react";
 import { booksApi } from "@/api";
+import { LANGUAGES, isSeparator } from "@/constants/languages";
 import { useAuthStore } from "@/stores/authStore";
 import { useQueryClient } from "@tanstack/react-query";
 import { BOOKS_KEY } from "@/hooks/useBooks";
@@ -18,6 +19,7 @@ const schema = z.object({
   year: z.coerce.number().int().min(1000).max(2100).optional().or(z.literal("")),
   publisher: z.string().max(255).optional(),
   language: z.string().default("en"),
+  languageCustom: z.string().optional(),  // used when language === "other"
 });
 type Form = z.infer<typeof schema>;
 
@@ -93,6 +95,7 @@ export default function Upload() {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<Form>({ resolver: zodResolver(schema) });
 
@@ -109,7 +112,10 @@ export default function Upload() {
     fd.append("edition_number", String(data.edition_number));
     if (data.year) fd.append("year", String(data.year));
     if (data.publisher) fd.append("publisher", data.publisher);
-    fd.append("language", data.language);
+    const finalLanguage = data.language === "other"
+      ? (data.languageCustom?.trim() || "Other")
+      : data.language;
+    fd.append("language", finalLanguage);
     fd.append("pdf_file", pdfFile);
     if (coverFile) fd.append("cover_file", coverFile);
 
@@ -226,17 +232,24 @@ export default function Upload() {
           <div>
             <label className="label" htmlFor="language">Language</label>
             <select id="language" className="input" {...register("language")}>
-              <option value="en">English</option>
-              <option value="es">Spanish</option>
-              <option value="fr">French</option>
-              <option value="de">German</option>
-              <option value="zh">Chinese</option>
-              <option value="hi">Hindi</option>
-              <option value="ar">Arabic</option>
-              <option value="pt">Portuguese</option>
-              <option value="ru">Russian</option>
-              <option value="ja">Japanese</option>
+              {LANGUAGES.map((lang) =>
+                isSeparator(lang.code) ? (
+                  <option key={lang.code} disabled value="">{lang.label}</option>
+                ) : (
+                  <option key={lang.code} value={lang.code}>{lang.label}</option>
+                )
+              )}
             </select>
+            {/* Free-text input shown when "Other" is selected */}
+            {watch("language") === "other" && (
+              <input
+                type="text"
+                placeholder="Type language name in English..."
+                className="input mt-1"
+                maxLength={30}
+                {...register("languageCustom")}
+              />
+            )}
           </div>
         </div>
 
