@@ -1,4 +1,4 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useRef, useState, useCallback, useEffect } from "react";
 import { ArrowLeft, SortAsc, TrendingUp, Bookmark, Maximize, Minimize } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
