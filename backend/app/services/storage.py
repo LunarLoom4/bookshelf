@@ -79,6 +79,16 @@ def generate_presigned_url(r2_key: str, expires_in: int = 3600) -> str:
     )
 
 
+def get_pdf_page_count(pdf_bytes: bytes) -> int | None:
+    """Return the number of pages in a PDF, or None on failure."""
+    try:
+        import fitz
+        doc = fitz.open(stream=pdf_bytes, filetype="pdf")
+        return doc.page_count if doc.page_count > 0 else None
+    except Exception:
+        return None
+
+
 def extract_first_page_as_cover(pdf_bytes: bytes) -> bytes | None:
     """
     Extract the first page of a PDF and return it as a JPEG image.

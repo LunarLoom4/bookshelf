@@ -1,5 +1,5 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { LANGUAGES, isSeparator } from "@/constants/languages";
+import { LanguagePicker } from "@/components/ui/LanguagePicker";
 import { useQuery } from "@tanstack/react-query";
 import { progressApi } from "@/api";
 import { useAuthStore } from "@/stores/authStore";
@@ -223,7 +223,6 @@ function AddEditionPanel({ bookId, existingNums }: { bookId: number; existingNum
   const [year, setYear] = useState("");
   const [publisher, setPublisher] = useState("");
   const [language, setLanguage] = useState("en");
-  const [languageCustom, setLanguageCustom] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const addEdition = useAddEdition(bookId);
 
@@ -252,10 +251,7 @@ function AddEditionPanel({ bookId, existingNums }: { bookId: number; existingNum
     fd.append("edition_number", String(num));
     if (year) fd.append("year", year);
     if (publisher) fd.append("publisher", publisher);
-    const finalLanguage = language === "other"
-      ? (languageCustom.trim() || "Other")
-      : language;
-    fd.append("language", finalLanguage);
+    fd.append("language", language || "en");
     fd.append("pdf_file", pdfFile);
     try {
       await addEdition.mutateAsync(fd);
@@ -336,25 +332,7 @@ function AddEditionPanel({ bookId, existingNums }: { bookId: number; existingNum
           </div>
           <div>
             <label className="label">Language</label>
-            <select value={language} onChange={(e) => setLanguage(e.target.value)} className="input">
-              {LANGUAGES.map((lang) =>
-                isSeparator(lang.code) ? (
-                  <option key={lang.code} disabled value="">{lang.label}</option>
-                ) : (
-                  <option key={lang.code} value={lang.code}>{lang.label}</option>
-                )
-              )}
-            </select>
-            {language === "other" && (
-              <input
-                type="text"
-                placeholder="Type language name in English..."
-                className="input mt-1"
-                maxLength={30}
-                value={languageCustom}
-                onChange={(e) => setLanguageCustom(e.target.value)}
-              />
-            )}
+            <LanguagePicker value={language} onChange={setLanguage} />
           </div>
         </div>
 
@@ -377,6 +355,7 @@ export default function BookDetail() {
   const { data: book, isLoading, error } = useBook(Number(bookId));
   const { user } = useAuthStore();
   const [copied, setCopied] = useState(false); // must be before early returns
+  const [showComparison, setShowComparison] = useState(false); // must be before early returns
 
   if (isLoading) {
     return <BookDetailSkeleton />;
@@ -394,7 +373,6 @@ export default function BookDetail() {
   }
 
   const isOwner = user?.id === book.uploader_id;
-  const [showComparison, setShowComparison] = useState(false);
   const existingNums = book.editions.map((e) => e.edition_number);
 
   return (

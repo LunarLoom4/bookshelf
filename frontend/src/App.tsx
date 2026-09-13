@@ -1,6 +1,6 @@
 import { Suspense, lazy, Component } from "react";
 import type { ReactNode, ErrorInfo } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { Navbar } from "@/components/layout/Navbar";
 import { useAuthStore } from "@/stores/authStore";
@@ -100,13 +100,16 @@ function PageLoader() {
   );
 }
 
-export default function App() {
+function InnerApp() {
+  const { pathname } = useLocation();
   return (
-    <BrowserRouter>
+    <>
       <Navbar />
       <Toaster position="bottom-left" toastOptions={{ className: "font-sans text-sm" }} />
       <main>
-        <ChunkErrorBoundary>
+        {/* key=pathname resets ChunkErrorBoundary on every navigation so
+            a previous render error doesn't block a different page */}
+        <ChunkErrorBoundary key={pathname}>
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<Landing />} />
@@ -130,6 +133,14 @@ export default function App() {
         </Suspense>
         </ChunkErrorBoundary>
       </main>
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <InnerApp />
     </BrowserRouter>
   );
 }

@@ -210,6 +210,7 @@ async def create_book_with_edition(
         pdf_r2_key=pdf_key,
         file_size_bytes=len(pdf_bytes),
         pdf_hash=pdf_hash,
+        page_count=get_pdf_page_count(pdf_bytes),
         uploader_id=current_user.id,
     )
     db.add(edition)
@@ -331,6 +332,7 @@ async def add_edition(
         pdf_r2_key=pdf_key,
         file_size_bytes=len(pdf_bytes),
         pdf_hash=pdf_hash,
+        page_count=get_pdf_page_count(pdf_bytes),
         uploader_id=current_user.id,
     )
     db.add(edition)
@@ -352,12 +354,13 @@ async def proxy_pdf(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Stream the PDF through the API so the browser can render it natively.
-    Uses true streaming so large PDFs start displaying immediately.
+    Redirect the browser directly to the R2 public URL for the PDF.
+    This is much faster than proxying -- the browser fetches straight from
+    Cloudflare's CDN edge without going through our API server.
+    R2 sets immutable cache headers so subsequent loads are instant.
     """
-    from fastapi.responses import StreamingResponse
+    from fastapi.responses import RedirectResponse
     from app.models.edition import Edition as EditionModel
-    import httpx
 
     result = await db.execute(
         select(EditionModel).where(
@@ -369,33 +372,8 @@ async def proxy_pdf(
     if not edition:
         raise HTTPException(status_code=404, detail="Edition not found")
 
-    # Stream directly from R2 to the client -- no buffering
-    client = httpx.AsyncClient(timeout=120)
-    try:
-        r2_response = await client.get(edition.pdf_url)
-        r2_response.raise_for_status()
-    except httpx.HTTPError as e:
-        await client.aclose()
-        raise HTTPException(status_code=502, detail=f"Failed to fetch PDF: {e}")
-
-    async def stream_pdf():
-        try:
-            async for chunk in r2_response.aiter_bytes(chunk_size=65536):
-                yield chunk
-        finally:
-            await client.aclose()
-
-    headers = {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": "inline",
-        "Cache-Control": "public, max-age=3600",
-        "Access-Control-Allow-Origin": "*",
-        "X-Content-Type-Options": "nosniff",
-    }
-    if r2_response.headers.get("content-length"):
-        headers["Content-Length"] = r2_response.headers["content-length"]
-
-    return StreamingResponse(stream_pdf(), media_type="application/pdf", headers=headers)
+    # 301 permanent redirect -- browser caches this so repeat visits are instant
+    return RedirectResponse(url=edition.pdf_url, status_code=302)
 
 
 @router.delete("/{book_id}", status_code=status.HTTP_204_NO_CONTENT)

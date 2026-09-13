@@ -95,7 +95,54 @@ export function useCreateComment(editionId: number) {
       pageNumber?: number;
       parentId?: number;
     }) => commentsApi.create(editionId, body, pageNumber, parentId).then((r) => r.data),
-    onSuccess: () => {
+
+    // Optimistic update: add the new comment to the cache immediately
+    // so it appears in the UI before the server responds
+    onMutate: async ({ body, pageNumber, parentId }) => {
+      await qc.cancelQueries({ queryKey: [COMMENTS_KEY, editionId] });
+      const previousData = qc.getQueriesData({ queryKey: [COMMENTS_KEY, editionId] });
+
+      // Build a temporary comment object
+      const tempComment: Comment = {
+        id: -Date.now(), // negative temp id to avoid conflicts
+        body,
+        page_number: pageNumber ?? null,
+        parent_id: parentId ?? null,
+        user_id: 0,
+        edition_id: editionId,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        vote_score: 0,
+        user_vote: null,
+        is_deleted: false,
+        edited_at: null,
+        author: null,
+        reply_count: 0,
+      };
+
+      // Add to the correct query cache (top-level or replies)
+      const queryKey = parentId
+        ? [COMMENTS_KEY, editionId, "replies", parentId]
+        : [COMMENTS_KEY, editionId, "newest"];
+
+      qc.setQueryData(queryKey, (old: Comment[] | undefined) =>
+        old ? [...old, tempComment] : [tempComment]
+      );
+
+      return { previousData };
+    },
+
+    // On error, roll back optimistic update
+    onError: (_err, _vars, context) => {
+      if (context?.previousData) {
+        context.previousData.forEach(([queryKey, data]) => {
+          qc.setQueryData(queryKey, data);
+        });
+      }
+    },
+
+    // Always refetch to sync with server (replaces temp comment with real one)
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: [COMMENTS_KEY, editionId] });
     },
   });
