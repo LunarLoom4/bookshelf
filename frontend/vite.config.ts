@@ -15,6 +15,8 @@ export default defineConfig({
     headers: {
       "Cross-Origin-Opener-Policy": "unsafe-none",
       "Cross-Origin-Embedder-Policy": "unsafe-none",
+      "Cache-Control": "no-store, no-cache, must-revalidate",
+      "Pragma": "no-cache",
     },
     proxy: {
       "/api": {

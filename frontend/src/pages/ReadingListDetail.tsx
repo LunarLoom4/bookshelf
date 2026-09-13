@@ -6,7 +6,7 @@ import { readingListsApi } from "@/api";
 import { useAuthStore } from "@/stores/authStore";
 import { BookCard } from "@/components/ui/BookCard";
 import { BookCardSkeleton } from "@/components/ui/Skeleton";
-import { Globe, Lock, Trash2, ArrowLeft, BookOpen } from "lucide-react";
+import { Globe, Lock, Trash2, ArrowLeft, BookOpen, Pencil, Check, X } from "lucide-react";
 import { timeAgo } from "@/utils/time";
 import toast from "react-hot-toast";
 import type { BookListItem, ReadingListDetail } from "@/types";
