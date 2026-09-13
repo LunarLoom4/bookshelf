@@ -393,6 +393,7 @@ export default function BookDetail() {
   }
 
   const isOwner = user?.id === book.uploader_id;
+  const [showComparison, setShowComparison] = useState(false);
   const existingNums = book.editions.map((e) => e.edition_number);
 
   return (
