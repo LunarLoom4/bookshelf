@@ -143,7 +143,7 @@ export default function Landing() {
             <p className="text-sm text-gray-500 text-center mb-8">
               Most discussed books in the last 7 days
             </p>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
               {popularBooks.map((book) => (
                 <BookCard key={book.id} book={book} />
               ))}

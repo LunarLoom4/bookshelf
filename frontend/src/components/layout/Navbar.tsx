@@ -1,10 +1,12 @@
 import { Link, useNavigate } from "react-router-dom";
-import { BookOpen, Search, Upload, Settings, LogOut, Sun, Moon } from "lucide-react";
+import { BookOpen, Search, Upload, Settings, LogOut, Sun, Moon, Bell } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import { useThemeStore } from "@/stores/themeStore";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { usersApi } from "@/api";
 import { Avatar } from "@/components/ui/Avatar";
+import { timeAgo } from "@/utils/time";
 
 function ThemeToggle() {
   const { theme, setTheme } = useThemeStore();
@@ -46,12 +48,15 @@ export function Navbar() {
     staleTime: 2 * 60 * 1000,  // poll every 2 min
     refetchInterval: 2 * 60 * 1000,
   });
-  const lastChecked = localStorage.getItem("bookshelf-notif-checked") || "0";
-  const hasNewActivity = profileData?.recent_comments?.some(
-    (c: any) => new Date(c.created_at).getTime() > Number(lastChecked)
-  ) ?? false;
+  const [notifOpen, setNotifOpen] = useState(false);
+  const lastChecked = Number(localStorage.getItem("bookshelf-notif-checked") || "0");
+  const newComments = (profileData?.recent_comments ?? []).filter(
+    (c: any) => new Date(c.created_at).getTime() > lastChecked
+  );
+  const hasNew = newComments.length > 0;
 
-  const handleProfileClick = () => {
+  const handleBellClick = () => {
+    setNotifOpen(v => !v);
     localStorage.setItem("bookshelf-notif-checked", Date.now().toString());
   };
 
@@ -93,17 +98,59 @@ export function Navbar() {
               {/* Avatar + username → profile */}
               <Link
                 to={`/u/${user.username}`}
-                onClick={handleProfileClick}
-                className="flex items-center gap-2 text-sm text-gray-600 hover:text-ink-700 transition-colors px-2 py-1 rounded-md hover:bg-paper-100 relative"
+                className="flex items-center gap-2 text-sm text-gray-600 hover:text-ink-700 transition-colors px-2 py-1 rounded-md hover:bg-paper-100"
               >
-                <div className="relative">
-                  <Avatar username={user.username} avatarUrl={user.avatar_url} size="xs" />
-                  {hasNewActivity && (
-                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full border border-white" />
-                  )}
-                </div>
+                <Avatar username={user.username} avatarUrl={user.avatar_url} size="xs" />
                 <span className="hidden sm:inline font-medium">{user.username}</span>
               </Link>
+
+              {/* Bell notification icon */}
+              <div className="relative">
+                <button
+                  onClick={handleBellClick}
+                  className="p-1.5 text-gray-400 hover:text-ink-700 rounded-md hover:bg-paper-100 transition-colors relative"
+                  title="Notifications"
+                >
+                  <Bell className="w-4 h-4" />
+                  {hasNew && (
+                    <span className="absolute top-0.5 right-0.5 w-2 h-2 bg-red-500 rounded-full" />
+                  )}
+                </button>
+
+                {/* Notification dropdown */}
+                {notifOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-paper-200 rounded-xl shadow-xl z-50 overflow-hidden">
+                    <div className="px-4 py-3 border-b border-paper-100 flex items-center justify-between">
+                      <span className="text-sm font-semibold text-ink-800">Recent activity</span>
+                      <button onClick={() => setNotifOpen(false)} className="text-gray-400 hover:text-gray-600 text-xs">
+                        Close
+                      </button>
+                    </div>
+                    <div className="max-h-72 overflow-y-auto divide-y divide-paper-100">
+                      {(profileData?.recent_comments ?? []).length === 0 ? (
+                        <div className="px-4 py-6 text-center text-sm text-gray-400">
+                          No recent activity.
+                        </div>
+                      ) : (
+                        (profileData?.recent_comments ?? []).slice(0, 10).map((c: any, i: number) => (
+                          <div
+                            key={i}
+                            className={`px-4 py-3 hover:bg-paper-50 transition-colors ${
+                              new Date(c.created_at).getTime() > lastChecked ? "bg-blue-50/50" : ""
+                            }`}
+                          >
+                            <p className="text-sm text-ink-800 line-clamp-2">{c.body}</p>
+                            <p className="text-xs text-gray-400 mt-1">
+                              {c.page_number ? `p. ${c.page_number} · ` : ""}
+                              {timeAgo(c.created_at)}
+                            </p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* Settings gear */}
               <Link

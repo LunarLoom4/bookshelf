@@ -8,7 +8,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { useRef, useState } from "react";
 import {
   BookOpen, Layers, User, Calendar, Globe, FileText,
-  Upload, Plus, X, CheckCircle, Link2, Download,
+  Upload, Plus, X, CheckCircle, Link2, Download, Table2,
 } from "lucide-react";
 import { useBook, useUploadCover, useAddEdition, useDeleteBook } from "@/hooks/useBooks";
 import { format } from "date-fns";
@@ -462,9 +462,14 @@ export default function BookDetail() {
           {book.recent_commenters?.length > 0 && (
             <div className="flex items-center gap-1.5 mt-2">
               <span className="text-xs text-gray-400">Discussed by</span>
-              <div className="flex -space-x-2">
+              <div className="flex -space-x-3">
                 {book.recent_commenters.map((c) => (
-                  <Link key={c.username} to={`/u/${c.username}`} title={c.username}>
+                  <Link
+                    key={c.username}
+                    to={`/u/${c.username}`}
+                    title={c.username}
+                    className="ring-2 ring-white rounded-full hover:z-10 hover:scale-110 transition-transform"
+                  >
                     <Avatar username={c.username} avatarUrl={c.avatar_url} size="xs" />
                   </Link>
                 ))}
@@ -484,6 +489,15 @@ export default function BookDetail() {
           {/* Actions: stacked on small screens, row on large */}
           <div className="flex flex-wrap items-center gap-2 justify-end">
             <AddToListPanel bookId={book.id} />
+            {book.editions.length > 1 && (
+              <button
+                onClick={() => setShowComparison(v => !v)}
+                className="btn-secondary py-1.5 text-xs flex items-center gap-1.5"
+              >
+                <Table2 className="w-3.5 h-3.5" />
+                {showComparison ? "List view" : "Compare"}
+              </button>
+            )}
             {user && (
               <AddEditionPanel bookId={book.id} existingNums={existingNums} />
             )}

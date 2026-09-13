@@ -122,13 +122,17 @@ function ReadingListsSection({ username }: { username: string }) {
             <div key={list.id} className="card p-4 flex items-start justify-between gap-3">
               <div className="flex items-start gap-3 flex-1 min-w-0">
                 {/* 24: Cover collage -- 2x2 grid of up to 4 book covers */}
-                <div className="grid grid-cols-2 gap-0.5 w-12 h-12 rounded overflow-hidden flex-shrink-0 bg-paper-100">
-                  {(list.cover_urls ?? []).slice(0, 4).map((url: string, i: number) => (
-                    <img key={i} src={url} alt="" loading="lazy" className="w-full h-full object-cover" />
-                  ))}
-                  {Array.from({ length: Math.max(0, 4 - (list.cover_urls?.length ?? 0)) }).map((_, i) => (
-                    <div key={`pad-${i}`} className="bg-paper-200" />
-                  ))}
+                <div className="flex-shrink-0 w-12 h-12 rounded overflow-hidden bg-paper-100">
+                  <div className="grid grid-cols-2 w-full h-full">
+                    {(list.cover_urls ?? []).slice(0, 4).map((url: string, i: number) => (
+                      <div key={i} className="w-full h-full overflow-hidden">
+                        <img src={url} alt="" loading="lazy" className="w-full h-full object-cover" />
+                      </div>
+                    ))}
+                    {Array.from({ length: Math.max(0, 4 - (list.cover_urls?.length ?? 0)) }).map((_, i) => (
+                      <div key={`pad-${i}`} className="bg-paper-200 w-full h-full" />
+                    ))}
+                  </div>
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 mb-1">

@@ -200,8 +200,11 @@ export default function ReadingPage() {
   // Save progress when the user leaves the page (back button, tab close, navigate away)
   useEffect(() => {
     const saveOnLeave = () => {
-      if (isAuthenticated && currentPageRef.current > 0) {
-        saveProgressMutate(currentPageRef.current);
+      if (!isAuthenticated) return;
+      // Prefer the page from the viewer ref (most accurate), fall back to tracked ref
+      const page = viewerRef.current?.getCurrentPage() ?? currentPageRef.current;
+      if (page > 0) {
+        saveProgressMutate(page);
       }
     };
     // visibilitychange covers: switching tabs, minimizing, pressing Back
@@ -412,7 +415,7 @@ export default function ReadingPage() {
                 <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
                 <input
                   type="text"
-                  placeholder="Search comments..."
+                  placeholder="Search by text or username..."
                   value={commentSearch}
                   onChange={(e) => setCommentSearch(e.target.value)}
                   className="input pl-7 pr-7 py-1 text-xs w-full"

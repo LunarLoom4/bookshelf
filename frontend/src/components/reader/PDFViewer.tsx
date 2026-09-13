@@ -9,6 +9,7 @@ import { forwardRef, useImperativeHandle, useRef, useState, useCallback } from "
 
 export interface PDFViewerHandle {
   goToPage: (page: number) => void;
+  getCurrentPage: () => number;  // returns the page number from current iframe src
 }
 
 interface Props {
@@ -21,6 +22,7 @@ const PDFViewer = forwardRef<PDFViewerHandle, Props>(({ url }, ref) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [currentSrc, setCurrentSrc] = useState(url);
   const [iframeKey, setIframeKey] = useState(0); // increment to force remount
+  const currentPageNum = useRef(1); // tracks page set via goToPage
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const loadedOnce = useRef(false);
@@ -32,10 +34,12 @@ const PDFViewer = forwardRef<PDFViewerHandle, Props>(({ url }, ref) => {
 
   useImperativeHandle(ref, () => ({
     goToPage: (page: number) => {
+      currentPageNum.current = page;
       setCurrentSrc(buildSrc(page));
       setIframeKey(k => k + 1); // always force remount, even for same page
       setLoading(true);
     },
+    getCurrentPage: () => currentPageNum.current,
   }));
 
   return (
