@@ -1,11 +1,13 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { useUpdateReadingList } from "@/hooks/useBooks";
 import { readingListsApi } from "@/api";
 import { useAuthStore } from "@/stores/authStore";
 import { BookCard } from "@/components/ui/BookCard";
 import { BookCardSkeleton } from "@/components/ui/Skeleton";
 import { Globe, Lock, Trash2, ArrowLeft, BookOpen } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { timeAgo } from "@/utils/time";
 import toast from "react-hot-toast";
 import type { BookListItem, ReadingListDetail } from "@/types";
 
@@ -20,6 +22,10 @@ export default function ReadingListDetail() {
     queryFn: () => readingListsApi.get(Number(listId)).then((r) => r.data),
     enabled: !!listId,
   });
+
+  const updateList = useUpdateReadingList();
+  const [editingName, setEditingName] = useState(false);
+  const [nameValue, setNameValue] = useState("");
 
   const removeBook = useMutation({
     mutationFn: (bookId: number) =>
@@ -87,11 +93,49 @@ export default function ReadingListDetail() {
               ? <Globe className="w-4 h-4 text-gray-400" />
               : <Lock className="w-4 h-4 text-gray-400" />
             }
-            <h1 className="font-serif text-3xl font-semibold text-ink-900">{list.name}</h1>
+            {editingName ? (
+              <div className="flex items-center gap-2">
+                <input
+                  autoFocus
+                  value={nameValue}
+                  onChange={(e) => setNameValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && nameValue.trim()) {
+                      updateList.mutate({ listId: list.id, name: nameValue.trim() });
+                      setEditingName(false);
+                    }
+                    if (e.key === "Escape") setEditingName(false);
+                  }}
+                  className="input font-serif text-2xl py-0.5 w-64"
+                  maxLength={100}
+                />
+                <button
+                  onClick={() => { if (nameValue.trim()) updateList.mutate({ listId: list.id, name: nameValue.trim() }); setEditingName(false); }}
+                  className="text-green-600 hover:text-green-700"
+                  title="Save"
+                ><Check className="w-5 h-5" /></button>
+                <button onClick={() => setEditingName(false)} className="text-gray-400 hover:text-gray-600" title="Cancel">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <h1 className="font-serif text-3xl font-semibold text-ink-900">{list.name}</h1>
+                {isOwner && (
+                  <button
+                    onClick={() => { setNameValue(list.name); setEditingName(true); }}
+                    className="text-gray-400 hover:text-ink-600 transition-colors mt-1"
+                    title="Rename list"
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            )}
           </div>
           <p className="text-sm text-gray-400">
             {books.length} {books.length === 1 ? "book" : "books"} ·{" "}
-            updated {formatDistanceToNow(new Date(list.updated_at), { addSuffix: true })}
+            updated {timeAgo(list.updated_at)}
           </p>
         </div>
         {isOwner && (

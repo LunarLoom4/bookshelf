@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { BookOpen, Layers, MessageSquare } from "lucide-react";
 import type { BookListItem } from "@/types";
-import { formatDistanceToNow } from "date-fns";
+import { timeAgo } from "@/utils/time";
 import { useQueryClient } from "@tanstack/react-query";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { booksApi } from "@/api";
@@ -31,7 +31,7 @@ export function BookCard({ book }: Props) {
       onMouseEnter={handleMouseEnter}
     >
       {/* Cover */}
-      <div className="aspect-[3/4] bg-paper-100 flex items-center justify-center overflow-hidden">
+      <div className="aspect-[4/5] bg-paper-100 flex items-center justify-center overflow-hidden">
         {book.cover_url ? (
           <img
             src={book.cover_url}
@@ -74,7 +74,7 @@ export function BookCard({ book }: Props) {
               </span>
             )}
           </div>
-          <span>{formatDistanceToNow(new Date(book.created_at), { addSuffix: true })}</span>
+          <span>{timeAgo(book.created_at)}</span>
         </div>
       </div>
     </Link>

@@ -21,7 +21,7 @@ export function BookCardSkeleton() {
   return (
     <div className="card flex flex-col overflow-hidden">
       {/* Cover placeholder — 3:4 aspect ratio */}
-      <Skeleton className="w-full aspect-[3/4] rounded-none" />
+      <Skeleton className="w-full aspect-[4/5] rounded-none" />
       {/* Meta */}
       <div className="p-4 flex flex-col gap-2">
         <Skeleton className="h-4 w-4/5" />

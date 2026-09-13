@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Bookmark, Trash2, Edit2, Check, X, Plus } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { timeAgo } from "@/utils/time";
 import type { Bookmark as BookmarkType } from "@/types";
 import {
   useBookmarks,
@@ -70,7 +70,7 @@ function BookmarkRow({
             </p>
           )}
           <p className="text-xs text-gray-300 mt-0.5">
-            {formatDistanceToNow(new Date(bookmark.created_at), { addSuffix: true })}
+            {timeAgo(bookmark.created_at)}
           </p>
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">

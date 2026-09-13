@@ -4,7 +4,7 @@ import {
   ChevronUp, ChevronDown, MessageSquare, BookOpen,
   Loader2, Pencil, Trash2, Check, X, Share2,
 } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { timeAgo } from "@/utils/time";
 import toast from "react-hot-toast";
 import type { Comment } from "@/types";
 import { useAuthStore } from "@/stores/authStore";
@@ -61,7 +61,7 @@ function DeletedComment({ comment }: { comment: Comment }) {
           <div className="w-5 h-5 rounded-full bg-gray-200 flex-shrink-0" />
           <span className="text-xs text-gray-400 italic">Deleted</span>
           <span className="text-xs text-gray-300">
-            {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+            {timeAgo(comment.created_at)}
           </span>
         </div>
         <p className="text-xs text-gray-400 italic">[comment deleted]</p>
@@ -265,7 +265,7 @@ export function CommentThread({
               {comment.author.username}
             </Link>
             <span className="text-xs text-gray-400">
-              {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+              {timeAgo(comment.created_at)}
             </span>
             {comment.edited_at && (
               <span className="text-xs text-gray-300 italic">(edited)</span>

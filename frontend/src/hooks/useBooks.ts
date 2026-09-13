@@ -223,6 +223,17 @@ export function useCreateReadingList() {
   });
 }
 
+export function useUpdateReadingList() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ listId, name, isPublic }: { listId: number; name?: string; isPublic?: boolean }) =>
+      readingListsApi.update(listId, name, isPublic).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["lists"] });
+    },
+  });
+}
+
 export function useDeleteReadingList() {
   const qc = useQueryClient();
   return useMutation({

@@ -9,20 +9,30 @@ import { useAuthStore } from "@/stores/authStore";
 // and forces a hard reload so the user gets the latest version automatically.
 class ChunkErrorBoundary extends Component<
   { children: ReactNode },
-  { hasError: boolean }
+  { hasError: boolean; isChunkError: boolean }
 > {
   constructor(props: { children: ReactNode }) {
     super(props);
-    this.state = { hasError: false };
+    this.state = { hasError: false, isChunkError: false };
   }
 
-  static getDerivedStateFromError() {
-    return { hasError: true };
+  static getDerivedStateFromError(error: Error) {
+    const isChunkError =
+      error.message.includes("Failed to fetch dynamically imported module") ||
+      error.message.includes("Importing a module script failed") ||
+      error.message.includes("Unable to preload CSS") ||
+      error.name === "ChunkLoadError";
+    // Only catch chunk errors here. Other errors are real bugs and should
+    // surface clearly in development, not be swallowed as "Something went wrong".
+    if (isChunkError) {
+      return { hasError: true, isChunkError: true };
+    }
+    // For non-chunk errors: still set hasError so we show a useful message,
+    // but mark it differently so we don't auto-reload.
+    return { hasError: true, isChunkError: false };
   }
 
-  componentDidCatch(error: Error, _info: ErrorInfo) {
-    // If a chunk fails to load (404 after deployment), reload the page once.
-    // The sessionStorage flag prevents an infinite reload loop.
+  componentDidCatch(error: Error, info: ErrorInfo) {
     const isChunkError =
       error.message.includes("Failed to fetch dynamically imported module") ||
       error.message.includes("Importing a module script failed") ||
@@ -30,18 +40,30 @@ class ChunkErrorBoundary extends Component<
       error.name === "ChunkLoadError";
 
     if (isChunkError && !sessionStorage.getItem("chunk-reload")) {
+      // Auto-reload once on chunk errors (stale deployment URLs)
       sessionStorage.setItem("chunk-reload", "1");
       window.location.reload();
+      return;
     }
+
+    // Log non-chunk errors so they appear in the console for debugging
+    console.error("[App Error]", error, info);
   }
 
   render() {
     if (this.state.hasError) {
       return (
         <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-center px-4">
-          <p className="text-gray-500 text-sm">Something went wrong loading this page.</p>
+          <p className="text-gray-500 text-sm">
+            {this.state.isChunkError
+              ? "A new version of Bookshelf is available."
+              : "Something went wrong loading this page."}
+          </p>
           <button
-            onClick={() => window.location.reload()}
+            onClick={() => {
+              sessionStorage.removeItem("chunk-reload");
+              window.location.reload();
+            }}
             className="btn-primary py-2 text-sm"
           >
             Reload page

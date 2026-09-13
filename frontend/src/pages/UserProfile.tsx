@@ -2,8 +2,9 @@ import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ScrollToTop } from "@/components/ui/ScrollToTop";
 import { useQuery } from "@tanstack/react-query";
-import { BookOpen, MessageSquare, Calendar, List, Lock, Globe, Trash2, Plus, BookMarked } from "lucide-react";
-import { formatDistanceToNow, format } from "date-fns";
+import { BookOpen, MessageSquare, Calendar, List, Lock, Globe, Trash2, Plus, BookMarked, Pencil, Check, X } from "lucide-react";
+import { format } from "date-fns";
+import { timeAgo } from "@/utils/time";
 import { usersApi } from "@/api";
 import { BookCard } from "@/components/ui/BookCard";
 import {
@@ -11,6 +12,7 @@ import {
   useMyReadingLists,
   useCreateReadingList,
   useDeleteReadingList,
+  useUpdateReadingList,
 } from "@/hooks/useBooks";
 import { useAuthStore } from "@/stores/authStore";
 import { Avatar } from "@/components/ui/Avatar";
@@ -34,6 +36,9 @@ function ReadingListsSection({ username }: { username: string }) {
   const { data: myLists = [], isLoading: loadingMine } = useMyReadingLists();
   const createList = useCreateReadingList();
   const deleteList = useDeleteReadingList();
+  const updateList = useUpdateReadingList();
+  const [editingListId, setEditingListId] = useState<number | null>(null);
+  const [editingName, setEditingName] = useState("");
 
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState("");
@@ -132,28 +137,65 @@ function ReadingListsSection({ username }: { username: string }) {
                     ) : (
                       <Lock className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
                     )}
-                    <Link
-                      to={`/lists/${list.id}`}
-                      className="font-medium text-sm text-ink-900 truncate hover:text-ink-600 hover:underline"
-                    >
-                      {list.name}
-                    </Link>
+                    {editingListId === list.id ? (
+                        <div className="flex items-center gap-1">
+                          <input
+                            autoFocus
+                            value={editingName}
+                            onChange={(e) => setEditingName(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter" && editingName.trim()) {
+                                updateList.mutate({ listId: list.id, name: editingName.trim() });
+                                setEditingListId(null);
+                              }
+                              if (e.key === "Escape") setEditingListId(null);
+                            }}
+                            className="input py-0.5 text-sm w-36"
+                            maxLength={100}
+                          />
+                          <button
+                            onClick={() => { if (editingName.trim()) { updateList.mutate({ listId: list.id, name: editingName.trim() }); } setEditingListId(null); }}
+                            className="text-green-600 hover:text-green-700"
+                            title="Save"
+                          ><Check className="w-4 h-4" /></button>
+                          <button onClick={() => setEditingListId(null)} className="text-gray-400 hover:text-gray-600" title="Cancel">
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : (
+                        <Link
+                          to={`/lists/${list.id}`}
+                          className="font-medium text-sm text-ink-900 truncate hover:text-ink-600 hover:underline"
+                        >
+                          {list.name}
+                        </Link>
+                      )}
                   </div>
                   <p className="text-xs text-gray-400">
                     {list.item_count} {list.item_count === 1 ? "book" : "books"} ·{" "}
-                    updated {formatDistanceToNow(new Date(list.updated_at), { addSuffix: true })}
+                    updated {timeAgo(list.updated_at)}
                   </p>
                 </div>
               </div>
               {isOwnProfile && (
-                <button
-                  onClick={() => deleteList.mutate(list.id)}
-                  disabled={deleteList.isPending}
-                  className="text-gray-300 hover:text-red-400 transition-colors flex-shrink-0"
-                  title="Delete list"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  {/* Pencil: rename list */}
+                  <button
+                    onClick={() => { setEditingListId(list.id); setEditingName(list.name); }}
+                    className="text-gray-300 hover:text-ink-600 transition-colors p-0.5"
+                    title="Rename list"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => deleteList.mutate(list.id)}
+                    disabled={deleteList.isPending}
+                    className="text-gray-300 hover:text-red-400 transition-colors p-0.5"
+                    title="Delete list"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               )}
             </div>
           ))}
@@ -291,7 +333,7 @@ export default function UserProfile() {
                   {comment.page_number != null && (
                     <span className="page-badge">{`p. ${comment.page_number}`}</span>
                   )}
-                  <span>{formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}</span>
+                  <span>{timeAgo(comment.created_at)}</span>
                 </div>
               </Link>
             ))}

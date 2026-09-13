@@ -11,7 +11,8 @@ import {
   Upload, Plus, X, CheckCircle, Link2, Download,
 } from "lucide-react";
 import { useBook, useUploadCover, useAddEdition, useDeleteBook } from "@/hooks/useBooks";
-import { formatDistanceToNow, format } from "date-fns";
+import { format } from "date-fns";
+import { timeAgo } from "@/utils/time";
 import toast from "react-hot-toast";
 import type { Edition } from "@/types";
 import { AddToListPanel } from "@/components/ui/AddToListPanel";
@@ -87,7 +88,7 @@ function EditionRow({ edition, bookId, isOwner, onDelete }: {
             )}
             <span className="flex items-center gap-1">
               <Calendar className="w-3 h-3" />
-              {formatDistanceToNow(new Date(edition.created_at), { addSuffix: true })}
+              {timeAgo(edition.created_at)}
             </span>
           </div>
         </div>
