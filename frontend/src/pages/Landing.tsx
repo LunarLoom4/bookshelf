@@ -9,7 +9,6 @@ import { useAuthStore } from "@/stores/authStore";
 
 export default function Landing() {
   usePostLoginToast();
-  const { data: books } = useBooks(0, 6);
   const { isAuthenticated } = useAuthStore();
   const { data: popularBooks = [] } = useQuery({
     queryKey: ["books", "popular"],
@@ -133,24 +132,7 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Recent uploads */}
-      {books && books.length > 0 && (
-        <section className="py-16 px-4 bg-paper-50 landing-section-alt">
-          <div className="max-w-5xl mx-auto">
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="font-serif text-2xl font-semibold text-ink-900">Recently added</h2>
-              <Link to="/browse" className="text-sm text-ink-600 hover:text-ink-800 transition-colors">
-                See all
-              </Link>
-            </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {books.map((book) => (
-                <BookCard key={book.id} book={book} />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+
       {/* 25: Popular this week */}
       {popularBooks.length > 0 && (
         <section className="py-16 px-4 landing-section-alt">
