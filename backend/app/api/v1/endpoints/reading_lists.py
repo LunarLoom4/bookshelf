@@ -23,6 +23,34 @@ from app.schemas.phase3 import (
 router = APIRouter(prefix="/lists", tags=["reading_lists"])
 
 
+async def _attach_covers(lists: list, db) -> list:
+    """Attach up to 4 book cover URLs to each ReadingListResponse for collage display."""
+    if not lists:
+        return lists
+    list_ids = [r.id for r in lists]
+    # Fetch first 4 book covers per list
+    from sqlalchemy import and_
+    covers_result = await db.execute(
+        select(ReadingListItem.list_id, Book.cover_url)
+        .join(Book, Book.id == ReadingListItem.book_id)
+        .where(
+            ReadingListItem.list_id.in_(list_ids),
+            Book.cover_url.isnot(None),
+        )
+        .order_by(ReadingListItem.list_id, ReadingListItem.added_at.desc())
+    )
+    # Group by list_id, keep first 4 per list
+    covers_map: dict[int, list[str]] = {}
+    for list_id, cover_url in covers_result.all():
+        if list_id not in covers_map:
+            covers_map[list_id] = []
+        if len(covers_map[list_id]) < 4:
+            covers_map[list_id].append(cover_url)
+    for r in lists:
+        r.cover_urls = covers_map.get(r.id, [])
+    return lists
+
+
 # ── Fixed-path routes FIRST (before parametric {list_id}) ─────────────────────
 
 @router.get("/mine", response_model=list[ReadingListResponse])
@@ -43,7 +71,7 @@ async def get_my_lists(
         r = ReadingListResponse.model_validate(rl)
         r.item_count = count
         result.append(r)
-    return result
+    return await _attach_covers(result, db)
 
 
 @router.get("/by-user/{username}", response_model=list[ReadingListResponse])
@@ -79,7 +107,7 @@ async def get_user_public_lists(
         r = ReadingListResponse.model_validate(rl)
         r.item_count = count
         result.append(r)
-    return result
+    return await _attach_covers(result, db)
 
 
 @router.post("/", response_model=ReadingListResponse, status_code=status.HTTP_201_CREATED)

@@ -5,7 +5,6 @@ import { booksApi } from "@/api";
 import { BookCard } from "@/components/ui/BookCard";
 import { ScrollToTop } from "@/components/ui/ScrollToTop";
 import { BookOpen, MessageSquare, Layers, Download, Bookmark, List } from "lucide-react";
-import { useBooks } from "@/hooks/useBooks";
 import { useAuthStore } from "@/stores/authStore";
 
 export default function Landing() {

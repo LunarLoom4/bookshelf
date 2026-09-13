@@ -2,6 +2,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { BookOpen, Search, Upload, Settings, LogOut, Sun, Moon } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import { useThemeStore } from "@/stores/themeStore";
+import { useQuery } from "@tanstack/react-query";
+import { usersApi } from "@/api";
 import { Avatar } from "@/components/ui/Avatar";
 
 function ThemeToggle() {
@@ -26,7 +28,7 @@ function ThemeToggle() {
         style={{ opacity: isDark ? 1 : 0.35 }} />
       {/* Dark: thumb LEFT covers sun. Light: thumb RIGHT covers moon. */}
       <span className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200 pointer-events-none"
-        style={{ transform: isDark ? "translateX(-21px)" : "translateX(2px)" }}
+        style={{ transform: isDark ? "translateX(2px)" : "translateX(24px)" }}
       />
     </button>
   );
@@ -35,6 +37,23 @@ function ThemeToggle() {
 export function Navbar() {
   const { user, isAuthenticated, logout } = useAuthStore();
   const navigate = useNavigate();
+
+  // 21: Notification dot -- check for new replies to user's comments
+  const { data: profileData } = useQuery({
+    queryKey: ["notifications", user?.username],
+    queryFn: () => usersApi.profile(user!.username).then((r) => r.data),
+    enabled: isAuthenticated && !!user?.username,
+    staleTime: 2 * 60 * 1000,  // poll every 2 min
+    refetchInterval: 2 * 60 * 1000,
+  });
+  const lastChecked = localStorage.getItem("bookshelf-notif-checked") || "0";
+  const hasNewActivity = profileData?.recent_comments?.some(
+    (c: any) => new Date(c.created_at).getTime() > Number(lastChecked)
+  ) ?? false;
+
+  const handleProfileClick = () => {
+    localStorage.setItem("bookshelf-notif-checked", Date.now().toString());
+  };
 
   const handleLogout = () => {
     logout();
@@ -74,9 +93,15 @@ export function Navbar() {
               {/* Avatar + username → profile */}
               <Link
                 to={`/u/${user.username}`}
-                className="flex items-center gap-2 text-sm text-gray-600 hover:text-ink-700 transition-colors px-2 py-1 rounded-md hover:bg-paper-100"
+                onClick={handleProfileClick}
+                className="flex items-center gap-2 text-sm text-gray-600 hover:text-ink-700 transition-colors px-2 py-1 rounded-md hover:bg-paper-100 relative"
               >
-                <Avatar username={user.username} avatarUrl={user.avatar_url} size="xs" />
+                <div className="relative">
+                  <Avatar username={user.username} avatarUrl={user.avatar_url} size="xs" />
+                  {hasNewActivity && (
+                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full border border-white" />
+                  )}
+                </div>
                 <span className="hidden sm:inline font-medium">{user.username}</span>
               </Link>
 

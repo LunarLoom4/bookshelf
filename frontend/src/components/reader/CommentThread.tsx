@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   ChevronUp, ChevronDown, MessageSquare, BookOpen,
-  Loader2, Pencil, Trash2, Check, X,
+  Loader2, Pencil, Trash2, Check, X, Share2,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import toast from "react-hot-toast";
@@ -101,6 +101,7 @@ export function CommentThread({
   const [editBody, setEditBody] = useState(comment.body);
   const [editLoading, setEditLoading] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [shared, setShared] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const editRef = useRef<HTMLTextAreaElement>(null);
 
@@ -342,6 +343,21 @@ export function CommentThread({
                     : `${comment.reply_count} ${comment.reply_count === 1 ? "reply" : "replies"}`}
                 </button>
               )}
+
+              {/* 27: Share comment link */}
+              <button
+                onClick={() => {
+                  const url = `${window.location.origin}${window.location.pathname}?comment=${comment.id}`;
+                  navigator.clipboard.writeText(url);
+                  setShared(true);
+                  setTimeout(() => setShared(false), 2000);
+                }}
+                className="flex items-center gap-1 text-xs text-gray-400 hover:text-ink-600 transition-colors"
+                title="Copy link to this comment"
+              >
+                <Share2 className="w-3 h-3" />
+                {shared ? "Copied!" : "Share"}
+              </button>
 
               {/* Edit / Delete -- owner only */}
               {isOwner && !confirmDelete && (

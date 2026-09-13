@@ -101,6 +101,7 @@ class ReadingListResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     item_count: int = 0
+    cover_urls: list[str] = []  # 24: up to 4 book covers for collage display
 
     model_config = {"from_attributes": True}
 

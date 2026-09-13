@@ -1,6 +1,6 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useRef, useState, useCallback, useEffect } from "react";
-import { ArrowLeft, SortAsc, TrendingUp, Bookmark, Maximize, Minimize } from "lucide-react";
+import { ArrowLeft, SortAsc, TrendingUp, Bookmark, Maximize, Minimize, Search, X as XIcon } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 
@@ -45,6 +45,7 @@ export default function ReadingPage() {
   const currentPageRef = useRef(1); // ref so we can read it in event listeners without stale closure
   const unsavedCommentRef = useRef(""); // 9: tracks if user has unsaved text in comment box
   const [sort, setSort] = useState<SortMode>("newest");
+  const [commentSearch, setCommentSearch] = useState("");
   const [activeTab, setActiveTab] = useState<PanelTab>("discussion");
   const progressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [pdfWidthPct, setPdfWidthPct] = useState(DEFAULT_PDF_PCT);
@@ -283,7 +284,15 @@ export default function ReadingPage() {
   }
 
   const { edition, book } = data;
-  const topLevelComments = comments.filter((c) => c.parent_id === null);
+  const topLevelComments = comments.filter((c) => {
+    if (c.parent_id !== null) return false;
+    if (!commentSearch.trim()) return true;
+    const q = commentSearch.toLowerCase();
+    return (
+      c.body.toLowerCase().includes(q) ||
+      c.author?.username?.toLowerCase().includes(q)
+    );
+  });
 
   return (
     <div className="flex flex-col md:flex-row h-[calc(100vh-56px)] overflow-hidden">
@@ -397,6 +406,27 @@ export default function ReadingPage() {
         {/* ── Discussion tab ── */}
         {activeTab === "discussion" && (
           <>
+            {/* 23: Comment search */}
+            <div className="flex-shrink-0 px-3 py-1.5 border-b border-paper-200 discussion-panel">
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Search comments..."
+                  value={commentSearch}
+                  onChange={(e) => setCommentSearch(e.target.value)}
+                  className="input pl-7 pr-7 py-1 text-xs w-full"
+                />
+                {commentSearch && (
+                  <button
+                    onClick={() => setCommentSearch("")}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <XIcon className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            </div>
             <div className="flex-shrink-0 px-3 py-1.5 border-b border-paper-200 flex items-center justify-end gap-1 discussion-panel">
               <button
                 onClick={() => setSort("newest")}

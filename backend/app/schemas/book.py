@@ -17,6 +17,13 @@ class EditionResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class CommenterInfo(BaseModel):
+    username: str
+    avatar_url: str | None = None
+
+    model_config = {"from_attributes": True}
+
+
 class BookResponse(BaseModel):
     id: int
     title: str
@@ -27,6 +34,7 @@ class BookResponse(BaseModel):
     uploader_username: str | None = None
     created_at: datetime
     editions: list[EditionResponse] = []
+    recent_commenters: list[CommenterInfo] = []  # 19: avatars of recent commenters
 
     model_config = {"from_attributes": True}
 

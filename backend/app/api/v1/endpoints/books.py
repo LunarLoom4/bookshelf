@@ -13,7 +13,7 @@ from app.models.book import Book
 from app.models.comment import Comment
 from app.models.edition import Edition
 from app.models.user import User
-from app.schemas.book import BookListItem, BookResponse
+from app.schemas.book import BookListItem, BookResponse, CommenterInfo
 from app.services import storage
 
 router = APIRouter(prefix="/books", tags=["books"])
@@ -583,4 +583,23 @@ async def get_book(book_id: int, db: AsyncSession = Depends(get_db)):
         )
         username = user_result.scalar_one_or_none()
         response.uploader_username = username
+
+    # 19: Fetch up to 8 distinct recent commenters for avatar row
+    edition_ids = [e.id for e in book.editions]
+    if edition_ids:
+        commenters_result = await db.execute(
+            select(User.username, User.avatar_url)
+            .join(Comment, Comment.user_id == User.id)
+            .where(
+                Comment.edition_id.in_(edition_ids),
+                Comment.is_deleted.is_(False),
+            )
+            .distinct(User.id)
+            .order_by(User.id, Comment.created_at.desc())
+            .limit(8)
+        )
+        response.recent_commenters = [
+            CommenterInfo(username=row.username, avatar_url=row.avatar_url)
+            for row in commenters_result.all()
+        ]
     return response

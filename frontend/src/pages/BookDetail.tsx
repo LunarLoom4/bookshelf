@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { progressApi } from "@/api";
 import { useAuthStore } from "@/stores/authStore";
 import { BookDetailSkeleton } from "@/components/ui/Skeleton";
+import { Avatar } from "@/components/ui/Avatar";
 import { useRef, useState } from "react";
 import {
   BookOpen, Layers, User, Calendar, Globe, FileText,
@@ -455,6 +456,19 @@ export default function BookDetail() {
               >{book.uploader_username}</Link></>
             )}
           </p>
+          {/* 19: Recent commenters avatars */}
+          {book.recent_commenters?.length > 0 && (
+            <div className="flex items-center gap-1.5 mt-2">
+              <span className="text-xs text-gray-400">Discussed by</span>
+              <div className="flex -space-x-2">
+                {book.recent_commenters.map((c) => (
+                  <Link key={c.username} to={`/u/${c.username}`} title={c.username}>
+                    <Avatar username={c.username} avatarUrl={c.avatar_url} size="xs" />
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -473,6 +487,40 @@ export default function BookDetail() {
             )}
           </div>
         </div>
+
+        {/* 28: Edition comparison table */}
+        {showComparison && book.editions.length > 1 && (
+          <div className="overflow-x-auto mb-4 card p-0">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-paper-200 bg-paper-50">
+                  <th className="text-left px-4 py-2.5 font-medium text-gray-500">Edition</th>
+                  <th className="text-left px-4 py-2.5 font-medium text-gray-500">Year</th>
+                  <th className="text-left px-4 py-2.5 font-medium text-gray-500">Publisher</th>
+                  <th className="text-left px-4 py-2.5 font-medium text-gray-500">Language</th>
+                  <th className="text-left px-4 py-2.5 font-medium text-gray-500">Size</th>
+                  <th className="text-left px-4 py-2.5 font-medium text-gray-500">Pages</th>
+                  <th className="px-4 py-2.5" />
+                </tr>
+              </thead>
+              <tbody>
+                {[...book.editions].sort((a, b) => b.edition_number - a.edition_number).map((ed) => (
+                  <tr key={ed.id} className="border-b border-paper-100 last:border-0 hover:bg-paper-50 transition-colors">
+                    <td className="px-4 py-2.5 font-medium text-ink-800">Edition {ed.edition_number}</td>
+                    <td className="px-4 py-2.5 text-gray-500">{ed.year ?? "—"}</td>
+                    <td className="px-4 py-2.5 text-gray-500">{ed.publisher ?? "—"}</td>
+                    <td className="px-4 py-2.5 text-gray-500">{ed.language?.toUpperCase() ?? "—"}</td>
+                    <td className="px-4 py-2.5 text-gray-500">{ed.file_size_bytes ? formatBytes(ed.file_size_bytes) : "—"}</td>
+                    <td className="px-4 py-2.5 text-gray-500">{ed.page_count ?? "—"}</td>
+                    <td className="px-4 py-2.5">
+                      <Link to={`/read/${ed.id}`} className="text-ink-600 hover:underline font-medium">Read</Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
         {book.editions.length === 0 ? (
           <p className="text-sm text-gray-400">No editions uploaded yet.</p>
