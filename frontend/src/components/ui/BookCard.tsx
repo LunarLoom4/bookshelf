@@ -49,14 +49,14 @@ export function BookCard({ book }: Props) {
       </div>
 
       {/* Meta */}
-      <div className="p-4 flex flex-col gap-1 flex-1">
+      <div className="p-3 flex flex-col gap-1 flex-1">
         <h3 className="font-serif text-base font-semibold text-ink-900 line-clamp-2 leading-snug">
           {book.title}
         </h3>
         <p className="text-sm text-gray-500">{book.author}</p>
         {book.description && (
           <Tooltip content={book.description}>
-            <p className="text-xs text-gray-400 mt-1 line-clamp-2">
+            <p className="text-xs text-gray-400 mt-1 line-clamp-1">
               {book.description}
             </p>
           </Tooltip>

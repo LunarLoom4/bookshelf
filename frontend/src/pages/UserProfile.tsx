@@ -257,7 +257,7 @@ export default function UserProfile() {
             Currently reading
             <span className="text-sm font-normal font-sans text-gray-400">({currently_reading.length})</span>
           </h2>
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
             {currently_reading.map((item: CurrentlyReadingItem) => (
               <Link
                 key={item.edition_id}
@@ -299,7 +299,7 @@ export default function UserProfile() {
         {books_uploaded.length === 0 ? (
           <p className="text-sm text-gray-400">No books uploaded yet.</p>
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {books_uploaded.map((book) => (
               <BookCard key={book.id} book={book} />
             ))}
