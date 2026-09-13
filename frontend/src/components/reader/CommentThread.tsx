@@ -142,9 +142,9 @@ export function CommentThread({
 
   const handleReplySubmit = async (body: string, pn?: number) => {
     // Prepend @username if not already there
-    const mentionedBody = body.startsWith(`@${comment.author.username}`)
+    const mentionedBody = body.startsWith(`@${comment.author?.username ?? ""}`)
       ? body
-      : `@${comment.author.username} ${body}`;
+      : `@${comment.author?.username ?? ""} ${body}`;
     await onReply(mentionedBody, pn, comment.id);
     setShowReplies(true);
     setShowReplyBox(false);
@@ -258,11 +258,11 @@ export function CommentThread({
           {/* Header row */}
           <div className="flex flex-wrap items-center gap-2 mb-1">
             <Link
-              to={`/u/${comment.author.username}`}
+              to={`/u/${comment.author?.username ?? ""}`}
               className="flex items-center gap-1.5 text-xs font-medium text-ink-700 hover:underline"
             >
-              <Avatar username={comment.author.username} avatarUrl={comment.author.avatar_url} size="xs" />
-              {comment.author.username}
+              <Avatar username={comment.author?.username ?? "…"} avatarUrl={comment.author?.avatar_url} size="xs" />
+              {comment.author?.username ?? ""}
             </Link>
             <span className="text-xs text-gray-400">
               {timeAgo(comment.created_at)}
@@ -408,11 +408,11 @@ export function CommentThread({
       {/* Reply box with quote preview */}
       {showReplyBox && (
         <div className="pl-7 pb-2">
-          <QuotePreview body={comment.body} username={comment.author.username} />
+          <QuotePreview body={comment.body} username={comment.author?.username ?? ""} />
           <CommentBox
             onSubmit={handleReplySubmit}
             parentId={comment.id}
-            placeholder={`@${comment.author.username} `}
+            placeholder={`@${comment.author?.username ?? ""} `}
           />
         </div>
       )}

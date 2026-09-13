@@ -9,6 +9,7 @@ from app.api.v1.endpoints.editions import router as editions_router
 from app.api.v1.endpoints.progress import router as progress_router
 from app.api.v1.endpoints.reading_lists import router as reading_lists_router
 from app.api.v1.endpoints.users import router as users_router
+from app.api.v1.endpoints.notifications import router as notifications_router
 
 api_router = APIRouter(prefix="/api/v1")
 
@@ -21,3 +22,4 @@ api_router.include_router(progress_router)
 api_router.include_router(bookmarks_router)
 api_router.include_router(reading_lists_router)
 api_router.include_router(users_router)
+api_router.include_router(notifications_router)

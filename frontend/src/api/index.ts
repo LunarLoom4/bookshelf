@@ -108,6 +108,19 @@ export const commentsApi = {
 };
 
 // ── Users ──────────────────────────────────────────────────────────────────────
+export interface NotificationEvent {
+  type: string;
+  message: string;
+  detail: string | null;
+  link: string;
+  created_at: string;
+  actor: string;
+}
+
+export const notificationsApi = {
+  get: () => api.get<Notification[]>("/notifications/"),
+};
+
 export const usersApi = {
   profile: (username: string) => api.get(`/users/${username}`),
 };

@@ -4,7 +4,8 @@ import { useAuthStore } from "@/stores/authStore";
 import { useThemeStore } from "@/stores/themeStore";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { usersApi } from "@/api";
+import { notificationsApi } from "@/api";
+import type { NotificationEvent } from "@/api";
 import { Avatar } from "@/components/ui/Avatar";
 import { timeAgo } from "@/utils/time";
 
@@ -40,24 +41,21 @@ export function Navbar() {
   const { user, isAuthenticated, logout } = useAuthStore();
   const navigate = useNavigate();
 
-  // 21: Notification dot -- check for new replies to user's comments
-  const { data: profileData } = useQuery({
-    queryKey: ["notifications", user?.username],
-    queryFn: () => usersApi.profile(user!.username).then((r) => r.data),
-    enabled: isAuthenticated && !!user?.username,
-    staleTime: 2 * 60 * 1000,  // poll every 2 min
+  // 21: Real notification system -- events caused by OTHER users that affect the current user
+  const [notifOpen, setNotifOpen] = useState(false);
+  const { data: notifications = [] } = useQuery<NotificationEvent[]>({
+    queryKey: ["notifications"],
+    queryFn: () => notificationsApi.get().then((r) => r.data),
+    enabled: isAuthenticated,
+    staleTime: 2 * 60 * 1000,
     refetchInterval: 2 * 60 * 1000,
   });
-  const [notifOpen, setNotifOpen] = useState(false);
   const lastChecked = Number(localStorage.getItem("bookshelf-notif-checked") || "0");
-  const newComments = (profileData?.recent_comments ?? []).filter(
-    (c: any) => new Date(c.created_at).getTime() > lastChecked
-  );
-  const hasNew = newComments.length > 0;
+  const hasNew = notifications.some(n => new Date(n.created_at).getTime() > lastChecked);
 
   const handleBellClick = () => {
     setNotifOpen(v => !v);
-    localStorage.setItem("bookshelf-notif-checked", Date.now().toString());
+    if (!notifOpen) localStorage.setItem("bookshelf-notif-checked", Date.now().toString());
   };
 
   const handleLogout = () => {
@@ -127,25 +125,30 @@ export function Navbar() {
                       </button>
                     </div>
                     <div className="max-h-72 overflow-y-auto divide-y divide-paper-100">
-                      {(profileData?.recent_comments ?? []).length === 0 ? (
+                      {notifications.length === 0 ? (
                         <div className="px-4 py-6 text-center text-sm text-gray-400">
-                          No recent activity.
+                          No new notifications yet.
                         </div>
                       ) : (
-                        (profileData?.recent_comments ?? []).slice(0, 10).map((c: any, i: number) => (
-                          <div
-                            key={i}
-                            className={`px-4 py-3 hover:bg-paper-50 transition-colors ${
-                              new Date(c.created_at).getTime() > lastChecked ? "bg-blue-50/50" : ""
-                            }`}
-                          >
-                            <p className="text-sm text-ink-800 line-clamp-2">{c.body}</p>
-                            <p className="text-xs text-gray-400 mt-1">
-                              {c.page_number ? `p. ${c.page_number} · ` : ""}
-                              {timeAgo(c.created_at)}
-                            </p>
-                          </div>
-                        ))
+                        notifications.map((n, i) => {
+                          const isNew = new Date(n.created_at).getTime() > lastChecked;
+                          return (
+                            <a
+                              key={i}
+                              href={n.link}
+                              onClick={() => setNotifOpen(false)}
+                              className={`block px-4 py-3 hover:bg-paper-50 transition-colors ${
+                                isNew ? "bg-ink-50/60 border-l-2 border-ink-400" : ""
+                              }`}
+                            >
+                              <p className="text-sm text-ink-800 leading-snug">{n.message}</p>
+                              {n.detail && (
+                                <p className="text-xs text-gray-500 mt-0.5 line-clamp-1 italic">"{n.detail}"</p>
+                              )}
+                              <p className="text-xs text-gray-400 mt-1">{timeAgo(n.created_at)}</p>
+                            </a>
+                          );
+                        })
                       )}
                     </div>
                   </div>

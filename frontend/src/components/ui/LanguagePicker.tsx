@@ -132,7 +132,7 @@ export function LanguagePicker({ value, onChange }: Props) {
 
       {/* Popup */}
       {open && (
-        <div className="absolute z-50 left-0 top-full mt-1 w-80 bg-white border border-paper-200 rounded-xl shadow-2xl overflow-hidden animate-in fade-in-0 slide-in-from-top-2 duration-150">
+        <div className="absolute z-50 left-0 bottom-full mb-1 w-80 bg-white border border-paper-200 rounded-xl shadow-2xl overflow-hidden animate-in fade-in-0 slide-in-from-bottom-2 duration-150">
           {/* Search bar */}
           <div className="p-2 border-b border-paper-100">
             <div className="relative">
@@ -227,11 +227,11 @@ export function LanguagePicker({ value, onChange }: Props) {
           )}
 
           {/* Done button */}
-          <div className="p-2 border-t border-paper-100">
+          <div className="p-2 border-t border-paper-100 flex justify-end">
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="w-full btn-primary py-1.5 text-sm"
+              className="btn-primary py-1 px-4 text-sm"
             >
               Done
             </button>

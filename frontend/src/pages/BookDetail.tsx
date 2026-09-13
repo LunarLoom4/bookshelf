@@ -438,19 +438,22 @@ export default function BookDetail() {
           </p>
           {/* 19: Recent commenters avatars */}
           {book.recent_commenters?.length > 0 && (
-            <div className="flex items-center gap-1.5 mt-2">
-              <span className="text-xs text-gray-400">Discussed by</span>
-              <div className="flex -space-x-3">
-                {book.recent_commenters.map((c) => (
+            <div className="flex items-center gap-2 mt-2 flex-wrap">
+              <span className="text-xs text-gray-400 leading-none">Discussed by</span>
+              <div className="flex items-center -space-x-1.5">
+                {book.recent_commenters.slice(0, 8).map((c) => (
                   <Link
                     key={c.username}
                     to={`/u/${c.username}`}
                     title={c.username}
-                    className="ring-2 ring-white rounded-full hover:z-10 hover:scale-110 transition-transform"
+                    className="ring-1.5 ring-white dark:ring-gray-900 rounded-full hover:z-10 hover:scale-110 transition-transform duration-150 flex-shrink-0"
                   >
                     <Avatar username={c.username} avatarUrl={c.avatar_url} size="xs" />
                   </Link>
                 ))}
+                {book.recent_commenters.length > 8 && (
+                  <span className="text-xs text-gray-400 pl-2">+{book.recent_commenters.length - 8}</span>
+                )}
               </div>
             </div>
           )}
@@ -487,7 +490,7 @@ export default function BookDetail() {
           <div className="overflow-x-auto mb-4 card p-0">
             <table className="w-full text-xs">
               <thead>
-                <tr className="border-b border-paper-200 bg-paper-50">
+                <tr className="border-b border-gray-200/60 dark:border-gray-700/40 bg-paper-50 dark:bg-gray-800/20">
                   <th className="text-left px-4 py-2.5 font-medium text-gray-500">Edition</th>
                   <th className="text-left px-4 py-2.5 font-medium text-gray-500">Year</th>
                   <th className="text-left px-4 py-2.5 font-medium text-gray-500">Publisher</th>
@@ -499,8 +502,8 @@ export default function BookDetail() {
               </thead>
               <tbody>
                 {[...book.editions].sort((a, b) => b.edition_number - a.edition_number).map((ed) => (
-                  <tr key={ed.id} className="border-b border-paper-100 last:border-0 hover:bg-paper-50 transition-colors">
-                    <td className="px-4 py-2.5 font-medium text-ink-800">Edition {ed.edition_number}</td>
+                  <tr key={ed.id} className="border-b border-gray-200/60 dark:border-gray-700/40 last:border-0 hover:bg-paper-50 dark:hover:bg-gray-800/30 transition-colors">
+                    <td className="px-4 py-2.5 font-medium text-ink-800 dark:text-gray-200">Edition {ed.edition_number}</td>
                     <td className="px-4 py-2.5 text-gray-500">{ed.year ?? "—"}</td>
                     <td className="px-4 py-2.5 text-gray-500">{ed.publisher ?? "—"}</td>
                     <td className="px-4 py-2.5 text-gray-500">{ed.language?.toUpperCase() ?? "—"}</td>
