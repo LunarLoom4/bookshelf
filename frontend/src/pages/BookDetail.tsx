@@ -86,6 +86,12 @@ function EditionRow({ edition, bookId, isOwner, onDelete }: {
             {edition.file_size_bytes != null && (
               <span>{formatBytes(edition.file_size_bytes)}</span>
             )}
+            {edition.page_count != null && (
+              <span className="flex items-center gap-1">
+                <BookOpen className="w-3 h-3" />
+                {edition.page_count} pages
+              </span>
+            )}
             <span className="flex items-center gap-1">
               <Calendar className="w-3 h-3" />
               {timeAgo(edition.created_at)}
@@ -503,12 +509,12 @@ export default function BookDetail() {
               <tbody>
                 {[...book.editions].sort((a, b) => b.edition_number - a.edition_number).map((ed) => (
                   <tr key={ed.id} className="border-b border-gray-200/60 dark:border-gray-700/40 last:border-0 hover:bg-paper-50 dark:hover:bg-gray-800/30 transition-colors">
-                    <td className="px-4 py-2.5 text-center font-semibold text-ink-900 dark:text-gray-100">Ed. {ed.edition_number}</td>
-                    <td className="px-4 py-2.5 text-center text-gray-700">{ed.year ?? "N/A"}</td>
-                    <td className="px-4 py-2.5 text-center text-gray-700">{ed.publisher ?? "N/A"}</td>
-                    <td className="px-4 py-2.5 text-center text-gray-700">{ed.language?.toUpperCase() ?? "N/A"}</td>
-                    <td className="px-4 py-2.5 text-center text-gray-700">{ed.file_size_bytes ? formatBytes(ed.file_size_bytes) : "N/A"}</td>
-                    <td className="px-4 py-2.5 text-center text-gray-700">{ed.page_count ?? "N/A"}</td>
+                    <td className="px-4 py-2.5 text-center font-semibold text-ink-900 dark:text-white">Edition {ed.edition_number}</td>
+                    <td className="px-4 py-2.5 text-center text-gray-900 dark:text-gray-100">{ed.year ?? "N/A"}</td>
+                    <td className="px-4 py-2.5 text-center text-gray-900 dark:text-gray-100">{ed.publisher ?? "N/A"}</td>
+                    <td className="px-4 py-2.5 text-center text-gray-900 dark:text-gray-100">{ed.language?.toUpperCase() ?? "N/A"}</td>
+                    <td className="px-4 py-2.5 text-center text-gray-900 dark:text-gray-100">{ed.file_size_bytes ? formatBytes(ed.file_size_bytes) : "N/A"}</td>
+                    <td className="px-4 py-2.5 text-center text-gray-900 dark:text-gray-100">{ed.page_count ?? "N/A"}</td>
                     <td className="px-4 py-2.5">
                       <Link to={`/read/${ed.id}`} className="text-ink-600 hover:underline font-medium block text-center">Read</Link>
                     </td>

@@ -46,6 +46,7 @@ export default function ReadingPage() {
   const unsavedCommentRef = useRef(""); // 9: tracks if user has unsaved text in comment box
   const [sort, setSort] = useState<SortMode>("newest");
   const [commentSearch, setCommentSearch] = useState("");
+  const [manualPage, setManualPage] = useState("");
   const [activeTab, setActiveTab] = useState<PanelTab>("discussion");
   const progressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [pdfWidthPct, setPdfWidthPct] = useState(DEFAULT_PDF_PCT);
