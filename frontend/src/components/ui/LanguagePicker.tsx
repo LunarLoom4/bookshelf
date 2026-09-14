@@ -134,7 +134,7 @@ export function LanguagePicker({ value, onChange }: Props) {
       {open && (
         <div className="absolute z-50 left-0 bottom-full mb-1 w-80 bg-white border border-paper-200 rounded-xl shadow-2xl overflow-hidden animate-in fade-in-0 slide-in-from-bottom-2 duration-150">
           {/* Search bar */}
-          <div className="p-2 border-b border-paper-100">
+          <div className="p-3 border-b border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-900">
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
               <input
@@ -155,7 +155,7 @@ export function LanguagePicker({ value, onChange }: Props) {
 
           {/* Tabs -- hidden during search */}
           {!search && (
-            <div className="flex border-b border-paper-100">
+            <div className="flex border-b border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-900">
               {(["international", "indian", "custom"] as Tab[]).map(t => (
                 <button
                   key={t}
@@ -174,7 +174,7 @@ export function LanguagePicker({ value, onChange }: Props) {
           )}
 
           {/* Language list */}
-          <div className="max-h-48 overflow-y-auto">
+          <div className="max-h-56 overflow-y-auto bg-white dark:bg-gray-900">
             {search ? (
               searchResults!.length === 0 ? (
                 <p className="px-4 py-3 text-xs text-gray-400 text-center">No languages found for "{search}"</p>
@@ -214,9 +214,9 @@ export function LanguagePicker({ value, onChange }: Props) {
 
           {/* Selected chips */}
           {selected.length > 0 && (
-            <div className="p-2 border-t border-paper-100 flex flex-wrap gap-1.5">
+            <div className="p-3 border-t border-gray-100 dark:border-gray-700 flex flex-wrap gap-1.5 bg-white dark:bg-gray-900">
               {selected.map(code => (
-                <span key={code} className="inline-flex items-center gap-1 px-2 py-0.5 bg-ink-100 text-ink-700 text-xs rounded-full">
+                <span key={code} className="inline-flex items-center gap-1 px-2.5 py-1 bg-ink-100 dark:bg-ink-900/40 text-ink-700 dark:text-ink-300 text-xs font-medium rounded-full">
                   {labelFor(code)}
                   <button type="button" onClick={() => toggle(code)} className="hover:text-red-500">
                     <X className="w-3 h-3" />
@@ -227,7 +227,7 @@ export function LanguagePicker({ value, onChange }: Props) {
           )}
 
           {/* Done button */}
-          <div className="p-2 border-t border-paper-100 flex justify-end">
+          <div className="p-3 border-t border-gray-100 dark:border-gray-700 flex justify-end bg-white dark:bg-gray-900">
             <button
               type="button"
               onClick={() => setOpen(false)}
@@ -254,8 +254,10 @@ function LanguageRow({
     <button
       type="button"
       onClick={() => onToggle(lang.code)}
-      className={`w-full flex items-center justify-between px-4 py-2 text-sm hover:bg-paper-50 transition-colors ${
-        isSelected ? "text-ink-700 font-medium bg-ink-50" : "text-gray-700"
+      className={`w-full flex items-center justify-between px-4 py-2.5 text-sm transition-colors ${
+        isSelected
+          ? "text-ink-700 dark:text-ink-300 font-medium bg-ink-50 dark:bg-ink-900/30"
+          : "text-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
       }`}
     >
       <span>{lang.label}</span>

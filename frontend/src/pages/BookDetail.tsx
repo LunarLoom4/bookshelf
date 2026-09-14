@@ -494,27 +494,27 @@ export default function BookDetail() {
         {/* 28: Edition comparison table */}
         {showComparison && book.editions.length > 1 && (
           <div className="overflow-x-auto mb-4 card p-0">
-            <table className="w-full text-xs">
+            <table className="w-full text-xs text-gray-900 dark:text-gray-100">
               <thead>
                 <tr className="border-b border-gray-200/60 dark:border-gray-700/40 bg-paper-50 dark:bg-gray-800/20">
-                  <th className="text-center px-4 py-2.5 font-medium text-gray-600">Edition</th>
-                  <th className="text-center px-4 py-2.5 font-medium text-gray-600">Year</th>
-                  <th className="text-center px-4 py-2.5 font-medium text-gray-600">Publisher</th>
-                  <th className="text-center px-4 py-2.5 font-medium text-gray-600">Language</th>
-                  <th className="text-center px-4 py-2.5 font-medium text-gray-600">Size</th>
-                  <th className="text-center px-4 py-2.5 font-medium text-gray-600">Pages</th>
+                  <th className="text-center px-4 py-2.5 font-semibold text-gray-800 dark:text-gray-200">Edition</th>
+                  <th className="text-center px-4 py-2.5 font-semibold text-gray-800 dark:text-gray-200">Year</th>
+                  <th className="text-center px-4 py-2.5 font-semibold text-gray-800 dark:text-gray-200">Publisher</th>
+                  <th className="text-center px-4 py-2.5 font-semibold text-gray-800 dark:text-gray-200">Language</th>
+                  <th className="text-center px-4 py-2.5 font-semibold text-gray-800 dark:text-gray-200">Size</th>
+                  <th className="text-center px-4 py-2.5 font-semibold text-gray-800 dark:text-gray-200">Pages</th>
                   <th className="px-4 py-2.5" />
                 </tr>
               </thead>
               <tbody>
                 {[...book.editions].sort((a, b) => b.edition_number - a.edition_number).map((ed) => (
                   <tr key={ed.id} className="border-b border-gray-200/60 dark:border-gray-700/40 last:border-0 hover:bg-paper-50 dark:hover:bg-gray-800/30 transition-colors">
-                    <td className="px-4 py-2.5 text-center font-semibold text-ink-900 dark:text-white">Edition {ed.edition_number}</td>
-                    <td className="px-4 py-2.5 text-center text-gray-900 dark:text-gray-100">{ed.year ?? "N/A"}</td>
-                    <td className="px-4 py-2.5 text-center text-gray-900 dark:text-gray-100">{ed.publisher ?? "N/A"}</td>
-                    <td className="px-4 py-2.5 text-center text-gray-900 dark:text-gray-100">{ed.language?.toUpperCase() ?? "N/A"}</td>
-                    <td className="px-4 py-2.5 text-center text-gray-900 dark:text-gray-100">{ed.file_size_bytes ? formatBytes(ed.file_size_bytes) : "N/A"}</td>
-                    <td className="px-4 py-2.5 text-center text-gray-900 dark:text-gray-100">{ed.page_count ?? "N/A"}</td>
+                    <td className="px-4 py-2.5 text-center font-bold text-gray-950 dark:text-white">Edition {ed.edition_number}</td>
+                    <td className="px-4 py-2.5 text-center">{ed.year ?? "N/A"}</td>
+                    <td className="px-4 py-2.5 text-center">{ed.publisher ?? "N/A"}</td>
+                    <td className="px-4 py-2.5 text-center">{ed.language?.toUpperCase() ?? "N/A"}</td>
+                    <td className="px-4 py-2.5 text-center">{ed.file_size_bytes ? formatBytes(ed.file_size_bytes) : "N/A"}</td>
+                    <td className="px-4 py-2.5 text-center">{ed.page_count ?? "N/A"}</td>
                     <td className="px-4 py-2.5">
                       <Link to={`/read/${ed.id}`} className="text-ink-600 hover:underline font-medium block text-center">Read</Link>
                     </td>

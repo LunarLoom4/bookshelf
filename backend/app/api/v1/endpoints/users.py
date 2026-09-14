@@ -60,15 +60,17 @@ async def get_user_profile(username: str, db: AsyncSession = Depends(get_db)):
         item.edition_count = edition_count
         books.append(item)
 
-    # Fetch recent comments with author loaded
+    # Fetch recent comments with book and edition context
     comments_result = await db.execute(
-        select(Comment)
+        select(Comment, Book.title, Book.id.label("book_id"), Edition.edition_number)
+        .join(Edition, Edition.id == Comment.edition_id)
+        .join(Book, Book.id == Edition.book_id)
         .options(selectinload(Comment.author))
         .where(Comment.user_id == user.id, Comment.is_deleted.is_(False))
         .order_by(Comment.created_at.desc())
         .limit(20)
     )
-    comments = list(comments_result.scalars())
+    comment_rows = comments_result.all()
 
     # 17: Currently reading -- editions the user has progress on, newest first
     progress_result = await db.execute(
@@ -93,6 +95,14 @@ async def get_user_profile(username: str, db: AsyncSession = Depends(get_db)):
     return UserProfile(
         user=UserResponse.model_validate(user),
         books_uploaded=books,
-        recent_comments=[CommentResponse.model_validate(c) for c in comments],
+        recent_comments=[
+            {
+                **CommentResponse.model_validate(c).model_dump(),
+                "book_title": book_title,
+                "book_id": book_id,
+                "edition_number": edition_number,
+            }
+            for c, book_title, book_id, edition_number in comment_rows
+        ],
         currently_reading=currently_reading,
     )

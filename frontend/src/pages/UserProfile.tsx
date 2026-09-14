@@ -21,7 +21,7 @@ import type { User, BookListItem, Comment, ReadingList, CurrentlyReadingItem } f
 interface UserProfileData {
   user: User;
   books_uploaded: BookListItem[];
-  recent_comments: Comment[];
+  recent_comments: (Comment & { book_title?: string; book_id?: number; edition_number?: number })[];
   currently_reading?: CurrentlyReadingItem[];
 }
 
@@ -319,9 +319,9 @@ export default function UserProfile() {
         )}
       </section>
 
-      {/* Recent comments */}
+      {/* Recent comments -- grouped by book */}
       <section>
-        <h2 className="font-serif text-xl font-semibold text-ink-900 mb-4 flex items-center gap-2">
+        <h2 className="font-serif text-xl font-semibold text-ink-900 dark:text-gray-100 mb-4 flex items-center gap-2">
           <MessageSquare className="w-5 h-5 text-ink-400" />
           Recent comments
           <span className="text-sm font-normal font-sans text-gray-400">
@@ -330,27 +330,59 @@ export default function UserProfile() {
         </h2>
         {recent_comments.filter(c => !c.is_deleted).length === 0 ? (
           <p className="text-sm text-gray-400">No comments yet.</p>
-        ) : (
-          <div className="flex flex-col gap-3">
-            {recent_comments.filter(c => !c.is_deleted).map((comment) => (
-              <Link
-                key={comment.id}
-                to={`/read/${comment.edition_id}`}
-                className="card p-4 hover:shadow-md hover:border-ink-200 transition-all block"
-              >
-                <p className="text-sm text-gray-700 leading-relaxed line-clamp-2 mb-2">
-                  {comment.body}
-                </p>
-                <div className="flex items-center gap-2 text-xs text-gray-400">
-                  {comment.page_number != null && (
-                    <span className="page-badge">{`p. ${comment.page_number}`}</span>
-                  )}
-                  <span>{timeAgo(comment.created_at)}</span>
+        ) : (() => {
+          // Group comments by book
+          const activeComments = recent_comments.filter(c => !c.is_deleted);
+          const groups = new Map<number, typeof activeComments>();
+          activeComments.forEach(c => {
+            const key = c.book_id ?? c.edition_id;
+            if (!groups.has(key)) groups.set(key, []);
+            groups.get(key)!.push(c);
+          });
+          return (
+            <div className="flex flex-col gap-5">
+              {Array.from(groups.entries()).map(([bookId, groupComments]) => (
+                <div key={bookId} className="card p-0 overflow-hidden">
+                  {/* Book header */}
+                  <div className="px-4 py-2.5 bg-paper-50 dark:bg-gray-800/50 border-b border-paper-200 dark:border-gray-700 flex items-center justify-between">
+                    <Link
+                      to={`/books/${groupComments[0].book_id}`}
+                      className="text-sm font-semibold text-ink-800 dark:text-gray-100 hover:text-ink-600 hover:underline truncate max-w-xs"
+                    >
+                      {groupComments[0].book_title ?? "Unknown book"}
+                    </Link>
+                    <span className="text-xs text-gray-400 flex-shrink-0 ml-2">
+                      {groupComments.length} {groupComments.length === 1 ? "comment" : "comments"}
+                    </span>
+                  </div>
+                  {/* Comments in this book */}
+                  <div className="divide-y divide-paper-100 dark:divide-gray-700/50">
+                    {groupComments.map((comment) => (
+                      <Link
+                        key={comment.id}
+                        to={`/read/${comment.edition_id}`}
+                        className="block px-4 py-3 hover:bg-paper-50 dark:hover:bg-gray-800/30 transition-colors"
+                      >
+                        <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed line-clamp-2 mb-1.5">
+                          {comment.body}
+                        </p>
+                        <div className="flex items-center gap-2 text-xs text-gray-400">
+                          {comment.edition_number != null && (
+                            <span className="text-gray-500 dark:text-gray-400">Ed. {comment.edition_number}</span>
+                          )}
+                          {comment.page_number != null && (
+                            <span className="page-badge">{`p. ${comment.page_number}`}</span>
+                          )}
+                          <span>{timeAgo(comment.created_at)}</span>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
                 </div>
-              </Link>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          );
+        })()}
       </section>
       <ScrollToTop />
     </div>
