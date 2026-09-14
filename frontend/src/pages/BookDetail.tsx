@@ -476,7 +476,7 @@ export default function BookDetail() {
                 className="btn-secondary py-1.5 text-xs flex items-center gap-1.5"
               >
                 <Table2 className="w-3.5 h-3.5" />
-                {showComparison ? "List view" : "Compare"}
+                {showComparison ? "Close table" : "Compare"}
               </button>
             )}
             {user && (
@@ -491,26 +491,26 @@ export default function BookDetail() {
             <table className="w-full text-xs">
               <thead>
                 <tr className="border-b border-gray-200/60 dark:border-gray-700/40 bg-paper-50 dark:bg-gray-800/20">
-                  <th className="text-left px-4 py-2.5 font-medium text-gray-500">Edition</th>
-                  <th className="text-left px-4 py-2.5 font-medium text-gray-500">Year</th>
-                  <th className="text-left px-4 py-2.5 font-medium text-gray-500">Publisher</th>
-                  <th className="text-left px-4 py-2.5 font-medium text-gray-500">Language</th>
-                  <th className="text-left px-4 py-2.5 font-medium text-gray-500">Size</th>
-                  <th className="text-left px-4 py-2.5 font-medium text-gray-500">Pages</th>
+                  <th className="text-center px-4 py-2.5 font-medium text-gray-600">Edition</th>
+                  <th className="text-center px-4 py-2.5 font-medium text-gray-600">Year</th>
+                  <th className="text-center px-4 py-2.5 font-medium text-gray-600">Publisher</th>
+                  <th className="text-center px-4 py-2.5 font-medium text-gray-600">Language</th>
+                  <th className="text-center px-4 py-2.5 font-medium text-gray-600">Size</th>
+                  <th className="text-center px-4 py-2.5 font-medium text-gray-600">Pages</th>
                   <th className="px-4 py-2.5" />
                 </tr>
               </thead>
               <tbody>
                 {[...book.editions].sort((a, b) => b.edition_number - a.edition_number).map((ed) => (
                   <tr key={ed.id} className="border-b border-gray-200/60 dark:border-gray-700/40 last:border-0 hover:bg-paper-50 dark:hover:bg-gray-800/30 transition-colors">
-                    <td className="px-4 py-2.5 font-medium text-ink-800 dark:text-gray-200">Edition {ed.edition_number}</td>
-                    <td className="px-4 py-2.5 text-gray-500">{ed.year ?? "—"}</td>
-                    <td className="px-4 py-2.5 text-gray-500">{ed.publisher ?? "—"}</td>
-                    <td className="px-4 py-2.5 text-gray-500">{ed.language?.toUpperCase() ?? "—"}</td>
-                    <td className="px-4 py-2.5 text-gray-500">{ed.file_size_bytes ? formatBytes(ed.file_size_bytes) : "—"}</td>
-                    <td className="px-4 py-2.5 text-gray-500">{ed.page_count ?? "—"}</td>
+                    <td className="px-4 py-2.5 text-center font-semibold text-ink-900 dark:text-gray-100">Ed. {ed.edition_number}</td>
+                    <td className="px-4 py-2.5 text-center text-gray-700">{ed.year ?? "N/A"}</td>
+                    <td className="px-4 py-2.5 text-center text-gray-700">{ed.publisher ?? "N/A"}</td>
+                    <td className="px-4 py-2.5 text-center text-gray-700">{ed.language?.toUpperCase() ?? "N/A"}</td>
+                    <td className="px-4 py-2.5 text-center text-gray-700">{ed.file_size_bytes ? formatBytes(ed.file_size_bytes) : "N/A"}</td>
+                    <td className="px-4 py-2.5 text-center text-gray-700">{ed.page_count ?? "N/A"}</td>
                     <td className="px-4 py-2.5">
-                      <Link to={`/read/${ed.id}`} className="text-ink-600 hover:underline font-medium">Read</Link>
+                      <Link to={`/read/${ed.id}`} className="text-ink-600 hover:underline font-medium block text-center">Read</Link>
                     </td>
                   </tr>
                 ))}

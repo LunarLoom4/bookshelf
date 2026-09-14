@@ -218,38 +218,38 @@ export function CommentThread({
     <div className={`flex flex-col ${depth > 0 ? "pl-3 border-l-2 border-paper-200" : ""}`}>
       <div className="flex gap-2.5 py-3">
 
-        {/* Vote column */}
-        <div className="flex flex-col items-center gap-0.5 flex-shrink-0">
+        {/* Vote column -- Reddit-style animated arrows */}
+        <div className="flex flex-col items-center gap-0.5 flex-shrink-0 w-7">
           <button
             onClick={() => isAuthenticated && onVote(comment.id, 1)}
             disabled={!isAuthenticated}
-            className={`p-0.5 rounded transition-all duration-150 active:scale-125 ${
-              comment.user_vote === 1
-                ? "text-amber-500 scale-110"
-                : "text-gray-300 hover:text-amber-400 disabled:cursor-default"
-            }`}
-            title="Upvote"
+            aria-label="Upvote"
+            className={`group p-0.5 rounded-sm transition-all duration-200 disabled:cursor-default
+              ${comment.user_vote === 1
+                ? "text-orange-500 drop-shadow-[0_0_6px_rgba(249,115,22,0.7)] scale-125"
+                : "text-gray-300 hover:text-orange-400 hover:scale-110"
+              }`}
           >
-            <ChevronUp className="w-4 h-4" />
+            <ChevronUp className="w-4 h-4" strokeWidth={comment.user_vote === 1 ? 3 : 2} />
           </button>
-          <span className={`text-xs font-medium tabular-nums ${
-            comment.vote_score > 0 ? "text-ink-600"
-            : comment.vote_score < 0 ? "text-red-400"
+          <span className={`text-[11px] font-bold tabular-nums leading-none transition-all duration-200 ${
+            comment.vote_score > 0 ? "text-orange-500"
+            : comment.vote_score < 0 ? "text-blue-500 dark:text-blue-400"
             : "text-gray-400"
           }`}>
-            <span className="tabular-nums transition-all duration-200">{comment.vote_score}</span>
+            {comment.vote_score}
           </span>
           <button
             onClick={() => isAuthenticated && onVote(comment.id, -1)}
             disabled={!isAuthenticated}
-            className={`p-0.5 rounded transition-all duration-150 active:scale-125 ${
-              comment.user_vote === -1
-                ? "text-red-400 scale-110"
-                : "text-gray-300 hover:text-red-300 disabled:cursor-default"
-            }`}
-            title="Downvote"
+            aria-label="Downvote"
+            className={`group p-0.5 rounded-sm transition-all duration-200 disabled:cursor-default
+              ${comment.user_vote === -1
+                ? "text-blue-500 drop-shadow-[0_0_6px_rgba(59,130,246,0.7)] scale-125"
+                : "text-gray-300 hover:text-blue-400 hover:scale-110"
+              }`}
           >
-            <ChevronDown className="w-4 h-4" />
+            <ChevronDown className="w-4 h-4" strokeWidth={comment.user_vote === -1 ? 3 : 2} />
           </button>
         </div>
 

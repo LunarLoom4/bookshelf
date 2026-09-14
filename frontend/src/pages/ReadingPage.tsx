@@ -197,6 +197,18 @@ export default function ReadingPage() {
     [isAuthenticated, saveProgressMutate]
   );
 
+  // Periodic autosave every 10 seconds so progress is captured even without badge clicks
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const interval = setInterval(() => {
+      const page = viewerRef.current?.getCurrentPage() ?? currentPageRef.current;
+      if (page > 1) {
+        saveProgressMutate(page);
+      }
+    }, 10_000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated, saveProgressMutate]);
+
   // Save progress when the user leaves the page (back button, tab close, navigate away)
   useEffect(() => {
     const saveOnLeave = () => {
@@ -330,6 +342,35 @@ export default function ReadingPage() {
           {edition.year && <span className="text-gray-500">· {edition.year}</span>}
 
           <div className="ml-auto flex items-center gap-2">
+            {/* Manual page tracker -- type page and press Enter to jump + save progress */}
+            {isAuthenticated && (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const p = parseInt(manualPage);
+                  if (!isNaN(p) && p > 0) {
+                    currentPageRef.current = p;
+                    setCurrentPage(p);
+                    saveProgressMutate(p);
+                    setManualPage("");
+                    viewerRef.current?.goToPage(p);
+                  }
+                }}
+                className="flex items-center gap-1"
+                title="Type a page number and press Enter to jump there and save your progress"
+              >
+                <span className="text-gray-500 text-xs hidden sm:inline">p.</span>
+                <input
+                  type="number"
+                  value={manualPage}
+                  onChange={(e) => setManualPage(e.target.value)}
+                  placeholder={String(currentPage)}
+                  className="w-12 bg-gray-700 text-gray-200 text-xs text-center rounded px-1 py-0.5 border border-gray-600 focus:outline-none focus:border-ink-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  min="1"
+                />
+              </form>
+            )}
+
             <button
               onClick={() => {
                 const el = pdfPanelRef.current;
