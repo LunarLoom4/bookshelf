@@ -12,7 +12,7 @@ from app.models.comment import Comment
 from app.models.reading_progress import ReadingProgress
 from app.schemas.auth import UserResponse
 from app.schemas.book import BookListItem
-from app.schemas.comment import CommentResponse, CommentWithContext
+from app.schemas.comment import CommentWithContext
 
 
 class CurrentlyReadingItem(BaseModel):
@@ -28,7 +28,7 @@ class CurrentlyReadingItem(BaseModel):
 class UserProfile(BaseModel):
     user: UserResponse
     books_uploaded: list[BookListItem]
-    recent_comments: list[CommentResponse]
+    recent_comments: list[CommentWithContext]
     currently_reading: list[CurrentlyReadingItem] = []
 
     model_config = {"from_attributes": True}

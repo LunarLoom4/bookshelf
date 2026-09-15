@@ -493,10 +493,10 @@ export default function BookDetail() {
 
         {/* 28: Edition comparison table */}
         {showComparison && book.editions.length > 1 && (
-          <div className="overflow-x-auto mb-4 card p-0">
-            <table className="w-full text-xs" style={{color: "#111827"}}>
+          <div className="overflow-x-auto mb-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+            <table className="w-full text-xs text-gray-900 dark:text-gray-100">
               <thead>
-                <tr style={{backgroundColor: "#f8f9fa", color: "#374151"}} className="border-b border-gray-200/60 dark:border-gray-700/40">
+                <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 text-gray-700 dark:text-gray-300">
                   <th className="text-center px-4 py-2.5 font-semibold">Edition</th>
                   <th className="text-center px-4 py-2.5 font-semibold">Year</th>
                   <th className="text-center px-4 py-2.5 font-semibold">Publisher</th>
