@@ -12,7 +12,7 @@ from app.models.comment import Comment
 from app.models.reading_progress import ReadingProgress
 from app.schemas.auth import UserResponse
 from app.schemas.book import BookListItem
-from app.schemas.comment import CommentResponse
+from app.schemas.comment import CommentResponse, CommentWithContext
 
 
 class CurrentlyReadingItem(BaseModel):
@@ -96,12 +96,24 @@ async def get_user_profile(username: str, db: AsyncSession = Depends(get_db)):
         user=UserResponse.model_validate(user),
         books_uploaded=books,
         recent_comments=[
-            {
-                **CommentResponse.model_validate(c).model_dump(),
-                "book_title": book_title,
-                "book_id": book_id,
-                "edition_number": edition_number,
-            }
+            CommentWithContext(
+                id=c.id,
+                body=c.body,
+                page_number=c.page_number,
+                edition_id=c.edition_id,
+                user_id=c.user_id,
+                parent_id=c.parent_id,
+                vote_score=c.vote_score,
+                user_vote=None,
+                is_deleted=c.is_deleted,
+                created_at=c.created_at,
+                updated_at=c.updated_at,
+                edited_at=c.edited_at,
+                book_title=book_title,
+                book_id=int(book_id),
+                edition_number=int(edition_number),
+                reply_count=0,
+            )
             for c, book_title, book_id, edition_number in comment_rows
         ],
         currently_reading=currently_reading,

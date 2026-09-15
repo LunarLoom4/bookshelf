@@ -38,6 +38,28 @@ class CommentUpdate(BaseModel):
         return v.strip()
 
 
+class CommentWithContext(BaseModel):
+    """CommentResponse extended with book and edition context for profile page."""
+    id: int
+    body: str
+    page_number: int | None
+    edition_id: int
+    user_id: int
+    parent_id: int | None
+    vote_score: int
+    user_vote: int | None
+    is_deleted: bool
+    created_at: datetime
+    updated_at: datetime
+    edited_at: datetime | None
+    book_title: str
+    book_id: int
+    edition_number: int
+    reply_count: int = 0
+
+    model_config = {"from_attributes": True}
+
+
 class CommentResponse(BaseModel):
     id: int
     edition_id: int

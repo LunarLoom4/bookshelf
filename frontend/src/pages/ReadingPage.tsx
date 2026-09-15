@@ -314,7 +314,7 @@ export default function ReadingPage() {
               if (unsavedCommentRef.current.trim()) {
                 if (!window.confirm("You have an unsaved comment. Leave anyway?")) return;
               }
-              navigate(`/books/${book.id}`);
+              navigate(-1);
             }}
             className="flex items-center gap-1 hover:text-white transition-colors"
           >

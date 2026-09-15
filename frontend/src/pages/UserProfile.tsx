@@ -21,7 +21,7 @@ import type { User, BookListItem, Comment, ReadingList, CurrentlyReadingItem } f
 interface UserProfileData {
   user: User;
   books_uploaded: BookListItem[];
-  recent_comments: (Comment & { book_title?: string; book_id?: number; edition_number?: number })[];
+  recent_comments: (Comment & { book_title: string; book_id: number; edition_number: number })[];
   currently_reading?: CurrentlyReadingItem[];
 }
 
@@ -321,7 +321,7 @@ export default function UserProfile() {
 
       {/* Recent comments -- grouped by book */}
       <section>
-        <h2 className="font-serif text-xl font-semibold text-ink-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+        <h2 className="font-serif text-xl font-semibold mb-4 flex items-center gap-2" style={{color:"var(--ink-900,#1c3089)"}}>
           <MessageSquare className="w-5 h-5 text-ink-400" />
           Recent comments
           <span className="text-sm font-normal font-sans text-gray-400">
@@ -344,10 +344,10 @@ export default function UserProfile() {
               {Array.from(groups.entries()).map(([bookId, groupComments]) => (
                 <div key={bookId} className="card p-0 overflow-hidden">
                   {/* Book header */}
-                  <div className="px-4 py-2.5 bg-paper-50 dark:bg-gray-800/50 border-b border-paper-200 dark:border-gray-700 flex items-center justify-between">
+                  <div className="px-4 py-2.5 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between" style={{backgroundColor:"#e8edf5"}}>
                     <Link
                       to={`/books/${groupComments[0].book_id}`}
-                      className="text-sm font-semibold text-ink-800 dark:text-gray-100 hover:text-ink-600 hover:underline truncate max-w-xs"
+                      className="text-sm font-semibold hover:underline truncate max-w-xs dark:text-gray-100" style={{color:"#1c3089"}}
                     >
                       {groupComments[0].book_title ?? "Unknown book"}
                     </Link>
@@ -363,12 +363,12 @@ export default function UserProfile() {
                         to={`/read/${comment.edition_id}`}
                         className="block px-4 py-3 hover:bg-paper-50 dark:hover:bg-gray-800/30 transition-colors"
                       >
-                        <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed line-clamp-2 mb-1.5">
+                        <p className="text-sm leading-relaxed line-clamp-2 mb-1.5 dark:text-gray-200" style={{color:"#1f2937"}}>
                           {comment.body}
                         </p>
                         <div className="flex items-center gap-2 text-xs text-gray-400">
                           {comment.edition_number != null && (
-                            <span className="text-gray-500 dark:text-gray-400">Ed. {comment.edition_number}</span>
+                            <span className="dark:text-gray-400" style={{color:"#6b7280"}}>Ed. {comment.edition_number}</span>
                           )}
                           {comment.page_number != null && (
                             <span className="page-badge">{`p. ${comment.page_number}`}</span>
