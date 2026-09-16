@@ -321,7 +321,7 @@ export default function UserProfile() {
 
       {/* Recent comments -- grouped by book */}
       <section>
-        <h2 className="font-serif text-xl font-semibold mb-4 flex items-center gap-2" style={{color:"var(--ink-900,#1c3089)"}}>
+        <h2 className="font-serif text-xl font-semibold text-ink-900 mb-4 flex items-center gap-2">
           <MessageSquare className="w-5 h-5 text-ink-400" />
           Recent comments
           <span className="text-sm font-normal font-sans text-gray-400">
