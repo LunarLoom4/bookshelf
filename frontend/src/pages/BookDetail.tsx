@@ -39,7 +39,8 @@ function EditionRow({ edition, bookId, isOwner, onDelete }: {
     queryKey: ["progress", edition.id],
     queryFn: () => progressApi.get(edition.id).then((r) => r.data),
     enabled: isAuthenticated,
-    staleTime: 60_000,
+    staleTime: 0,          // always fresh when returning from reading
+    refetchOnWindowFocus: true,
   });
   const lastPage = progress?.last_page;
 

@@ -35,8 +35,12 @@ const PDFViewer = forwardRef<PDFViewerHandle, Props>(({ url }, ref) => {
   useImperativeHandle(ref, () => ({
     goToPage: (page: number) => {
       currentPageNum.current = page;
-      setCurrentSrc(buildSrc(page));
-      setIframeKey(k => k + 1); // always force remount, even for same page
+      const newSrc = buildSrc(page);
+      setCurrentSrc(newSrc);
+      // Only force a full iframe remount if the base URL changes (new PDF).
+      // For page-only changes, just updating src is enough -- the native PDF
+      // viewer responds to the #page=N fragment change without a full reload.
+      // Forcing a remount every time causes a full PDF download on each page jump.
       setLoading(true);
     },
     getCurrentPage: () => currentPageNum.current,

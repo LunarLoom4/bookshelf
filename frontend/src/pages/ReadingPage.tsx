@@ -146,14 +146,26 @@ export default function ReadingPage() {
   useEffect(() => {
     if (progressRestoredRef.current) return;
     if (!savedProgress?.last_page || savedProgress.last_page <= 1) return;
-    if (!viewerRef.current) return;
-    // Small delay to ensure iframe is mounted and ready
-    const t = setTimeout(() => {
-      viewerRef.current?.goToPage(savedProgress.last_page);
-      currentPageRef.current = savedProgress.last_page;
-      setCurrentPage(savedProgress.last_page);
-      progressRestoredRef.current = true;
-    }, 800);
+
+    // Set the current page immediately so the UI shows the right page number
+    // even before the PDF iframe navigates
+    const page = savedProgress.last_page;
+    currentPageRef.current = page;
+    setCurrentPage(page);
+
+    // Give the iframe time to mount and load the PDF, then jump to the saved page.
+    // We try at 1s and retry at 2s if the ref isn't ready yet.
+    const tryGoTo = (delay: number) => setTimeout(() => {
+      if (viewerRef.current) {
+        viewerRef.current.goToPage(page);
+        progressRestoredRef.current = true;
+      } else if (delay < 2500) {
+        // Retry once more
+        tryGoTo(delay + 1000);
+      }
+    }, delay);
+
+    const t = tryGoTo(1000);
     return () => clearTimeout(t);
   }, [savedProgress?.last_page]);
 

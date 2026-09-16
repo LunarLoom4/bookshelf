@@ -3,7 +3,7 @@ import { BookOpen, Search, Upload, Settings, LogOut, Sun, Moon, Bell } from "luc
 import { useAuthStore } from "@/stores/authStore";
 import { useThemeStore } from "@/stores/themeStore";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { notificationsApi } from "@/api";
 import type { NotificationEvent } from "@/api";
 import { Avatar } from "@/components/ui/Avatar";
@@ -43,6 +43,20 @@ export function Navbar() {
 
   // 21: Real notification system -- events caused by OTHER users that affect the current user
   const [notifOpen, setNotifOpen] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null);
+
+  // b: Close notification popup when clicking outside it
+  useEffect(() => {
+    if (!notifOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setNotifOpen(false);
+      }
+    };
+    // Use mousedown so it fires before any click handlers on other elements
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [notifOpen]);
   const { data: notifications = [] } = useQuery<NotificationEvent[]>({
     queryKey: ["notifications"],
     queryFn: () => notificationsApi.get().then((r) => r.data),
@@ -103,7 +117,7 @@ export function Navbar() {
               </Link>
 
               {/* Bell notification icon */}
-              <div className="relative">
+              <div className="relative" ref={notifRef}>
                 <button
                   onClick={handleBellClick}
                   className="p-1.5 text-gray-400 hover:text-ink-700 rounded-md hover:bg-paper-100 transition-colors relative"
@@ -117,16 +131,16 @@ export function Navbar() {
 
                 {/* Notification dropdown */}
                 {notifOpen && (
-                  <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-paper-200 rounded-xl shadow-xl z-50 overflow-hidden">
-                    <div className="px-4 py-3 border-b border-paper-100 flex items-center justify-between">
-                      <span className="text-sm font-semibold text-ink-800">Recent activity</span>
-                      <button onClick={() => setNotifOpen(false)} className="text-gray-400 hover:text-gray-600 text-xs">
+                  <div className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl z-50 overflow-hidden">
+                    <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                      <span className="text-sm font-semibold text-ink-800 dark:text-gray-100">Recent activity</span>
+                      <button onClick={() => setNotifOpen(false)} className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 text-xs">
                         Close
                       </button>
                     </div>
-                    <div className="max-h-72 overflow-y-auto divide-y divide-paper-100">
+                    <div className="max-h-72 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-700/50">
                       {notifications.length === 0 ? (
-                        <div className="px-4 py-6 text-center text-sm text-gray-400">
+                        <div className="px-4 py-6 text-center text-sm text-gray-400 dark:text-gray-500">
                           No new notifications yet.
                         </div>
                       ) : (
@@ -137,15 +151,15 @@ export function Navbar() {
                               key={i}
                               href={n.link}
                               onClick={() => setNotifOpen(false)}
-                              className={`block px-4 py-3 hover:bg-paper-50 transition-colors ${
-                                isNew ? "bg-ink-50/60 border-l-2 border-ink-400" : ""
+                              className={`block px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors ${
+                                isNew ? "bg-ink-50/60 dark:bg-ink-900/20 border-l-2 border-ink-400" : ""
                               }`}
                             >
-                              <p className="text-sm text-ink-800 leading-snug">{n.message}</p>
+                              <p className="text-sm text-ink-800 dark:text-gray-100 leading-snug">{n.message}</p>
                               {n.detail && (
-                                <p className="text-xs text-gray-500 mt-0.5 line-clamp-1 italic">"{n.detail}"</p>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-1 italic">"{n.detail}"</p>
                               )}
-                              <p className="text-xs text-gray-400 mt-1">{timeAgo(n.created_at)}</p>
+                              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{timeAgo(n.created_at)}</p>
                             </a>
                           );
                         })
