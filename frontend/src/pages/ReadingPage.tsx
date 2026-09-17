@@ -42,6 +42,8 @@ export default function ReadingPage() {
   const editionId = Number(editionIdStr);
   const viewerRef = useRef<PDFViewerHandle>(null);
   const { isAuthenticated } = useAuthStore();
+  const { pdfBackMode } = usePrefsStore();
+  const pageHistoryRef = useRef<number[]>([]); // for "retrace" back mode
   const [currentPage, setCurrentPage] = useState(1);
   const currentPageRef = useRef(1); // ref so we can read it in event listeners without stale closure
   const unsavedCommentRef = useRef(""); // 9: tracks if user has unsaved text in comment box
