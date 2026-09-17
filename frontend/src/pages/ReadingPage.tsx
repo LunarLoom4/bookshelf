@@ -321,6 +321,7 @@ export default function ReadingPage() {
         }}
       >
         <div className="flex items-center gap-2 px-3 py-2 bg-gray-900 text-gray-300 text-xs border-b border-gray-700 flex-shrink-0">
+          {/* Back arrow: exits reading page */}
           <button
             onClick={() => {
               if (unsavedCommentRef.current.trim()) {
@@ -328,11 +329,22 @@ export default function ReadingPage() {
               }
               navigate(-1);
             }}
-            className="flex items-center gap-1 hover:text-white transition-colors"
+            className="flex items-center justify-center p-1 rounded hover:bg-gray-700 hover:text-white transition-colors flex-shrink-0"
+            title="Back"
+            aria-label="Go back"
           >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            <span className="truncate max-w-[120px] sm:max-w-[200px] md:max-w-[260px]">{book.title}</span>
+            <ArrowLeft className="w-4 h-4" />
           </button>
+          {/* Book title: opens book detail in new tab */}
+          <a
+            href={`/books/${book.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="truncate max-w-[100px] sm:max-w-[180px] md:max-w-[240px] text-gray-300 hover:text-white transition-colors text-sm"
+            title={`Open ${book.title} in new tab`}
+          >
+            {book.title}
+          </a>
           <span className="text-gray-600">/</span>
           <span>Edition {edition.edition_number}</span>
           {edition.year && <span className="text-gray-500">· {edition.year}</span>}

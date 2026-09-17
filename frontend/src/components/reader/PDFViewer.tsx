@@ -27,6 +27,9 @@ const PDFViewer = forwardRef<PDFViewerHandle, Props>(({ url }, ref) => {
   const [error, setError] = useState(false);
   const loadedOnce = useRef(false);
 
+  const pendingPageRef = useRef<number | null>(null); // page to jump to after initial load
+  const loadingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const buildSrc = useCallback((page: number) => {
     const base = url.split("#")[0];
     return page > 1 ? `${base}#page=${page}` : base;
@@ -35,13 +38,23 @@ const PDFViewer = forwardRef<PDFViewerHandle, Props>(({ url }, ref) => {
   useImperativeHandle(ref, () => ({
     goToPage: (page: number) => {
       currentPageNum.current = page;
-      const newSrc = buildSrc(page);
-      setCurrentSrc(newSrc);
-      // Only force a full iframe remount if the base URL changes (new PDF).
-      // For page-only changes, just updating src is enough -- the native PDF
-      // viewer responds to the #page=N fragment change without a full reload.
-      // Forcing a remount every time causes a full PDF download on each page jump.
+
+      if (!loadedOnce.current) {
+        // PDF hasn't finished loading yet -- queue this page for after load.
+        // The onLoad handler will call goToPage with pendingPageRef value.
+        pendingPageRef.current = page;
+        // Update the initial src so the PDF loads directly at this page.
+        setCurrentSrc(buildSrc(page));
+        return;
+      }
+
+      // PDF is already loaded -- hash-only change navigates instantly.
+      // The native PDF viewer does NOT fire onLoad for hash changes,
+      // so we clear the spinner after a short fixed delay instead.
+      setCurrentSrc(buildSrc(page));
       setLoading(true);
+      if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
+      loadingTimeoutRef.current = setTimeout(() => setLoading(false), 600);
     },
     getCurrentPage: () => currentPageNum.current,
   }));
@@ -82,6 +95,18 @@ const PDFViewer = forwardRef<PDFViewerHandle, Props>(({ url }, ref) => {
           loadedOnce.current = true;
           setLoading(false);
           setError(false);
+          // If a page jump was queued before the PDF finished loading, apply it now.
+          if (pendingPageRef.current !== null) {
+            const page = pendingPageRef.current;
+            pendingPageRef.current = null;
+            // Small delay so the PDF viewer has rendered before we hash-navigate
+            setTimeout(() => {
+              currentPageNum.current = page;
+              setCurrentSrc(buildSrc(page));
+              // Clear spinner after hash navigation settles
+              setTimeout(() => setLoading(false), 600);
+            }, 100);
+          }
         }}
         onError={() => { setLoading(false); setError(true); }}
         allow="fullscreen"
