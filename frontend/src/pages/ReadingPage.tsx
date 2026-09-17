@@ -1,4 +1,4 @@
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useRef, useState, useCallback, useEffect } from "react";
 import { ArrowLeft, SortAsc, TrendingUp, Bookmark, Maximize, Minimize, Search, X as XIcon } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -40,12 +40,14 @@ export default function ReadingPage() {
   const navigate = useNavigate();
   const { editionId: editionIdStr } = useParams<{ editionId: string }>();
   const editionId = Number(editionIdStr);
+  const [searchParams] = useSearchParams();
+  const urlPageParam = Number(searchParams.get("page") || 0); // ?page=N from "p.N >" button
   const viewerRef = useRef<PDFViewerHandle>(null);
   const { isAuthenticated } = useAuthStore();
   const { pdfBackMode } = usePrefsStore();
   const pageHistoryRef = useRef<number[]>([]); // for "retrace" back mode
-  const [currentPage, setCurrentPage] = useState(1);
-  const currentPageRef = useRef(1); // ref so we can read it in event listeners without stale closure
+  const [currentPage, setCurrentPage] = useState(urlPageParam > 1 ? urlPageParam : 1);
+  const currentPageRef = useRef(urlPageParam > 1 ? urlPageParam : 1); // ref so we can read it in event listeners without stale closure
   const unsavedCommentRef = useRef(""); // 9: tracks if user has unsaved text in comment box
   const [sort, setSort] = useState<SortMode>("newest");
   const [commentSearch, setCommentSearch] = useState("");
@@ -148,6 +150,8 @@ export default function ReadingPage() {
   const progressRestoredRef = useRef(false);
   useEffect(() => {
     if (progressRestoredRef.current) return;
+    // If ?page=N was in the URL, that takes precedence -- already applied via initialSrc
+    if (urlPageParam > 1) { progressRestoredRef.current = true; return; }
     if (!savedProgress?.last_page || savedProgress.last_page <= 1) return;
 
     // Set the current page immediately so the UI shows the right page number
@@ -155,6 +159,7 @@ export default function ReadingPage() {
     const page = savedProgress.last_page;
     currentPageRef.current = page;
     setCurrentPage(page);
+    hasNavigatedRef.current = true; // restored progress counts as having navigated
 
     // Give the iframe time to mount and load the PDF, then jump to the saved page.
     // We try at 1s and retry at 2s if the ref isn't ready yet.
@@ -183,6 +188,7 @@ export default function ReadingPage() {
     }
     currentPageRef.current = page;
     setCurrentPage(page);
+    hasNavigatedRef.current = true; // user has actively navigated -- enable autosave
     saveProgressMutate(page);
   }, [isAuthenticated, saveProgressMutate, pdfBackMode]);
 
@@ -200,10 +206,17 @@ export default function ReadingPage() {
     [isAuthenticated, saveProgressMutate]
   );
 
-  // Periodic autosave every 10 seconds so progress is captured even without badge clicks
+  // Track whether user has explicitly navigated to a page in this session.
+  // Prevents the autosave from overwriting saved progress with page 1
+  // when the PDF is opened in a new tab (where it always starts at page 1).
+  const hasNavigatedRef = useRef(false);
+
+  // Periodic autosave every 10 seconds so progress is captured without badge clicks.
+  // Only fires if the user has actively navigated (not just the default page 1 on open).
   useEffect(() => {
     if (!isAuthenticated) return;
     const interval = setInterval(() => {
+      if (!hasNavigatedRef.current) return; // never started navigating -- skip
       const page = viewerRef.current?.getCurrentPage() ?? currentPageRef.current;
       if (page > 1) {
         saveProgressMutate(page);
@@ -418,7 +431,7 @@ export default function ReadingPage() {
         <div className="flex-1 min-h-0">
           <PDFViewer
             ref={viewerRef}
-            url={booksApi.pdfProxyUrl(book.id, edition.id)}
+            url={booksApi.pdfProxyUrl(book.id, edition.id) + (urlPageParam > 1 ? `#page=${urlPageParam}` : "")}
             downloadFilename={`${book.title} - Edition ${edition.edition_number}.pdf`}
             onPageChange={handlePageChange}
           />
