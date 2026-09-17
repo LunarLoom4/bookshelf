@@ -151,7 +151,7 @@ export default function ReadingPage() {
   useEffect(() => {
     if (progressRestoredRef.current) return;
     // If ?page=N was in the URL, that takes precedence -- already applied via initialSrc
-    if (urlPageParam > 1) { progressRestoredRef.current = true; return; }
+    if (urlPageParam > 1) { progressRestoredRef.current = true; hasNavigatedRef.current = true; return; }
     if (!savedProgress?.last_page || savedProgress.last_page <= 1) return;
 
     // Set the current page immediately so the UI shows the right page number
@@ -229,9 +229,16 @@ export default function ReadingPage() {
   useEffect(() => {
     const saveOnLeave = () => {
       if (!isAuthenticated) return;
-      // Prefer the page from the viewer ref (most accurate), fall back to tracked ref
-      const page = viewerRef.current?.getCurrentPage() ?? currentPageRef.current;
-      if (page > 0) {
+      // Use currentPageRef as the authoritative source.
+      // viewerRef.getCurrentPage() reflects the PDF viewer's internal state which
+      // defaults to 1 on mount -- if we haven't explicitly navigated, that 1 would
+      // overwrite real saved progress. Only fall back to viewer if user navigated.
+      const page = hasNavigatedRef.current
+        ? (viewerRef.current?.getCurrentPage() ?? currentPageRef.current)
+        : currentPageRef.current;
+      // Never save page 1 on leave if we haven't navigated -- it means the PDF
+      // just opened and we don't want to corrupt previously saved progress.
+      if (page > 1 || hasNavigatedRef.current) {
         saveProgressMutate(page);
       }
     };

@@ -89,7 +89,7 @@ function Section({ icon: Icon, title, children }: {
 }) {
   return (
     <div className="card p-6">
-      <h2 className="font-serif text-lg font-semibold text-ink-900 flex items-center gap-2 mb-5">
+      <h2 className="font-serif text-lg font-semibold text-ink-900 dark:text-gray-100 flex items-center gap-2 mb-5">
         <Icon className="w-5 h-5 text-ink-400" />
         {title}
       </h2>
@@ -287,15 +287,15 @@ function DangerSection() {
 
   return (
     <Section icon={ShieldCheck} title="Danger zone">
-      <div className="border border-red-200 rounded-lg p-4 bg-red-50">
-        <h3 className="text-sm font-semibold text-red-700 mb-1">Delete account</h3>
-        <p className="text-xs text-red-600 mb-3">
+      <div className="border-l-4 border-l-red-500 border border-red-200 rounded-lg p-4 bg-white dark:bg-transparent">
+        <h3 className="text-sm font-semibold text-red-700 dark:text-red-400 mb-1">Delete account</h3>
+        <p className="text-xs text-red-600 dark:text-red-400/80 mb-3">
           Permanently deletes your account, all uploaded books, comments, bookmarks,
           and reading lists. This cannot be undone.
         </p>
         {!confirm ? (
           <button onClick={() => setConfirm(true)}
-            className="px-3 py-1.5 text-sm font-medium text-red-600 border border-red-300 rounded-md hover:bg-red-100 transition-colors flex items-center gap-1.5">
+            className="px-3 py-1.5 text-sm font-medium text-red-600 dark:text-red-400 border border-red-300 dark:border-red-800/50 rounded-md hover:bg-red-100 dark:hover:bg-red-900/20 transition-colors flex items-center gap-1.5">
             <Trash2 className="w-4 h-4" />
             Delete my account
           </button>
@@ -354,7 +354,7 @@ function GeneralTab() {
     <div className="flex flex-col gap-6">
       {/* Theme */}
       <div className="card p-6">
-        <h2 className="font-serif text-lg font-semibold text-ink-900 flex items-center gap-2 mb-5">
+        <h2 className="font-serif text-lg font-semibold text-ink-900 dark:text-gray-100 flex items-center gap-2 mb-5">
           <Palette className="w-5 h-5 text-ink-400" />
           Theme
         </h2>
@@ -363,7 +363,7 @@ function GeneralTab() {
             <button
               key={value}
               onClick={() => setTheme(value)}
-              className="flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-150"
+              className="flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all duration-150"
               style={{
                 borderColor: theme === value ? "#4f46e5" : "#e5e7eb",
                 backgroundColor: theme === value ? "rgba(79,70,229,0.12)" : "transparent",
@@ -398,27 +398,27 @@ function GeneralTab() {
             <button
               key={value}
               onClick={() => setPdfBackMode(value)}
-              className="flex items-start gap-4 p-4 rounded-xl border-2 text-left transition-all duration-150"
+              className="flex items-start gap-4 p-3 rounded-xl border-2 text-left transition-all duration-150"
               style={{
-                borderColor: pdfBackMode === value ? "#4f46e5" : "#e5e7eb",
-                backgroundColor: pdfBackMode === value ? "rgba(79,70,229,0.08)" : "transparent",
+                borderColor: pdfBackMode === value ? "#6366f1" : "var(--opt-border, #e5e7eb)",
+                backgroundColor: pdfBackMode === value ? "rgba(99,102,241,0.10)" : "transparent",
               }}
             >
               <Icon
-                className="w-5 h-5 mt-0.5 flex-shrink-0"
-                style={{ color: pdfBackMode === value ? "#6366f1" : "#9ca3af" }}
+                className={`w-5 h-5 mt-0.5 flex-shrink-0 ${pdfBackMode !== value ? "text-gray-400 dark:text-gray-500" : ""}`}
+                style={{ color: pdfBackMode === value ? "#7c8cff" : undefined }}
               />
               <div>
                 <p
                   className="text-sm font-semibold mb-0.5"
-                  style={{ color: pdfBackMode === value ? "#818cf8" : undefined }}
+                  style={{ color: pdfBackMode === value ? "#7c8cff" : undefined }}
                 >
                   {label}
                 </p>
                 <p className="text-xs text-gray-400 leading-relaxed">{desc}</p>
               </div>
               {pdfBackMode === value && (
-                <div className="w-2 h-2 rounded-full bg-ink-600 flex-shrink-0 mt-1.5 ml-auto" />
+                <div className="w-2 h-2 rounded-full flex-shrink-0 mt-1.5 ml-auto" style={{backgroundColor:"#7c8cff"}} />
               )}
             </button>
           ))}
@@ -484,9 +484,11 @@ export default function Settings() {
                 key={id}
                 onClick={() => setTab(id)}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-left w-full ${
-                  tab !== id ? "text-gray-500 hover:bg-gray-100 hover:text-gray-700" : ""
+                  tab !== id
+                    ? "text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700/50 dark:hover:text-gray-100"
+                    : ""
                 }`}
-                style={tab === id ? { backgroundColor: "rgba(79,70,229,0.15)", color: "#818cf8" } : {}}
+                style={tab === id ? { backgroundColor: "rgba(99,102,241,0.15)", color: "#818cf8" } : {}}
               >
                 <Icon className="w-4 h-4 flex-shrink-0" />
                 {label}
