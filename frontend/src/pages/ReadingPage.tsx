@@ -13,6 +13,7 @@ import {
   useReadingProgress, useSaveProgress,
 } from "@/hooks/useBooks";
 import { useAuthStore } from "@/stores/authStore";
+import { usePrefsStore } from "@/stores/prefsStore";
 import api from "@/api/client";
 import { booksApi } from "@/api";
 import type { Edition, Book } from "@/types";
@@ -174,10 +175,14 @@ export default function ReadingPage() {
 
   const saveCurrentProgress = useCallback((page: number) => {
     if (!isAuthenticated || page < 1) return;
+    // Track page history for retrace mode (only when page actually changes)
+    if (pdfBackMode === "retrace" && page !== currentPageRef.current && currentPageRef.current > 0) {
+      pageHistoryRef.current = [...pageHistoryRef.current, currentPageRef.current];
+    }
     currentPageRef.current = page;
     setCurrentPage(page);
     saveProgressMutate(page);
-  }, [isAuthenticated, saveProgressMutate]);
+  }, [isAuthenticated, saveProgressMutate, pdfBackMode]);
 
   // handlePageChange: called when user manually sets a page (kept for CommentBox)
   const handlePageChange = useCallback(
@@ -321,16 +326,27 @@ export default function ReadingPage() {
         }}
       >
         <div className="flex items-center gap-2 px-3 py-2 bg-gray-900 text-gray-300 text-xs border-b border-gray-700 flex-shrink-0">
-          {/* Back arrow: exits reading page */}
+          {/* Back arrow: exits page OR retraces page history depending on Settings */}
           <button
             onClick={() => {
               if (unsavedCommentRef.current.trim()) {
                 if (!window.confirm("You have an unsaved comment. Leave anyway?")) return;
               }
-              navigate(-1);
+              if (pdfBackMode === "retrace" && pageHistoryRef.current.length > 0) {
+                const history = [...pageHistoryRef.current];
+                const prevPage = history.pop()!;
+                pageHistoryRef.current = history;
+                currentPageRef.current = prevPage;
+                setCurrentPage(prevPage);
+                viewerRef.current?.goToPage(prevPage);
+              } else {
+                navigate(-1);
+              }
             }}
             className="flex items-center justify-center p-1 rounded hover:bg-gray-700 hover:text-white transition-colors flex-shrink-0"
-            title="Back"
+            title={pdfBackMode === "retrace" && pageHistoryRef.current.length > 0
+              ? `Back to p.${pageHistoryRef.current[pageHistoryRef.current.length - 1]}`
+              : "Back"}
             aria-label="Go back"
           >
             <ArrowLeft className="w-4 h-4" />

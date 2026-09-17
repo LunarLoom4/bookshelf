@@ -7,16 +7,17 @@ import { z } from "zod";
 import toast from "react-hot-toast";
 import {
   User, KeyRound, Trash2, Camera, X, Eye, EyeOff,
-  ShieldCheck, LogOut, Palette, Monitor, Sun, Moon,
+  ShieldCheck, LogOut, Palette, Monitor, Sun, Moon, BookOpen, ArrowLeft, History,
 } from "lucide-react";
 import { accountApi } from "@/api";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/authStore";
 import { useThemeStore } from "@/stores/themeStore";
+import { usePrefsStore } from "@/stores/prefsStore";
 import { Avatar } from "@/components/ui/Avatar";
 import { PasswordStrength } from "@/components/ui/PasswordStrength";
 
-type Tab = "account" | "appearance";
+type Tab = "general" | "account";
 
 // ── Schemas ────────────────────────────────────────────────────────────────────
 const RESERVED_USERNAMES = new Set([
@@ -318,9 +319,10 @@ function DangerSection() {
   );
 }
 
-// ── Appearance tab ────────────────────────────────────────────────────────────
-function AppearanceTab() {
+// ── General tab (theme + reading preferences) ──────────────────────────────
+function GeneralTab() {
   const { theme, setTheme } = useThemeStore();
+  const { pdfBackMode, setPdfBackMode } = usePrefsStore();
 
   const themes = [
     { value: "system" as const, icon: Monitor, label: "System", desc: "Follows your OS setting" },
@@ -328,8 +330,29 @@ function AppearanceTab() {
     { value: "dark" as const, icon: Moon, label: "Dark", desc: "Always dark" },
   ];
 
+  const backModes: {
+    value: "exit" | "retrace";
+    icon: React.ElementType;
+    label: string;
+    desc: string;
+  }[] = [
+    {
+      value: "exit",
+      icon: ArrowLeft,
+      label: "Exit to previous page",
+      desc: "Back always returns to where you came from (book detail, profile, etc.). Your last page is saved.",
+    },
+    {
+      value: "retrace",
+      icon: History,
+      label: "Retrace page steps",
+      desc: "Back steps through pages you visited in this session (e.g. p.245 → p.442 → p.256 → exit). Last page is still saved.",
+    },
+  ];
+
   return (
     <div className="flex flex-col gap-6">
+      {/* Theme */}
       <div className="card p-6">
         <h2 className="font-serif text-lg font-semibold text-ink-900 flex items-center gap-2 mb-5">
           <Palette className="w-5 h-5 text-ink-400" />
@@ -361,6 +384,48 @@ function AppearanceTab() {
         </div>
       </div>
 
+      {/* PDF reading behaviour */}
+      <div className="card p-6">
+        <h2 className="font-serif text-lg font-semibold text-ink-900 flex items-center gap-2 mb-1">
+          <BookOpen className="w-5 h-5 text-ink-400" />
+          PDF back button behaviour
+        </h2>
+        <p className="text-sm text-gray-400 mb-5">
+          What happens when you press back while reading a PDF.
+        </p>
+        <div className="flex flex-col gap-3 max-w-lg">
+          {backModes.map(({ value, icon: Icon, label, desc }) => (
+            <button
+              key={value}
+              onClick={() => setPdfBackMode(value)}
+              className="flex items-start gap-4 p-4 rounded-xl border-2 text-left transition-all duration-150"
+              style={{
+                borderColor: pdfBackMode === value ? "#4f46e5" : "#e5e7eb",
+                backgroundColor: pdfBackMode === value ? "rgba(79,70,229,0.08)" : "transparent",
+              }}
+            >
+              <Icon
+                className="w-5 h-5 mt-0.5 flex-shrink-0"
+                style={{ color: pdfBackMode === value ? "#6366f1" : "#9ca3af" }}
+              />
+              <div>
+                <p
+                  className="text-sm font-semibold mb-0.5"
+                  style={{ color: pdfBackMode === value ? "#818cf8" : undefined }}
+                >
+                  {label}
+                </p>
+                <p className="text-xs text-gray-400 leading-relaxed">{desc}</p>
+              </div>
+              {pdfBackMode === value && (
+                <div className="w-2 h-2 rounded-full bg-ink-600 flex-shrink-0 mt-1.5 ml-auto" />
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* More options placeholder */}
       <div className="card p-6">
         <h2 className="font-serif text-lg font-semibold text-ink-900 flex items-center gap-2 mb-2">
           <Palette className="w-5 h-5 text-ink-400" />
@@ -378,7 +443,7 @@ function AppearanceTab() {
 export default function Settings() {
   const { user, isAuthenticated, logout } = useAuthStore();
   const navigate = useNavigate();
-  const [tab, setTab] = useState<Tab>("account");
+  const [tab, setTab] = useState<Tab>("general");
 
   usePostLoginToast();
 
@@ -388,8 +453,8 @@ export default function Settings() {
   }
 
   const tabs: { id: Tab; icon: React.ElementType; label: string }[] = [
+    { id: "general", icon: Palette, label: "General" },
     { id: "account", icon: User, label: "Account" },
-    { id: "appearance", icon: Palette, label: "Appearance" },
   ];
 
   return (
@@ -432,6 +497,7 @@ export default function Settings() {
 
         {/* Content */}
         <div className="flex-1 min-w-0 flex flex-col gap-6">
+          {tab === "general" && <GeneralTab />}
           {tab === "account" && (
             <>
               <AvatarSection />
@@ -440,7 +506,6 @@ export default function Settings() {
               <DangerSection />
             </>
           )}
-          {tab === "appearance" && <AppearanceTab />}
         </div>
       </div>
     </div>
