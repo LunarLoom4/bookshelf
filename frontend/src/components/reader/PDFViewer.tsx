@@ -40,21 +40,20 @@ const PDFViewer = forwardRef<PDFViewerHandle, Props>(({ url }, ref) => {
       currentPageNum.current = page;
 
       if (!loadedOnce.current) {
-        // PDF hasn't finished loading yet -- queue this page for after load.
-        // The onLoad handler will call goToPage with pendingPageRef value.
+        // PDF hasn't finished loading yet -- queue this page and update initial src.
         pendingPageRef.current = page;
-        // Update the initial src so the PDF loads directly at this page.
         setCurrentSrc(buildSrc(page));
         return;
       }
 
-      // PDF is already loaded -- hash-only change navigates instantly.
-      // The native PDF viewer does NOT fire onLoad for hash changes,
-      // so we clear the spinner after a short fixed delay instead.
+      // Force a full iframe remount for each page jump.
+      // This keeps the iframe's own navigation history empty, so the browser
+      // Back button exits the reading page rather than stepping through PDF pages.
+      // PDF bytes are served with cache headers from R2/CDN so remounting is fast --
+      // the browser reuses its cached copy, only the page fragment changes.
       setCurrentSrc(buildSrc(page));
+      setIframeKey(k => k + 1);
       setLoading(true);
-      if (loadingTimeoutRef.current) clearTimeout(loadingTimeoutRef.current);
-      loadingTimeoutRef.current = setTimeout(() => setLoading(false), 600);
     },
     getCurrentPage: () => currentPageNum.current,
   }));

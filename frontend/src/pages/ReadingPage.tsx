@@ -375,11 +375,8 @@ export default function ReadingPage() {
                   e.preventDefault();
                   const p = parseInt(manualPage);
                   if (!isNaN(p) && p > 0) {
-                    currentPageRef.current = p;
-                    setCurrentPage(p);
-                    saveProgressMutate(p);
                     setManualPage("");
-                    viewerRef.current?.goToPage(p);
+                    handleJumpToPage(p);
                   }
                 }}
                 className="flex items-center gap-1"
