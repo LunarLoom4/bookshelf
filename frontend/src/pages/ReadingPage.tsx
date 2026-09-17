@@ -206,24 +206,10 @@ export default function ReadingPage() {
     [isAuthenticated, saveProgressMutate]
   );
 
-  // Track whether user has explicitly navigated to a page in this session.
-  // Prevents the autosave from overwriting saved progress with page 1
-  // when the PDF is opened in a new tab (where it always starts at page 1).
+  // hasNavigatedRef: true once user has explicitly jumped to a page.
+  // Prevents saveOnLeave from overwriting real progress with page 1
+  // when a PDF is opened in a new tab and closed before navigating.
   const hasNavigatedRef = useRef(false);
-
-  // Periodic autosave every 10 seconds so progress is captured without badge clicks.
-  // Only fires if the user has actively navigated (not just the default page 1 on open).
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    const interval = setInterval(() => {
-      if (!hasNavigatedRef.current) return; // never started navigating -- skip
-      const page = viewerRef.current?.getCurrentPage() ?? currentPageRef.current;
-      if (page > 1) {
-        saveProgressMutate(page);
-      }
-    }, 10_000);
-    return () => clearInterval(interval);
-  }, [isAuthenticated, saveProgressMutate]);
 
   // Save progress when the user leaves the page (back button, tab close, navigate away)
   useEffect(() => {
