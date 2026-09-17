@@ -365,7 +365,7 @@ export default function ReadingPage() {
             target="_blank"
             rel="noopener noreferrer"
             className="truncate max-w-[100px] sm:max-w-[180px] md:max-w-[240px] text-gray-300 hover:text-white transition-colors text-sm"
-            title={`Open ${book.title} in new tab`}
+            title={`Open ${book.title}`}
           >
             {book.title}
           </a>
