@@ -8,163 +8,299 @@
   }
 
   /* ── Dark mode ────────────────────────────────────────────────────────────
-     Warm-slate dark palette. Not pure black -- softer, more readable,
-     with clear contrast between page / surface / elevated layers.
+     Only override layout backgrounds and text. Never touch icon containers,
+     badge elements, or anything with explicit color meaning.
   ── */
   html.dark {
     color-scheme: dark;
   }
 
-  /* ── Dark mode design tokens ──────────────────────────────────────────────────
-   * Page:     #16181d  outermost background (warm dark slate, not pure black)
-   * Surface:  #1f2128  cards, panels (visible lift above page)
-   * Elevated: #292c36  inputs, dropdowns, hover highlights
-   * Border:   #373b47  subtle separators
-   * Border+:  #4a4f5e  stronger separators / focus rings
-   * Text-1:   #eef0f4  headings, primary (slightly warm, not stark white)
-   * Text-2:   #b0b7c3  body, secondary labels
-   * Text-3:   #737a89  muted hints, timestamps
-   * Accent:   #7c8cff  links, active tabs, badges (brighter indigo)
-   * Accent-bg:#20224a  tinted surface behind selected accent items
-   ────────────────────────────────────────────────────────────────────────────*/
-
+  /* Page backgrounds */
   html.dark body,
   html.dark #root {
-    background-color: #16181d;
-    color: #eef0f4;
+    background-color: #0f1117;
+    color: #e2e8f0;
   }
 
   /* Navbar */
   html.dark header.sticky {
-    background-color: #1f2128;
-    border-bottom-color: #373b47;
+    background-color: #1a1f2e;
+    border-bottom-color: #2d3748;
   }
 
-  /* Cards */
+  /* Cards -- the .card class only */
   html.dark .card {
-    background-color: #1f2128;
-    border-color: #373b47;
+    background-color: #1a1f2e;
+    border-color: #2d3748;
   }
 
   /* Form inputs */
   html.dark .input {
-    background-color: #292c36;
-    border-color: #373b47;
-    color: #eef0f4;
+    background-color: #1e2535;
+    border-color: #4a5568;
+    color: #e2e8f0;
   }
-  html.dark .input::placeholder { color: #737a89; }
 
-  /* Headings */
-  html.dark .text-ink-900 { color: #eef0f4; }
-  html.dark .text-ink-800 { color: #d8dce6; }
-  html.dark .text-ink-700 { color: #b0b7c3; }
+  /* Headings in ink colors */
+  html.dark .text-ink-900 { color: #f0f4f8; }
+  html.dark .text-ink-800 { color: #e2e8f0; }
+  html.dark .text-ink-700 { color: #cbd5e0; }
 
-  /* Body text */
-  html.dark .text-gray-700 { color: #b0b7c3; }
-  html.dark .text-gray-600 { color: #8c93a0; }
-  html.dark .text-gray-500 { color: #737a89; }
-  html.dark .text-gray-400 { color: #737a89; }
+  /* Secondary text */
+  html.dark .text-gray-700 { color: #cbd5e0; }
+  html.dark .text-gray-600 { color: #a0aec0; }
+  html.dark .text-gray-500 { color: #718096; }
 
-  /* Section backgrounds */
+  /* Comment body text -- needs to be clearly readable */
+  html.dark .text-gray-700,
+  html.dark p.text-sm.text-gray-700 {
+    color: #cbd5e0;
+  }
+
+  /* Section backgrounds used as page sections */
   html.dark section.bg-paper-100,
   html.dark section.bg-white {
-    background-color: #16181d;
+    background-color: #13171f;
   }
 
-  /* Dividers and surface fills */
-  html.dark .border-paper-200 { border-color: #373b47; }
-  html.dark .bg-paper-200     { background-color: #373b47; }
-  html.dark .bg-paper-100     { background-color: #1f2128; }
-  html.dark .bg-paper-50      { background-color: #1f2128; }
 
-  /* Hover states */
-  html.dark .hover\:bg-paper-100:hover { background-color: #292c36; }
-  html.dark .hover\:bg-paper-50:hover  { background-color: #292c36; }
 
-  /* Active accent states */
+  /* Dividers */
+  html.dark .border-paper-200 { border-color: #2d3748; }
+  html.dark .bg-paper-200 { background-color: #2d3748; }
+
+  /* Hover states on nav items */
+  html.dark .hover\:bg-paper-100:hover { background-color: #2d3748; }
+
+  /* Settings sidebar active tab -- should be dark blue not white */
   html.dark .bg-ink-100 {
-    background-color: #20224a !important;
-  }
-  html.dark .text-ink-700 {
-    color: #7c8cff !important;
+    background-color: #1e3a5f;
   }
   html.dark .text-ink-800 {
-    color: #a5b4fc;
+    color: #90cdf4;
   }
+
+  /* Appearance tab cards -- dark background, NOT white */
+  html.dark .rounded-xl.border-2 {
+    background-color: #1a1f2e;
+  }
+  html.dark .rounded-xl.border-2.border-ink-600 {
+    background-color: #1e3a5f;
+    border-color: #3b82f6;
+  }
+
+  /* Page badges in comments */
+  html.dark .page-badge {
+    background-color: #1e3a5f !important;
+    color: #90cdf4 !important;
+  }
+
+  /* bg-ink-100 used for active sort buttons, active settings tabs, page badges */
+  html.dark .bg-ink-100 {
+    background-color: #1e3a5f !important;
+  }
+  html.dark .text-ink-700 {
+    color: #90cdf4 !important;
+  }
+
+  /* bg-ink-50 hover states */
   html.dark .hover\:bg-ink-50:hover,
   html.dark .bg-ink-50 {
-    background-color: #20224a !important;
+    background-color: #172042 !important;
   }
 
-  /* Page badges in discussion panel */
-  html.dark .page-badge {
-    background-color: #20224a !important;
-    color: #7c8cff !important;
-    border-color: #373b47 !important;
-  }
-
-  /* Settings: option cards (border-2 rounded-xl) */
-  html.dark .rounded-xl.border-2 {
-    background-color: #1f2128;
-    border-color: #373b47;
-  }
-  html.dark .rounded-xl.border-2:hover {
-    border-color: #4a4f5e;
-    background-color: #292c36;
-  }
-
-  /* Settings sidebar hover (unselected tabs) */
-  html.dark .hover\:bg-gray-100:hover {
-    background-color: #292c36 !important;
-    color: #eef0f4 !important;
-  }
-
-  /* Danger zone in dark mode */
-  html.dark .border-red-200 { border-color: #5c2a2a; }
-  html.dark .bg-red-50      { background-color: #2a1a1a; }
-  html.dark .text-red-700   { color: #f87171; }
-  html.dark .text-red-600   { color: #fca5a5; }
-  html.dark .hover\:bg-red-50:hover { background-color: #3a1f1f !important; }
-
-  /* Landing alternating sections */
+  /* Landing page section backgrounds -- preserve light/dark contrast between sections */
   html.dark .landing-section-alt {
-    background-color: #1f2128 !important;
-  }
-  html.dark .landing-section-main {
-    background-color: #16181d !important;
+    background-color: #1a1f2e !important; /* slightly lighter -- mirrors bg-paper-100 */
   }
 
-  /* Reading page discussion panel */
+  html.dark .landing-section-main {
+    background-color: #0f1117 !important; /* darker base -- mirrors bg-white */
+  }
+
+  /* Reading page right panel (discussion + bookmarks) */
   html.dark .discussion-panel {
-    background-color: #1f2128 !important;
-    border-color: #373b47 !important;
+    background-color: #13171f !important;
+    border-color: #2d3748 !important;
   }
+
   html.dark .discussion-panel * {
-    border-color: #373b47;
+    border-color: #2d3748;
   }
+
+  /* Override white backgrounds inside discussion panel */
   html.dark .discussion-panel .bg-white,
   html.dark .discussion-panel .bg-paper-50,
   html.dark .discussion-panel .bg-paper-100 {
-    background-color: #1f2128 !important;
+    background-color: #1a1f2e !important;
   }
+
+  /* Comment text inside panel */
   html.dark .discussion-panel .text-gray-700,
   html.dark .discussion-panel .text-ink-900,
   html.dark .discussion-panel .text-ink-800,
   html.dark .discussion-panel p {
-    color: #b0b7c3 !important;
+    color: #cbd5e0 !important;
   }
+
+  /* Secondary text */
   html.dark .discussion-panel .text-gray-400,
   html.dark .discussion-panel .text-gray-500 {
-    color: #737a89 !important;
+    color: #718096 !important;
   }
+
+  /* Scrollable comment list area */
   html.dark .discussion-panel .overflow-y-auto {
-    background-color: #16181d !important;
+    background-color: #13171f !important;
   }
+
+  /* Inputs inside panel */
   html.dark .discussion-panel input,
   html.dark .discussion-panel textarea {
-    background-color: #292c36 !important;
-    border-color: #373b47 !important;
-    color: #eef0f4 !important;
+    background-color: #1e2535 !important;
+    color: #e2e8f0 !important;
+    border-color: #4a5568 !important;
+  }
+
+  /* Comment box background (bg-paper-50 section) */
+  html.dark .bg-paper-50 {
+    background-color: #1a1f2e !important;
+  }
+
+  /* Bookmark panel items */
+  html.dark .hover\:bg-paper-50:hover {
+    background-color: #1e2535 !important;
+  }
+
+  /* btn-secondary in dark mode -- dark background, light text */
+  html.dark .btn-secondary {
+    background-color: #1e2535 !important;
+    color: #a5b4fc !important;
+    border-color: #3730a3 !important;
+  }
+  html.dark .btn-secondary:hover {
+    background-color: #2d3748 !important;
+  }
+
+  /* Delete button in dark mode -- keep red text, give it a dark red background */
+  html.dark .border-red-200 {
+    border-color: #7f1d1d !important;
+  }
+  html.dark .text-red-600,
+  html.dark .hover\:text-red-500 {
+    color: #fc8181 !important;
+  }
+  html.dark .hover\:bg-red-50:hover {
+    background-color: #2d1515 !important;
+  }
+  /* Edition row delete button */
+  html.dark .px-2.py-1\.5.text-xs.font-medium.text-red-600.border.border-red-200 {
+    background-color: #2d1515 !important;
+    border-color: #7f1d1d !important;
+  }
+
+  /* Comment box write area */
+  html.dark textarea.input,
+  html.dark .bg-white.rounded-lg {
+    background-color: #1e2535;
+    color: #e2e8f0;
+  }
+
+  /* Prose text in comment bodies and general readable text */
+  html.dark .whitespace-pre-wrap,
+  html.dark p.text-sm,
+  html.dark .text-sm.text-gray-700 {
+    color: #cbd5e0 !important;
+  }
+
+  /* UserProfile recent comments text */
+  html.dark .text-gray-700 {
+    color: #cbd5e0 !important;
+  }
+
+  /* Only force dark caret on light-background inputs.
+     Dark-background inputs (e.g. PDF viewer toolbar) manage their own caret color. */
+  input:not([data-dark-bg]), textarea:not([data-dark-bg]) {
+    caret-color: #1e293b;
+  }
+
+  /* Override Chrome autofill styles that reset caret to white */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active,
+  textarea:-webkit-autofill,
+  select:-webkit-autofill {
+    caret-color: #1e293b;
+    -webkit-text-fill-color: #111827 !important;
+    /* Use a very long transition to prevent Chrome's blue autofill background flash */
+    -webkit-box-shadow: 0 0 0px 1000px white inset !important;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+
+  body {
+    @apply bg-paper-50 text-gray-900 font-sans;
+  }
+
+  h1, h2, h3 {
+    @apply font-serif;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center gap-2 px-4 py-2 bg-ink-700 text-white text-sm font-medium
+           rounded-md hover:bg-ink-800 transition-colors duration-150 disabled:opacity-50
+           disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center gap-2 px-4 py-2 bg-white text-ink-700 text-sm font-medium
+           border border-ink-200 rounded-md hover:bg-ink-50 transition-colors duration-150;
+  }
+
+  .input {
+    @apply w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-sm
+           placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-ink-500
+           focus:border-transparent transition-shadow duration-150;
+    caret-color: #1e293b;
+    color: #111827;
+  }
+
+  .label {
+    @apply block text-sm font-medium text-gray-700 mb-1;
+  }
+
+  .card {
+    @apply bg-white border border-paper-200 rounded-lg shadow-sm;
+  }
+
+  .page-badge {
+    @apply inline-flex items-center px-2 py-0.5 text-xs font-medium bg-ink-100
+           text-ink-700 rounded cursor-pointer hover:bg-ink-200 transition-colors;
+  }
+
+  /* Google Sign-In button -- remove white rectangle in dark mode.
+     Google renders an iframe; we can't style its internals but we can
+     make the container transparent and clip the Google-injected border. */
+  .google-signin-btn {
+    @apply rounded-lg overflow-hidden;
+    /* Force the Google iframe to fill the container width cleanly */
+    line-height: 0;
+  }
+
+  /* In dark mode, the iframe background bleeds through -- clip it */
+  html.dark .google-signin-btn {
+    border-radius: 8px;
+    overflow: hidden;
+    /* The iframe Google injects has a white bg -- we clip it to the button shape */
+    isolation: isolate;
+  }
+
+  html.dark .google-signin-btn > div,
+  html.dark .google-signin-btn iframe {
+    border-radius: 8px !important;
+    overflow: hidden !important;
   }
 }
 
