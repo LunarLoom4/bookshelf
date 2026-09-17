@@ -339,14 +339,14 @@ function GeneralTab() {
     {
       value: "exit",
       icon: ArrowLeft,
-      label: "Exit to previous page",
-      desc: "Back always returns to where you came from (book detail, profile, etc.). Your last page is saved.",
+      label: "Leave the book",
+      desc: "One click exits the reader and returns to where you came from. Your last page is always saved.",
     },
     {
       value: "retrace",
       icon: History,
-      label: "Retrace page steps",
-      desc: "Back steps through pages you visited in this session (e.g. p.245 → p.442 → p.256 → exit). Last page is still saved.",
+      label: "Step back through visited pages",
+      desc: "Each click goes back one page in your reading session before finally exiting. Useful for retracing your path through the book.",
     },
   ];
 
@@ -388,10 +388,10 @@ function GeneralTab() {
       <div className="card p-6">
         <h2 className="font-serif text-lg font-semibold text-ink-900 flex items-center gap-2 mb-1">
           <BookOpen className="w-5 h-5 text-ink-400" />
-          PDF back button behaviour
+          Back button in PDF reader
         </h2>
         <p className="text-sm text-gray-400 mb-5">
-          What happens when you press back while reading a PDF.
+          Controls what the back arrow does while reading.
         </p>
         <div className="flex flex-col gap-3 max-w-lg">
           {backModes.map(({ value, icon: Icon, label, desc }) => (
