@@ -257,7 +257,7 @@ export default function Upload() {
             ? uploadPct < 100
               ? `Uploading... ${uploadPct}%`
               : "Processing..."
-            : "Upload book"}
+            : "Upload Book"}
         </button>
       </form>
     </div>

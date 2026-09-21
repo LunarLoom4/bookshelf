@@ -133,7 +133,7 @@ export default function Landing() {
               Popular This Week
             </h2>
             <p className="text-sm text-gray-500 text-center mb-8">
-              Most discussed books in the last 7 days
+              Most Discussed in the Last 7 Days
             </p>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
               {popularBooks.map((book) => (
