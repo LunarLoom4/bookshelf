@@ -166,7 +166,7 @@ export default function ReadingListDetail() {
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
           {books.map((book) => (
-            <div key={book.id} className="relative group">
+            <div key={book.id} className="relative group h-full">
               <BookCard book={book} />
               {isOwner && (
                 <button

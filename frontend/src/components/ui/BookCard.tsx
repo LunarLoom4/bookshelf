@@ -27,7 +27,7 @@ export function BookCard({ book }: Props) {
   return (
     <Link
       to={`/books/${book.id}`}
-      className="card group flex flex-col hover:shadow-md transition-shadow duration-200 overflow-hidden"
+      className="card group flex flex-col h-full hover:shadow-md transition-shadow duration-200 overflow-hidden"
       onMouseEnter={handleMouseEnter}
     >
       {/* Cover: fixed height so cards look square regardless of grid width */}
