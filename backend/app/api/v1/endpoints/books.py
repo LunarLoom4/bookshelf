@@ -15,6 +15,7 @@ from app.models.edition import Edition
 from app.models.user import User
 from app.schemas.book import BookListItem, BookResponse, CommenterInfo
 from app.services import storage
+from app.services.notifications import push_notification
 
 router = APIRouter(prefix="/books", tags=["books"])
 
@@ -340,6 +341,18 @@ async def add_edition(
 
     # 29: Record this edition upload for rate limiting
     _record_upload(current_user.id)
+
+    # Notify the book uploader that a new edition was added (only if uploader != adder)
+    await push_notification(
+        db,
+        recipient_id=book.uploader_id,
+        actor_id=current_user.id,
+        notif_type="new_edition_on_my_book",
+        message=f"{current_user.username} added Edition {edition_number} to \"{book.title}\"",
+        detail=None,
+        link=f"/books/{book.id}",
+        actor_username=current_user.username,
+    )
 
     result = await db.execute(
         select(Book).options(selectinload(Book.editions)).where(Book.id == book.id)

@@ -16,10 +16,20 @@
   }
 
   /* Page backgrounds */
+  /* html must also be set -- if body is shorter than the viewport, the html
+     background shows through at the bottom, creating a visible color band */
+  html.dark,
   html.dark body,
   html.dark #root {
     background-color: #0f1117;
     color: #e2e8f0;
+  }
+
+  /* Ensure body and root stretch to at least full viewport height so the
+     dark background never ends before the bottom of the screen */
+  html.dark body,
+  html.dark #root {
+    min-height: 100vh;
   }
 
   /* Navbar */

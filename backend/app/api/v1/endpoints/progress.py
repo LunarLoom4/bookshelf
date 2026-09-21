@@ -1,9 +1,9 @@
 """
-Reading progress: GET and POST /editions/{edition_id}/progress
-Upserts last_page for the current user on a given edition.
+Reading progress: GET, POST, DELETE /editions/{edition_id}/progress
+Upserts and deletes last_page for the current user on a given edition.
 """
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import func, select
+from fastapi import APIRouter, Depends, HTTPException, Response
+from sqlalchemy import func, select, delete
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -75,3 +75,24 @@ async def upsert_progress(
         )
     )
     return row.scalar_one()
+
+
+@router.delete("/", status_code=204)
+async def delete_progress(
+    edition_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Remove the caller's reading progress for this edition.
+    This removes the book from the 'Currently reading' section on their profile.
+    Returns 204 whether or not a row existed (idempotent).
+    """
+    await db.execute(
+        delete(ReadingProgress).where(
+            ReadingProgress.user_id == current_user.id,
+            ReadingProgress.edition_id == edition_id,
+        )
+    )
+    await db.commit()
+    return Response(status_code=204)

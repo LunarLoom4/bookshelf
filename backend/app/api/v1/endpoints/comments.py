@@ -5,11 +5,13 @@ from sqlalchemy.orm import selectinload
 
 from app.core.deps import get_current_user, get_current_user_optional
 from app.db.session import get_db
+from app.models.book import Book
 from app.models.comment import Comment
 from app.models.edition import Edition
 from app.models.user import User
 from app.models.vote import Vote
 from app.schemas.comment import CommentCreate, CommentUpdate, CommentResponse, VoteRequest
+from app.services.notifications import push_notification
 from app.tasks import send_reply_notification
 
 router = APIRouter(prefix="/editions/{edition_id}/comments", tags=["comments"])
@@ -85,8 +87,9 @@ async def create_comment(
     db.add(comment)
     await db.commit()
 
-    # Step 15: fire reply notification email (async, non-blocking)
+    # ── In-app notifications (push model) ────────────────────────────────────
     if payload.parent_id:
+        # Notify the parent comment author that someone replied
         from sqlalchemy.orm import selectinload as _sil
         parent_result = await db.execute(
             select(Comment)
@@ -94,13 +97,54 @@ async def create_comment(
             .where(Comment.id == payload.parent_id)
         )
         parent_comment = parent_result.scalar_one_or_none()
-        if parent_comment and parent_comment.author.id != current_user.id:
-            send_reply_notification.delay(
-                commenter_email=parent_comment.author.email,
-                commenter_username=parent_comment.author.username,
-                reply_author=current_user.username,
-                comment_body=comment.body,
-                edition_id=edition_id,
+        if parent_comment:
+            # Fetch book title for the message
+            book_result = await db.execute(
+                select(Book)
+                .join(Edition, Edition.book_id == Book.id)
+                .where(Edition.id == edition_id)
+            )
+            book = book_result.scalar_one_or_none()
+            book_title = book.title if book else "a book"
+
+            await push_notification(
+                db,
+                recipient_id=parent_comment.user_id,
+                actor_id=current_user.id,
+                notif_type="reply_to_my_comment",
+                message=f"{current_user.username} replied to your comment in \"{book_title}\"",
+                detail=comment.body[:100] + ("…" if len(comment.body) > 100 else ""),
+                link=f"/read/{edition_id}",
+                actor_username=current_user.username,
+            )
+
+            # Also fire legacy email notification (non-blocking)
+            if parent_comment.author.id != current_user.id:
+                send_reply_notification.delay(
+                    commenter_email=parent_comment.author.email,
+                    commenter_username=parent_comment.author.username,
+                    reply_author=current_user.username,
+                    comment_body=comment.body,
+                    edition_id=edition_id,
+                )
+    else:
+        # Top-level comment -- notify the book uploader
+        book_result = await db.execute(
+            select(Book)
+            .join(Edition, Edition.book_id == Book.id)
+            .where(Edition.id == edition_id)
+        )
+        book = book_result.scalar_one_or_none()
+        if book:
+            await push_notification(
+                db,
+                recipient_id=book.uploader_id,
+                actor_id=current_user.id,
+                notif_type="new_comment_on_my_book",
+                message=f"{current_user.username} commented on \"{book.title}\"",
+                detail=comment.body[:100] + ("…" if len(comment.body) > 100 else ""),
+                link=f"/read/{edition_id}",
+                actor_username=current_user.username,
             )
 
     # Reload with author

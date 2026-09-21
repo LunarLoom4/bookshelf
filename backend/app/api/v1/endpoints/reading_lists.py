@@ -12,6 +12,7 @@ from app.db.session import get_db
 from app.models.book import Book
 from app.models.reading_list import ReadingList, ReadingListItem
 from app.models.user import User
+from app.services.notifications import push_notification
 from app.schemas.phase3 import (
     BookSummary,
     ReadingListCreate,
@@ -261,6 +262,18 @@ async def add_book_to_list(
     item = ReadingListItem(list_id=list_id, book_id=book_id)
     db.add(item)
     await db.commit()
+
+    # Notify the book uploader that someone added their book to a list
+    await push_notification(
+        db,
+        recipient_id=book.uploader_id,
+        actor_id=current_user.id,
+        notif_type="book_added_to_list",
+        message=f"{current_user.username} added \"{book.title}\" to their list \"{reading_list.name}\"",
+        detail=None,
+        link=f"/books/{book_id}",
+        actor_username=current_user.username,
+    )
 
 
 @router.delete("/{list_id}/books/{book_id}", status_code=status.HTTP_204_NO_CONTENT)

@@ -109,16 +109,22 @@ export const commentsApi = {
 
 // ── Users ──────────────────────────────────────────────────────────────────────
 export interface NotificationEvent {
+  id: number;
   type: string;
   message: string;
   detail: string | null;
   link: string;
-  created_at: string;
   actor: string;
+  read_at: string | null;   // null = unread
+  created_at: string;
 }
 
 export const notificationsApi = {
-  get: () => api.get<Notification[]>("/notifications/"),
+  get: () => api.get<NotificationEvent[]>("/notifications/"),
+
+  // ids = undefined/[] -> mark ALL as read. ids = [1,2,3] -> mark those IDs.
+  markRead: (ids?: number[]) =>
+    api.post("/notifications/mark-read", { ids: ids ?? null }),
 };
 
 export const usersApi = {
@@ -132,6 +138,10 @@ export const progressApi = {
 
   save: (editionId: number, lastPage: number) =>
     api.post<ReadingProgress>(`/editions/${editionId}/progress/`, { last_page: lastPage }),
+
+  // Removes progress row entirely -- removes book from "Currently reading"
+  delete: (editionId: number) =>
+    api.delete(`/editions/${editionId}/progress/`),
 };
 
 // ── Bookmarks ──────────────────────────────────────────────────────────────────

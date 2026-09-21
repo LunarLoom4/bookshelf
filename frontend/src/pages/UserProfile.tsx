@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ScrollToTop } from "@/components/ui/ScrollToTop";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { BookOpen, MessageSquare, Calendar, List, Lock, Globe, Trash2, Plus, BookMarked, Pencil, Check, X } from "lucide-react";
 import { format } from "date-fns";
 import { timeAgo } from "@/utils/time";
-import { usersApi } from "@/api";
+import { usersApi, progressApi } from "@/api";
+import toast from "react-hot-toast";
 import { BookCard } from "@/components/ui/BookCard";
 import {
   useUserReadingLists,
@@ -60,8 +61,7 @@ function ReadingListsSection({ username }: { username: string }) {
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-serif text-xl font-semibold text-ink-900 flex items-center gap-2">
           <List className="w-5 h-5 text-ink-400" />
-          Reading lists
-          <span className="text-sm font-normal font-sans text-gray-400">({lists.length})</span>
+          Reading lists <span className="font-normal text-gray-400 dark:text-gray-500">[{lists.length}]</span>
         </h2>
         {isOwnProfile && (
           <button
@@ -229,6 +229,19 @@ export default function UserProfile() {
     staleTime: 0,  // always refetch on mount so avatar is never stale
   });
 
+  // ALL hooks must be declared before any early return -- Rules of Hooks
+  const { user: currentUser } = useAuthStore();
+  const qc = useQueryClient();
+
+  const removeProgress = useMutation({
+    mutationFn: (editionId: number) => progressApi.delete(editionId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["user", username] });
+      toast.success("Removed from currently reading");
+    },
+    onError: () => toast.error("Failed to remove"),
+  });
+
   if (isLoading) {
     return (
       <div className="flex justify-center py-24">
@@ -244,6 +257,7 @@ export default function UserProfile() {
   }
 
   const { user, books_uploaded, recent_comments, currently_reading = [] } = data;
+  const isOwnProfile = currentUser?.username === username;
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-10 flex flex-col gap-10">
@@ -266,36 +280,53 @@ export default function UserProfile() {
         <section>
           <h2 className="font-serif text-xl font-semibold text-ink-900 mb-4 flex items-center gap-2">
             <BookMarked className="w-5 h-5 text-ink-400" />
-            Currently reading
-            <span className="text-sm font-normal font-sans text-gray-400">({currently_reading.length})</span>
+            Currently reading <span className="font-normal text-gray-400 dark:text-gray-500">[{currently_reading.length}]</span>
           </h2>
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
             {currently_reading.map((item: CurrentlyReadingItem) => (
-              <Link
-                key={item.edition_id}
-                to={`/read/${item.edition_id}`}
-                className="group flex flex-col gap-1.5"
-                title={`${item.book_title} — last read p.${item.last_page}`}
-              >
-                <div className="aspect-[3/4] rounded-md overflow-hidden bg-paper-100 relative">
-                  {item.book_cover_url ? (
-                    <img
-                      src={item.book_cover_url}
-                      alt={item.book_title}
-                      loading="lazy"
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-paper-400">
-                      <BookOpen className="w-6 h-6" />
-                    </div>
-                  )}
-                  <span className="absolute bottom-1 right-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded font-mono">
-                    p.{item.last_page}
-                  </span>
-                </div>
-                <p className="text-xs text-gray-600 line-clamp-2 leading-tight">{item.book_title}</p>
-              </Link>
+              // Outer div is relative so the X button can be positioned top-right
+              // without being inside the Link (clicking X must NOT navigate)
+              <div key={item.edition_id} className="group relative flex flex-col gap-1.5">
+                <Link
+                  to={`/read/${item.edition_id}`}
+                  className="flex flex-col gap-1.5"
+                  title={`${item.book_title} — last read p.${item.last_page}`}
+                >
+                  <div className="aspect-[3/4] rounded-md overflow-hidden bg-paper-100 relative">
+                    {item.book_cover_url ? (
+                      <img
+                        src={item.book_cover_url}
+                        alt={item.book_title}
+                        loading="lazy"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-paper-400">
+                        <BookOpen className="w-6 h-6" />
+                      </div>
+                    )}
+                    <span className="absolute bottom-1 right-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded font-mono">
+                      p.{item.last_page}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-600 line-clamp-2 leading-tight">{item.book_title}</p>
+                </Link>
+                {/* X button: only on own profile, positioned top-right of cover, shown on group hover */}
+                {isOwnProfile && (
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      removeProgress.mutate(item.edition_id);
+                    }}
+                    disabled={removeProgress.isPending}
+                    title="Remove from currently reading"
+                    className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 z-10"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
             ))}
           </div>
         </section>
@@ -305,8 +336,7 @@ export default function UserProfile() {
       <section>
         <h2 className="font-serif text-xl font-semibold text-ink-900 mb-4 flex items-center gap-2">
           <BookOpen className="w-5 h-5 text-ink-400" />
-          Books uploaded
-          <span className="text-sm font-normal font-sans text-gray-400">({books_uploaded.length})</span>
+          Books uploaded <span className="font-normal text-gray-400 dark:text-gray-500">[{books_uploaded.length}]</span>
         </h2>
         {books_uploaded.length === 0 ? (
           <p className="text-sm text-gray-400">No books uploaded yet.</p>
@@ -323,10 +353,7 @@ export default function UserProfile() {
       <section>
         <h2 className="font-serif text-xl font-semibold text-ink-900 mb-4 flex items-center gap-2">
           <MessageSquare className="w-5 h-5 text-ink-400" />
-          Recent comments
-          <span className="text-sm font-normal font-sans text-gray-400">
-            ({recent_comments.filter(c => !c.is_deleted).length})
-          </span>
+          Recent comments <span className="font-normal text-gray-400 dark:text-gray-500">[{recent_comments.filter(c => !c.is_deleted).length}]</span>
         </h2>
         {recent_comments.filter(c => !c.is_deleted).length === 0 ? (
           <p className="text-sm text-gray-400">No comments yet.</p>
