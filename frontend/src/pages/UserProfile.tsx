@@ -121,27 +121,74 @@ function ReadingListsSection({ username }: { username: string }) {
           {lists.map((list) => (
             <div key={list.id} className="card p-4 flex items-start justify-between gap-3">
               <div className="flex items-start gap-3 flex-1 min-w-0">
-                {/* 24: Cover collage -- 2x2 grid of up to 4 book covers */}
-                <div className="flex-shrink-0 w-12 h-12 rounded overflow-hidden bg-paper-100 relative">
-                  {[0, 1, 2, 3].map((i) => {
-                    const url = (list.cover_urls ?? [])[i];
+                {/* 24: Cover collage -- smart layout based on book count */}
+                {(() => {
+                  const urls = (list.cover_urls ?? []).filter(Boolean).slice(0, 4);
+                  const count = urls.length;
+
+                  // 1 book: single cover fills the whole square
+                  if (count <= 1) {
                     return (
-                      <div
-                        key={i}
-                        className="absolute w-1/2 h-1/2 overflow-hidden"
-                        style={{
-                          top: i < 2 ? 0 : "50%",
-                          left: i % 2 === 0 ? 0 : "50%",
-                        }}
-                      >
-                        {url
-                          ? <img src={url} alt="" loading="lazy" className="w-full h-full object-cover" />
+                      <div className="flex-shrink-0 w-12 h-12 rounded overflow-hidden bg-paper-100">
+                        {urls[0]
+                          ? <img src={urls[0]} alt="" loading="lazy" className="w-full h-full object-cover" />
                           : <div className="w-full h-full bg-paper-200" />
                         }
                       </div>
                     );
-                  })}
-                </div>
+                  }
+
+                  // 2 books: two equal columns side by side
+                  if (count === 2) {
+                    return (
+                      <div className="flex-shrink-0 w-12 h-12 rounded overflow-hidden bg-paper-100 flex gap-px">
+                        {urls.map((url, i) => (
+                          <div key={i} className="flex-1 h-full overflow-hidden">
+                            <img src={url} alt="" loading="lazy" className="w-full h-full object-cover" />
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  }
+
+                  // 3 books: 2 on top row, 1 centered on bottom row
+                  if (count === 3) {
+                    return (
+                      <div className="flex-shrink-0 w-12 h-12 rounded overflow-hidden bg-paper-100 flex flex-col gap-px">
+                        <div className="flex gap-px flex-1">
+                          {[urls[0], urls[1]].map((url, i) => (
+                            <div key={i} className="flex-1 overflow-hidden">
+                              <img src={url} alt="" loading="lazy" className="w-full h-full object-cover" />
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex justify-center flex-1">
+                          <div className="w-1/2 overflow-hidden">
+                            <img src={urls[2]} alt="" loading="lazy" className="w-full h-full object-cover" />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // 4+ books: standard 2x2 grid
+                  return (
+                    <div className="flex-shrink-0 w-12 h-12 rounded overflow-hidden bg-paper-100 relative">
+                      {[0, 1, 2, 3].map((i) => (
+                        <div
+                          key={i}
+                          className="absolute w-1/2 h-1/2 overflow-hidden"
+                          style={{ top: i < 2 ? 0 : "50%", left: i % 2 === 0 ? 0 : "50%" }}
+                        >
+                          {urls[i]
+                            ? <img src={urls[i]} alt="" loading="lazy" className="w-full h-full object-cover" />
+                            : <div className="w-full h-full bg-paper-200" />
+                          }
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 mb-1">
                     {list.is_public ? (
