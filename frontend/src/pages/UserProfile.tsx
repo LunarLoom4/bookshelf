@@ -237,7 +237,7 @@ export default function UserProfile() {
     mutationFn: (editionId: number) => progressApi.delete(editionId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["user", username] });
-      toast.success("Removed from currently reading");
+      toast.success("Removed from Currently reading");
     },
     onError: () => toast.error("Failed to remove"),
   });
