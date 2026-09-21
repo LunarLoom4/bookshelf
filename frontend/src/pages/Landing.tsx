@@ -126,7 +126,7 @@ export default function Landing() {
               to={isAuthenticated ? "/upload" : "/register?next=/upload"}
               className="btn-primary bg-ink-800 hover:bg-ink-900 px-8 py-3 text-base"
             >
-              Get started — it's free
+              Get Started Free
             </Link>
           </div>
         </div>
@@ -138,7 +138,7 @@ export default function Landing() {
         <section className="py-16 px-4 landing-section-alt">
           <div className="max-w-5xl mx-auto">
             <h2 className="font-serif text-2xl font-semibold text-ink-900 text-center mb-2">
-              Popular this week
+              Popular This Week
             </h2>
             <p className="text-sm text-gray-500 text-center mb-8">
               Most discussed books in the last 7 days
