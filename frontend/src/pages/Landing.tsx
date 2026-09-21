@@ -1,11 +1,81 @@
 import { usePostLoginToast } from "@/hooks/usePostLoginToast";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { useRef, useState, useCallback, useEffect } from "react";
 import { booksApi } from "@/api";
 import { BookCard } from "@/components/ui/BookCard";
 import { ScrollToTop } from "@/components/ui/ScrollToTop";
-import { BookOpen, MessageSquare, Layers, Download, Bookmark, List } from "lucide-react";
+import { BookOpen, MessageSquare, Layers, Download, Bookmark, List, ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
+
+// ── Horizontal scroll row (same as UserProfile) ───────────────────────────────
+const BOOK_CARD_W = 200;
+const BOOK_CARD_GAP = 20;
+
+function HorizontalScrollRow({ children, itemCount }: { children: React.ReactNode; itemCount: number }) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const updateArrows = useCallback(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 4);
+    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 4);
+  }, []);
+
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    updateArrows();
+    el.addEventListener("scroll", updateArrows, { passive: true });
+    const ro = new ResizeObserver(updateArrows);
+    ro.observe(el);
+    return () => { el.removeEventListener("scroll", updateArrows); ro.disconnect(); };
+  }, [updateArrows, itemCount]);
+
+  const scroll = (dir: "left" | "right") => {
+    const el = trackRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir === "left" ? -(BOOK_CARD_W + BOOK_CARD_GAP) : (BOOK_CARD_W + BOOK_CARD_GAP), behavior: "smooth" });
+  };
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => scroll("left")}
+        aria-label="Scroll left"
+        className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10
+                   w-8 h-8 rounded-full bg-white dark:bg-gray-800 shadow-md border border-gray-200 dark:border-gray-600
+                   flex items-center justify-center text-ink-700 dark:text-gray-200
+                   transition-opacity duration-200
+                   ${canScrollLeft ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
+      >
+        <ChevronLeft className="w-4 h-4" />
+      </button>
+      <style>{`[data-hsr-landing]::-webkit-scrollbar{display:none}`}</style>
+      <div
+        ref={trackRef}
+        data-hsr-landing=""
+        className="flex overflow-x-auto pb-1"
+        style={{ gap: BOOK_CARD_GAP, scrollbarWidth: "none", msOverflowStyle: "none" }}
+      >
+        {children}
+      </div>
+      <button
+        onClick={() => scroll("right")}
+        aria-label="Scroll right"
+        className={`absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10
+                   w-8 h-8 rounded-full bg-white dark:bg-gray-800 shadow-md border border-gray-200 dark:border-gray-600
+                   flex items-center justify-center text-ink-700 dark:text-gray-200
+                   transition-opacity duration-200
+                   ${canScrollRight ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
+      >
+        <ChevronRight className="w-4 h-4" />
+      </button>
+    </div>
+  );
+}
 
 export default function Landing() {
   usePostLoginToast();
@@ -133,13 +203,15 @@ export default function Landing() {
               Popular This Week
             </h2>
             <p className="text-sm text-gray-500 text-center mb-8">
-              Most Discussed Books in Last 7 Days
+              Most Discussed in the Last 7 Days
             </p>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            <HorizontalScrollRow itemCount={popularBooks.length}>
               {popularBooks.map((book) => (
-                <BookCard key={book.id} book={book} />
+                <div key={book.id} className="flex-shrink-0" style={{ width: BOOK_CARD_W }}>
+                  <BookCard book={book} />
+                </div>
               ))}
-            </div>
+            </HorizontalScrollRow>
           </div>
         </section>
       )}
