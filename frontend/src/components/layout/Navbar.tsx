@@ -1,8 +1,9 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
-  BookOpen, Search, Upload, Settings, LogOut, Sun, Moon,
+  Search, Upload, Settings, LogOut, Sun, Moon,
   Bell, Check, MessageSquare, BookPlus, List, Menu, X as XIcon,
 } from "lucide-react";
+import { BookshelfLogo } from "@/components/ui/Logo";
 import { useAuthStore } from "@/stores/authStore";
 import { useThemeStore } from "@/stores/themeStore";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -247,16 +248,18 @@ export function Navbar() {
 
       <header className="sticky top-0 z-50 bg-white border-b border-paper-200 shadow-sm">
         {/* ── Desktop / tablet bar (always visible) ── */}
-        <nav className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-3">
+        <nav className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center">
 
-          {/* Brand -- always leftmost */}
-          <Link to="/" className="flex items-center gap-2 font-serif text-lg font-semibold text-ink-800 flex-shrink-0">
-            <BookOpen className="w-5 h-5 text-ink-600" />
-            <span>Bookshelf</span>
-          </Link>
+          {/* Left: Brand -- flex-1 so it occupies equal space to right controls */}
+          <div className="flex-1 flex items-center">
+            <Link to="/" className="flex items-center gap-2 font-serif text-lg font-semibold text-ink-800 flex-shrink-0">
+              <BookshelfLogo size={26} className="text-ink-600" />
+              <span>Bookshelf</span>
+            </Link>
+          </div>
 
-          {/* Center nav links -- hidden on mobile, shown from sm up */}
-          <div className="hidden sm:flex items-center gap-1 ml-4">
+          {/* Center: Browse + Upload -- hidden on mobile, truly centered because both sides are flex-1 */}
+          <div className="hidden sm:flex items-center gap-1">
             <Link
               to="/browse"
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm transition-colors
@@ -281,11 +284,8 @@ export function Navbar() {
             )}
           </div>
 
-          {/* Spacer pushes right-side controls to the end */}
-          <div className="flex-1" />
-
-          {/* Right controls -- always visible */}
-          <div className="flex items-center gap-1.5">
+          {/* Right controls -- flex-1 + justify-end mirrors the left flex-1, keeping center truly centered */}
+          <div className="flex-1 flex items-center justify-end gap-1.5">
             <ThemeToggle />
 
             {isAuthenticated && user ? (
