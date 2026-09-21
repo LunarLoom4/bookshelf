@@ -29,7 +29,7 @@ export default function Landing() {
           </h1>
           <p className="text-ink-300 text-lg leading-relaxed mb-10 max-w-2xl mx-auto">
             A home for PDFs worth reading twice. Upload a book, read it in your browser,
-            and leave comments pinned to specific pages — so the conversation stays
+            and leave comments pinned to specific pages, so the conversation stays
             exactly where it belongs.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
@@ -60,32 +60,32 @@ export default function Landing() {
               {
                 icon: BookOpen,
                 title: "Read in Browser",
-                body: "Open any PDF without downloading it. Zoom, pan, and jump to any page — all in one tab.",
+                body: "No downloads, no plugins. Open any PDF and navigate to any page instantly.",
               },
               {
                 icon: MessageSquare,
                 title: "Interact on Any Page",
-                body: "Pin a thought to page 47. Anyone reading that edition clicks the badge and lands right there.",
+                body: "Comments attach to specific pages. Readers click a badge and arrive exactly where the discussion started.",
               },
               {
                 icon: Layers,
                 title: "Multiple Editions",
-                body: "Track every edition of a book separately. Different PDFs, different discussions — no mix-ups.",
+                body: "Each edition gets its own PDF and discussion thread. No cross-contamination between versions.",
               },
               {
                 icon: Download,
                 title: "Download Anytime",
-                body: "Every PDF you can read, you can download. No paywalls, no limits.",
+                body: "Every book you can read here, you can also save locally. No paywalls or download limits.",
               },
               {
                 icon: Bookmark,
                 title: "Personal Bookmarks",
-                body: "Save any page with a private note. Your bookmarks are yours alone — nobody else sees them.",
+                body: "Mark pages with private notes. Only you can see them.",
               },
               {
                 icon: List,
                 title: "Reading Lists",
-                body: "Organise books into named lists — Want to Read, Finished, anything you like. Share them or keep them private.",
+                body: "Group books into named collections. Keep them private or share with anyone.",
               },
             ].map(({ icon: Icon, title, body }) => (
               <div key={title} className="flex flex-col gap-3">
@@ -108,9 +108,9 @@ export default function Landing() {
           </h2>
           <div className="grid sm:grid-cols-3 gap-10">
             {[
-              { step: "1", title: "Upload", body: "Drop a PDF and fill in the title and author. Takes thirty seconds." },
-              { step: "2", title: "Read", body: "Open the reader. Navigate by page, zoom in, and bookmark pages as you go." },
-              { step: "3", title: "Discuss", body: "Leave a comment on any page. Others see exactly where you mean." },
+              { step: "1", title: "Upload", body: "Add a PDF with its title and author. Done in under a minute." },
+              { step: "2", title: "Read", body: "Open the built-in reader. Jump to any page, zoom in, and set bookmarks as you go." },
+              { step: "3", title: "Discuss", body: "Post a comment tied to a specific page. Everyone reading that edition sees it in context." },
             ].map(({ step, title, body }) => (
               <div key={step} className="flex flex-col items-center gap-3 text-center">
                 <div className="w-10 h-10 rounded-full text-white flex items-center justify-center font-serif text-lg font-semibold" style={{ backgroundColor: "#312e81" }}>
