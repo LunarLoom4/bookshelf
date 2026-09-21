@@ -37,7 +37,8 @@ function HorizontalScrollRow({ children, itemCount }: { children: React.ReactNod
   const scroll = (dir: "left" | "right") => {
     const el = trackRef.current;
     if (!el) return;
-    el.scrollBy({ left: dir === "left" ? -(BOOK_CARD_W + BOOK_CARD_GAP) : (BOOK_CARD_W + BOOK_CARD_GAP), behavior: "smooth" });
+    const amount = Math.max(el.clientWidth - (BOOK_CARD_W + BOOK_CARD_GAP), BOOK_CARD_W + BOOK_CARD_GAP);
+    el.scrollBy({ left: dir === "left" ? -amount : amount, behavior: "smooth" });
   };
 
   return (

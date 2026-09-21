@@ -6,7 +6,7 @@ import { readingListsApi } from "@/api";
 import { useAuthStore } from "@/stores/authStore";
 import { BookCard } from "@/components/ui/BookCard";
 import { BookCardSkeleton } from "@/components/ui/Skeleton";
-import { Globe, Lock, Trash2, ArrowLeft, BookOpen, Pencil, Check, X } from "lucide-react";
+import { Lock, Trash2, ArrowLeft, BookOpen, Pencil, Check, X } from "lucide-react";
 import { timeAgo } from "@/utils/time";
 import toast from "react-hot-toast";
 import type { BookListItem, ReadingListDetail } from "@/types";
@@ -89,10 +89,7 @@ export default function ReadingListDetail() {
       <div className="flex items-start justify-between gap-4 mb-8">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            {list.is_public
-              ? <Globe className="w-4 h-4 text-gray-400" />
-              : <Lock className="w-4 h-4 text-gray-400" />
-            }
+            {!list.is_public && <Lock className="w-4 h-4 text-gray-400" />}
             {editingName ? (
               <div className="flex items-center gap-2">
                 <input
@@ -135,7 +132,7 @@ export default function ReadingListDetail() {
           </div>
           <p className="text-sm text-gray-400">
             {books.length} {books.length === 1 ? "book" : "books"} ·{" "}
-            updated {timeAgo(list.updated_at)}
+            Updated {timeAgo(list.updated_at)}
           </p>
         </div>
         {isOwner && (

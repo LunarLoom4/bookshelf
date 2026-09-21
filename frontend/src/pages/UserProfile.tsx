@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ScrollToTop } from "@/components/ui/ScrollToTop";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { BookOpen, MessageSquare, Calendar, List, Lock, Globe, Trash2, Plus, BookMarked, Pencil, Check, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { BookOpen, MessageSquare, Calendar, List, Lock, Trash2, Plus, BookMarked, Pencil, Check, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { timeAgo } from "@/utils/time";
 import { usersApi, progressApi } from "@/api";
@@ -191,9 +191,7 @@ function ReadingListsSection({ username }: { username: string }) {
                 })()}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 mb-1">
-                    {list.is_public ? (
-                      <Globe className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-                    ) : (
+                    {!list.is_public && (
                       <Lock className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
                     )}
                     {editingListId === list.id ? (
@@ -232,7 +230,7 @@ function ReadingListsSection({ username }: { username: string }) {
                   </div>
                   <p className="text-xs text-gray-400">
                     {list.item_count} {list.item_count === 1 ? "book" : "books"} ·{" "}
-                    updated {timeAgo(list.updated_at)}
+                    Updated {timeAgo(list.updated_at)}
                   </p>
                 </div>
               </div>
@@ -294,7 +292,10 @@ function HorizontalScrollRow({ children, itemCount }: { children: React.ReactNod
   const scroll = (dir: "left" | "right") => {
     const el = trackRef.current;
     if (!el) return;
-    el.scrollBy({ left: dir === "left" ? -(CARD_W + CARD_GAP) : (CARD_W + CARD_GAP), behavior: "smooth" });
+    // Scroll by visible width minus one card so the edge card stays partially
+    // visible as a cue -- same pattern Netflix and Disney use
+    const amount = Math.max(el.clientWidth - (CARD_W + CARD_GAP), CARD_W + CARD_GAP);
+    el.scrollBy({ left: dir === "left" ? -amount : amount, behavior: "smooth" });
   };
 
   return (
