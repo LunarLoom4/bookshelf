@@ -37,13 +37,13 @@ export default function Landing() {
               to="/browse"
               className="btn-primary bg-amber-500 hover:bg-amber-600 text-ink-950 font-semibold px-7 py-3 text-base"
             >
-              Browse books
+              Browse Books
             </Link>
             <Link
               to={isAuthenticated ? "/upload" : "/register?next=/upload"}
               className="inline-flex items-center gap-2 px-7 py-3 text-base font-semibold border-2 border-white text-white rounded-md hover:bg-white/20 hover:border-white transition-colors duration-150"
             >
-              Upload a book
+              Upload a Book
             </Link>
           </div>
         </div>

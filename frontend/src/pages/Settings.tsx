@@ -140,7 +140,7 @@ function AvatarSection() {
   };
 
   return (
-    <Section icon={Camera} title="Profile picture">
+    <Section icon={Camera} title="Profile Picture">
       <div className="flex items-center gap-6">
         <Avatar username={user.username} avatarUrl={user.avatar_url} size="xl" />
         <div className="inline-flex flex-col gap-2 items-start">
@@ -286,7 +286,7 @@ function DangerSection() {
   };
 
   return (
-    <Section icon={ShieldCheck} title="Danger zone">
+    <Section icon={ShieldCheck} title="Danger Zone">
       <div className="border-l-4 border-l-red-500 border border-red-200 rounded-lg p-4 bg-white dark:bg-transparent">
         <h3 className="text-sm font-semibold text-red-700 dark:text-red-400 mb-1">Delete account</h3>
         <p className="text-xs text-red-600 dark:text-red-400/80 mb-3">
