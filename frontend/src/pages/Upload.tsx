@@ -147,7 +147,7 @@ export default function Upload() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-10">
-      <h1 className="font-serif text-3xl font-semibold text-ink-900 mb-2">Upload a book</h1>
+      <h1 className="font-serif text-3xl font-semibold text-ink-900 mb-2">Upload a Book</h1>
       <p className="text-sm text-gray-500 mb-8">
         Add a PDF and its metadata. You can upload more editions later from the book detail page.
       </p>

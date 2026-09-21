@@ -388,7 +388,7 @@ function GeneralTab() {
       <div className="card p-6">
         <h2 className="font-serif text-lg font-semibold text-ink-900 flex items-center gap-2 mb-1">
           <BookOpen className="w-5 h-5 text-ink-400" />
-          Back button in PDF reader
+          Back Button in PDF Reader
         </h2>
         <p className="text-sm text-gray-400 mb-5">
           Controls what the back arrow does while reading.
@@ -429,7 +429,7 @@ function GeneralTab() {
       <div className="card p-6">
         <h2 className="font-serif text-lg font-semibold text-ink-900 flex items-center gap-2 mb-2">
           <Palette className="w-5 h-5 text-ink-400" />
-          More appearance options
+          More Appearance Options
         </h2>
         <p className="text-sm text-gray-400">
           Font size, reading width, and other display preferences will appear here in a future update.

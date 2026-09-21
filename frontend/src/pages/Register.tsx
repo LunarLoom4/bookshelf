@@ -166,7 +166,7 @@ export default function Register() {
           <div className="w-12 h-12 bg-ink-800 rounded-xl flex items-center justify-center">
             <BookOpen className="w-6 h-6 text-white" />
           </div>
-          <h1 className="font-serif text-2xl font-semibold text-ink-900">Create account</h1>
+          <h1 className="font-serif text-2xl font-semibold text-ink-900">Create Account</h1>
           <p className="text-sm text-gray-500">
             Already registered?{" "}
             <Link to="/login" className="text-ink-600 hover:underline">Sign in</Link>

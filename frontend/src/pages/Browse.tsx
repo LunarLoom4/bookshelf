@@ -75,7 +75,7 @@ export default function Browse() {
       {/* Header + search */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-8">
         <div>
-          <h1 className="font-serif text-3xl font-semibold text-ink-900">Browse books</h1>
+          <h1 className="font-serif text-3xl font-semibold text-ink-900">Browse Books</h1>
           <p className="text-sm text-gray-500 mt-1 h-5">{subtitle}</p>
         </div>
 

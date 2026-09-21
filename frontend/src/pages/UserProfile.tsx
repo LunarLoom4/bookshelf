@@ -61,7 +61,7 @@ function ReadingListsSection({ username }: { username: string }) {
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-serif text-xl font-semibold text-ink-900 flex items-center gap-2">
           <List className="w-5 h-5 text-ink-400" />
-          Reading lists <span className="font-serif text-black-400 dark:text-white-500">[{lists.length}]</span>
+          Reading Lists <span className="font-serif text-black-400 dark:text-white-500">[{lists.length}]</span>
         </h2>
         {isOwnProfile && (
           <button
@@ -327,7 +327,7 @@ export default function UserProfile() {
         <section>
           <h2 className="font-serif text-xl font-semibold text-ink-900 mb-4 flex items-center gap-2">
             <BookMarked className="w-5 h-5 text-ink-400" />
-            Currently reading <span className="font-serif text-black-400 dark:text-white-500">[{currently_reading.length}]</span>
+            Currently Reading <span className="font-serif text-black-400 dark:text-white-500">[{currently_reading.length}]</span>
           </h2>
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
             {currently_reading.map((item: CurrentlyReadingItem) => (
@@ -383,7 +383,7 @@ export default function UserProfile() {
       <section>
         <h2 className="font-serif text-xl font-semibold text-ink-900 mb-4 flex items-center gap-2">
           <BookOpen className="w-5 h-5 text-ink-400" />
-          Books uploaded <span className="font-serif text-black-400 dark:text-white-500">[{books_uploaded.length}]</span>
+          Books Uploaded <span className="font-serif text-black-400 dark:text-white-500">[{books_uploaded.length}]</span>
         </h2>
         {books_uploaded.length === 0 ? (
           <p className="text-sm text-gray-400">No books uploaded yet.</p>
@@ -400,7 +400,7 @@ export default function UserProfile() {
       <section>
         <h2 className="font-serif text-xl font-semibold text-ink-900 mb-4 flex items-center gap-2">
           <MessageSquare className="w-5 h-5 text-ink-400" />
-          Recent comments <span className="font-serif text-black-400 dark:text-white-500">[{recent_comments.filter(c => !c.is_deleted).length}]</span>
+          Recent Comments <span className="font-serif text-black-400 dark:text-white-500">[{recent_comments.filter(c => !c.is_deleted).length}]</span>
         </h2>
         {recent_comments.filter(c => !c.is_deleted).length === 0 ? (
           <p className="text-sm text-gray-400">No comments yet.</p>
