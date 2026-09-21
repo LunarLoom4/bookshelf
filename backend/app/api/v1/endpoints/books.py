@@ -15,6 +15,7 @@ from app.models.edition import Edition
 from app.models.user import User
 from app.schemas.book import BookListItem, BookResponse, CommenterInfo
 from app.services import storage
+from app.services.storage import get_pdf_page_count
 from app.services.notifications import push_notification
 
 router = APIRouter(prefix="/books", tags=["books"])
