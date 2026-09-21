@@ -55,7 +55,7 @@ export function BookCard({ book }: Props) {
         </h3>
         <p className="text-sm text-gray-500">{book.author}</p>
         {book.description && (
-          <Tooltip content={book.description}>
+          <Tooltip content={book.description} title={book.title}>
             <p className="text-xs text-gray-400 mt-1 line-clamp-2">
               {book.description}
             </p>
