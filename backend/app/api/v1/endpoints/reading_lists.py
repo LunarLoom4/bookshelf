@@ -145,7 +145,9 @@ async def get_list(
     """
     result = await db.execute(
         select(ReadingList)
-        .options(selectinload(ReadingList.items))
+        .options(
+            selectinload(ReadingList.items).selectinload(ReadingListItem.book)
+        )
         .where(ReadingList.id == list_id)
     )
     reading_list = result.scalar_one_or_none()
@@ -155,35 +157,32 @@ async def get_list(
         if not current_user or current_user.id != reading_list.user_id:
             raise HTTPException(status_code=403, detail="This list is private")
 
-    # Fetch book details for all items in one query
+    # Fetch edition counts for all books in one query
     book_ids = [item.book_id for item in reading_list.items]
-    books_by_id: dict = {}
+    edition_counts: dict[int, int] = {}
     if book_ids:
         from sqlalchemy import func as sqlfunc
         from app.models.edition import Edition
-        books_result = await db.execute(
-            select(Book, sqlfunc.count(Edition.id).label("edition_count"))
-            .outerjoin(Edition, Edition.book_id == Book.id)
-            .where(Book.id.in_(book_ids))
-            .group_by(Book.id)
+        counts_result = await db.execute(
+            select(Edition.book_id, sqlfunc.count(Edition.id).label("edition_count"))
+            .where(Edition.book_id.in_(book_ids))
+            .group_by(Edition.book_id)
         )
-        for row in books_result.all():
-            book, edition_count = row
-            summary = BookSummary(
-                id=book.id,
-                title=book.title,
-                author=book.author,
-                description=book.description,
-                cover_url=book.cover_url,
-                created_at=book.created_at,
-                edition_count=edition_count,
-            )
-            books_by_id[book.id] = summary
+        edition_counts = {row.book_id: row.edition_count for row in counts_result.all()}
 
-    # Build response with embedded book data
+    # Build response -- book is already loaded via selectinload, no lazy loads
     response = ReadingListDetailResponse.model_validate(reading_list)
-    for item in response.items:
-        item.book = books_by_id.get(item.book_id)
+    for resp_item, orm_item in zip(response.items, reading_list.items):
+        if orm_item.book:
+            resp_item.book = BookSummary(
+                id=orm_item.book.id,
+                title=orm_item.book.title,
+                author=orm_item.book.author,
+                description=orm_item.book.description,
+                cover_url=orm_item.book.cover_url,
+                created_at=orm_item.book.created_at,
+                edition_count=edition_counts.get(orm_item.book.id, 0),
+            )
     return response
 
 
