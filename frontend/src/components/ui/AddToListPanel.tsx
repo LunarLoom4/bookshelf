@@ -45,7 +45,7 @@ export function AddToListPanel({ bookId }: Props) {
         className="btn-secondary py-1.5 text-xs flex items-center gap-1.5"
       >
         <List className="w-3.5 h-3.5" />
-        Add to list
+        Add to List
       </button>
     );
   }

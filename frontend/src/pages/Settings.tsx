@@ -202,7 +202,7 @@ function UsernameSection() {
         </div>
         <div>
           <button type="submit" disabled={loading} className="btn-primary py-2 text-sm">
-            {loading ? "Saving..." : "Save username"}
+            {loading ? "Saving..." : "Save Username"}
           </button>
         </div>
       </form>
