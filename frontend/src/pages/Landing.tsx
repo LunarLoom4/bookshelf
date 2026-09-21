@@ -53,38 +53,38 @@ export default function Landing() {
       <section className="py-20 px-4 bg-paper-100 landing-section-alt">
         <div className="max-w-5xl mx-auto">
           <h2 className="font-serif text-2xl font-semibold text-ink-900 text-center mb-12">
-            Everything a reader needs
+            Key Features
           </h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
               {
                 icon: BookOpen,
-                title: "Read in the browser",
+                title: "Read in Browser",
                 body: "Open any PDF without downloading it. Zoom, pan, and jump to any page — all in one tab.",
               },
               {
                 icon: MessageSquare,
-                title: "Comments tied to pages",
+                title: "Interact on Any Page",
                 body: "Pin a thought to page 47. Anyone reading that edition clicks the badge and lands right there.",
               },
               {
                 icon: Layers,
-                title: "Multiple editions",
+                title: "Multiple Editions",
                 body: "Track every edition of a book separately. Different PDFs, different discussions — no mix-ups.",
               },
               {
                 icon: Download,
-                title: "Download anytime",
+                title: "Download Anytime",
                 body: "Every PDF you can read, you can download. No paywalls, no limits.",
               },
               {
                 icon: Bookmark,
-                title: "Personal bookmarks",
+                title: "Personal Bookmarks",
                 body: "Save any page with a private note. Your bookmarks are yours alone — nobody else sees them.",
               },
               {
                 icon: List,
-                title: "Reading lists",
+                title: "Reading Lists",
                 body: "Organise books into named lists — Want to Read, Finished, anything you like. Share them or keep them private.",
               },
             ].map(({ icon: Icon, title, body }) => (
@@ -100,11 +100,11 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* How it works */}
+      {/* Quick Start */}
       <section className="py-20 px-4 bg-white landing-section-main">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="font-serif text-2xl font-semibold text-ink-900 mb-12">
-            How it works
+            Quick Start
           </h2>
           <div className="grid sm:grid-cols-3 gap-10">
             {[
@@ -120,14 +120,6 @@ export default function Landing() {
                 <p className="text-gray-500 text-sm leading-relaxed">{body}</p>
               </div>
             ))}
-          </div>
-          <div className="mt-12">
-            <Link
-              to={isAuthenticated ? "/upload" : "/register?next=/upload"}
-              className="btn-primary bg-ink-800 hover:bg-ink-900 px-8 py-3 text-base"
-            >
-              Get Started Free
-            </Link>
           </div>
         </div>
       </section>
