@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ScrollToTop } from "@/components/ui/ScrollToTop";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { BookOpen, MessageSquare, Calendar, List, Lock, Globe, Trash2, Plus, BookMarked, Pencil, Check, X } from "lucide-react";
+import { BookOpen, MessageSquare, Calendar, List, Lock, Globe, Trash2, Plus, BookMarked, Pencil, Check, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { timeAgo } from "@/utils/time";
 import { usersApi, progressApi } from "@/api";
@@ -264,7 +264,80 @@ function ReadingListsSection({ username }: { username: string }) {
   );
 }
 
-// useState is used inside ReadingListsSection -- needs to be imported
+// ── Horizontal scroll row (Netflix/Disney style) ─────────────────────────────
+// Chevrons appear only when content exists in that direction.
+const CARD_W = 140; // px -- each card target width
+const CARD_GAP = 12; // px -- gap between cards
+
+function HorizontalScrollRow({ children, itemCount }: { children: React.ReactNode; itemCount: number }) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const updateArrows = useCallback(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 4);
+    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 4);
+  }, []);
+
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    updateArrows();
+    el.addEventListener("scroll", updateArrows, { passive: true });
+    const ro = new ResizeObserver(updateArrows);
+    ro.observe(el);
+    return () => { el.removeEventListener("scroll", updateArrows); ro.disconnect(); };
+  }, [updateArrows, itemCount]);
+
+  const scroll = (dir: "left" | "right") => {
+    const el = trackRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir === "left" ? -(CARD_W + CARD_GAP) : (CARD_W + CARD_GAP), behavior: "smooth" });
+  };
+
+  return (
+    <div className="relative">
+      {/* Left chevron */}
+      <button
+        onClick={() => scroll("left")}
+        aria-label="Scroll left"
+        className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10
+                   w-8 h-8 rounded-full bg-white dark:bg-gray-800 shadow-md border border-gray-200 dark:border-gray-600
+                   flex items-center justify-center text-ink-700 dark:text-gray-200
+                   transition-opacity duration-200
+                   ${canScrollLeft ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
+      >
+        <ChevronLeft className="w-4 h-4" />
+      </button>
+
+      {/* Scrollable track -- hide native scrollbar cross-browser */}
+      <style>{`[data-hsr-track]::-webkit-scrollbar{display:none}`}</style>
+      <div
+        ref={trackRef}
+        data-hsr-track=""
+        className="flex overflow-x-auto pb-1"
+        style={{ gap: CARD_GAP, scrollbarWidth: "none", msOverflowStyle: "none" }}
+      >
+        {children}
+      </div>
+
+      {/* Right chevron */}
+      <button
+        onClick={() => scroll("right")}
+        aria-label="Scroll right"
+        className={`absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10
+                   w-8 h-8 rounded-full bg-white dark:bg-gray-800 shadow-md border border-gray-200 dark:border-gray-600
+                   flex items-center justify-center text-ink-700 dark:text-gray-200
+                   transition-opacity duration-200
+                   ${canScrollRight ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
+      >
+        <ChevronRight className="w-4 h-4" />
+      </button>
+    </div>
+  );
+}
 
 export default function UserProfile() {
   const { username } = useParams<{ username: string }>();
@@ -329,17 +402,19 @@ export default function UserProfile() {
             <BookMarked className="w-5 h-5 text-ink-400" />
             Currently Reading <span className="font-serif text-black-400 dark:text-white-500">[{currently_reading.length}]</span>
           </h2>
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+          <HorizontalScrollRow itemCount={currently_reading.length}>
             {currently_reading.map((item: CurrentlyReadingItem) => (
-              // Outer div is relative so the X button can be positioned top-right
-              // without being inside the Link (clicking X must NOT navigate)
-              <div key={item.edition_id} className="group relative flex flex-col gap-1.5">
+              <div
+                key={item.edition_id}
+                className="group relative flex flex-col gap-1.5 flex-shrink-0"
+                style={{ width: CARD_W }}
+              >
                 <Link
                   to={`/read/${item.edition_id}`}
                   className="flex flex-col gap-1.5"
-                  title={`${item.book_title} — last read p.${item.last_page}`}
+                  title={`${item.book_title} - last read p.${item.last_page}`}
                 >
-                  <div className="aspect-[3/4] rounded-md overflow-hidden bg-paper-100 relative">
+                  <div className="rounded-md overflow-hidden bg-paper-100 relative" style={{ width: CARD_W, height: Math.round(CARD_W * 4 / 3) }}>
                     {item.book_cover_url ? (
                       <img
                         src={item.book_cover_url}
@@ -358,7 +433,6 @@ export default function UserProfile() {
                   </div>
                   <p className="text-xs text-gray-600 line-clamp-2 leading-tight">{item.book_title}</p>
                 </Link>
-                {/* X button: only on own profile, positioned top-right of cover, shown on group hover */}
                 {isOwnProfile && (
                   <button
                     onClick={(e) => {
@@ -367,7 +441,7 @@ export default function UserProfile() {
                       removeProgress.mutate(item.edition_id);
                     }}
                     disabled={removeProgress.isPending}
-                    title="Remove from currently reading"
+                    title="Remove from Currently Reading"
                     className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 z-10"
                   >
                     <X className="w-3 h-3" />
@@ -375,7 +449,7 @@ export default function UserProfile() {
                 )}
               </div>
             ))}
-          </div>
+          </HorizontalScrollRow>
         </section>
       )}
 
@@ -388,11 +462,13 @@ export default function UserProfile() {
         {books_uploaded.length === 0 ? (
           <p className="text-sm text-gray-400">No books uploaded yet.</p>
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+          <HorizontalScrollRow itemCount={books_uploaded.length}>
             {books_uploaded.map((book) => (
-              <BookCard key={book.id} book={book} />
+              <div key={book.id} className="flex-shrink-0" style={{ width: 200 }}>
+                <BookCard book={book} />
+              </div>
             ))}
-          </div>
+          </HorizontalScrollRow>
         )}
       </section>
 
