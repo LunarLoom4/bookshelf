@@ -149,7 +149,7 @@ export default function ReadingListDetail() {
             className="flex items-center gap-1.5 text-sm text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400 rounded-md px-3 py-1.5 transition-colors flex-shrink-0"
           >
             <Trash2 className="w-4 h-4" />
-            Delete list
+            Delete List
           </button>
         )}
       </div>

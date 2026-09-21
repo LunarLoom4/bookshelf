@@ -240,7 +240,7 @@ function AddEditionPanel({ bookId, existingNums }: { bookId: number; existingNum
         className="btn-secondary py-1.5 text-xs flex items-center gap-1.5"
       >
         <Plus className="w-3.5 h-3.5" />
-        Add edition
+        Add Edition
       </button>
     );
   }

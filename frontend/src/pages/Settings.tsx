@@ -150,7 +150,7 @@ function AvatarSection() {
           <button onClick={() => fileRef.current?.click()} disabled={loading}
             className="btn-primary py-2 text-sm flex items-center gap-2">
             <Camera className="w-4 h-4" />
-            {loading ? "Uploading..." : user.avatar_url ? "Change photo" : "Upload photo"}
+            {loading ? "Uploading..." : user.avatar_url ? "Change Photo" : "Upload Photo"}
           </button>
           {user.avatar_url && (
             <button onClick={handleRemove} disabled={loading}
@@ -260,7 +260,7 @@ function PasswordSection() {
         </div>
         <div>
           <button type="submit" disabled={loading} className="btn-primary py-2 text-sm">
-            {loading ? "Changing..." : "Change password"}
+            {loading ? "Changing..." : "Change Password"}
           </button>
         </div>
       </form>
@@ -288,7 +288,7 @@ function DangerSection() {
   return (
     <Section icon={ShieldCheck} title="Danger Zone">
       <div className="border-l-4 border-l-red-500 border border-red-200 rounded-lg p-4 bg-white dark:bg-transparent">
-        <h3 className="text-sm font-semibold text-red-700 dark:text-red-400 mb-1">Delete account</h3>
+        <h3 className="text-sm font-semibold text-red-700 dark:text-red-400 mb-1">Delete Account</h3>
         <p className="text-xs text-red-600 dark:text-red-400/80 mb-3">
           Permanently deletes your account, all uploaded books, comments, bookmarks,
           and reading lists. This cannot be undone.
@@ -297,7 +297,7 @@ function DangerSection() {
           <button onClick={() => setConfirm(true)}
             className="px-3 py-1.5 text-sm font-medium text-red-600 dark:text-red-400 border border-red-300 dark:border-red-800/50 rounded-md hover:bg-red-100 dark:hover:bg-red-900/20 transition-colors flex items-center gap-1.5">
             <Trash2 className="w-4 h-4" />
-            Delete my account
+            Delete My Account
           </button>
         ) : (
           <div className="flex flex-col gap-2">

@@ -85,7 +85,7 @@ export default function Login() {
           <div className="w-12 h-12 bg-ink-800 rounded-xl flex items-center justify-center">
             <BookOpen className="w-6 h-6 text-white" />
           </div>
-          <h1 className="font-serif text-2xl font-semibold text-ink-900">Sign in</h1>
+          <h1 className="font-serif text-2xl font-semibold text-ink-900">Sign In</h1>
           <p className="text-sm text-gray-500">
             No account?{" "}
             <Link to="/register" className="text-ink-600 hover:underline">Register</Link>
