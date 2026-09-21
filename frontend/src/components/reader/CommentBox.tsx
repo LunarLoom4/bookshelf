@@ -57,7 +57,13 @@ export function CommentBox({ onSubmit, parentId, currentPage, placeholder, autoF
       <textarea
         value={body}
         onChange={(e) => { setBody(e.target.value); onChange?.(e.target.value); }}
-        placeholder={placeholder || "Write a comment..."}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+            e.preventDefault();
+            if (body.trim() && !loading) handleSubmit(e as any);
+          }
+        }}
+        placeholder={placeholder || "Write a comment... (Ctrl+Enter to post)"}
         rows={3}
         className="input resize-none text-sm"
       />

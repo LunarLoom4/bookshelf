@@ -289,6 +289,13 @@ export function CommentThread({
                 ref={editRef}
                 value={editBody}
                 onChange={e => setEditBody(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    if (editBody.trim() && !editLoading) handleEdit();
+                  }
+                  if (e.key === "Escape") { setEditing(false); setEditBody(comment.body); }
+                }}
                 rows={3}
                 autoFocus
                 className="input resize-none text-sm"
