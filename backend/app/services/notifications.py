@@ -1,23 +1,22 @@
 """
 Notification push helper.
 
-Call push_notification() immediately after committing the triggering event.
-It writes a row to the notifications table for the recipient.
+Uses its OWN independent DB session, never the caller's request session.
+This is critical: if the notifications table doesn't exist yet (migration
+pending) or any other DB error occurs, it cannot corrupt or roll back the
+caller's already-committed transaction.
 
-All writes are fire-and-forget within the same request:
-we catch and swallow exceptions so a notification failure never
-blocks the primary action (comment creation, edition upload, etc.).
+Fire-and-forget: exceptions are caught and logged, never re-raised.
 """
 import logging
-from sqlalchemy.ext.asyncio import AsyncSession
-
+from app.db.session import AsyncSessionLocal
 from app.models.notification import Notification
 
 logger = logging.getLogger(__name__)
 
 
 async def push_notification(
-    db: AsyncSession,
+    db,  # kept for call-site compatibility but intentionally NOT used
     *,
     recipient_id: int,
     actor_id: int,
@@ -28,44 +27,35 @@ async def push_notification(
     actor_username: str,
 ) -> None:
     """
-    Write a notification row for recipient_id.
+    Write a notification row for recipient_id using a fresh DB session.
+
+    The `db` parameter is accepted for call-site compatibility but is
+    deliberately ignored -- we open our own session so that a failure here
+    (e.g. notifications table not yet migrated) can never affect the
+    caller's already-committed transaction.
 
     Does nothing if recipient_id == actor_id (no self-notifications).
-    Catches all exceptions -- a notification write failure must never
-    break the calling request.
     """
     if recipient_id == actor_id:
         return
 
     try:
-        notif = Notification(
-            user_id=recipient_id,
-            type=notif_type,
-            message=message,
-            detail=detail,
-            link=link,
-            actor=actor_username,
-        )
-        db.add(notif)
-        # We do NOT commit here -- the caller's existing commit (or the
-        # next one in the same request) will flush this row together with
-        # the primary change. If the caller already committed, call
-        # push_notification before commit instead, or call db.commit()
-        # here explicitly (see usage notes below).
-        #
-        # Pattern used in this codebase:
-        #   db.add(primary_object)
-        #   await db.commit()
-        #   await push_notification(db, ...)  <- separate commit below
-        #   await db.commit()
-        #
-        # To keep it simple and safe we commit here ourselves.
-        await db.commit()
+        async with AsyncSessionLocal() as session:
+            notif = Notification(
+                user_id=recipient_id,
+                type=notif_type,
+                message=message,
+                detail=detail,
+                link=link,
+                actor=actor_username,
+            )
+            session.add(notif)
+            await session.commit()
     except Exception:
         logger.exception(
-            "Failed to push notification type=%s recipient=%d actor=%s",
+            "push_notification failed (type=%s recipient=%d actor=%s) -- "
+            "primary operation is unaffected",
             notif_type,
             recipient_id,
             actor_username,
         )
-        await db.rollback()
