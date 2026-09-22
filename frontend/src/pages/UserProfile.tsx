@@ -534,25 +534,6 @@ export default function UserProfile() {
         </section>
       )}
 
-      {/* Books uploaded */}
-      <section>
-        <h2 className="font-serif text-xl font-semibold text-ink-900 mb-4 flex items-center gap-2">
-          <BookOpen className="w-5 h-5 text-ink-400" />
-          Books Uploaded <span className="font-serif text-black-400 dark:text-white-500">[{books_uploaded.length}]</span>
-        </h2>
-        {books_uploaded.length === 0 ? (
-          <p className="text-sm text-gray-400">No books uploaded yet.</p>
-        ) : (
-          <HorizontalScrollRow itemCount={books_uploaded.length}>
-            {books_uploaded.map((book) => (
-              <div key={book.id} className="flex-shrink-0" style={{ width: 200 }}>
-                <BookCard book={book} />
-              </div>
-            ))}
-          </HorizontalScrollRow>
-        )}
-      </section>
-
       {/* Comments section -- book card grid */}
       <section>
         <div className="mb-4">
@@ -624,6 +605,25 @@ export default function UserProfile() {
               </Link>
             ))}
           </div>
+        )}
+      </section>
+
+      {/* Books uploaded */}
+      <section>
+        <h2 className="font-serif text-xl font-semibold text-ink-900 mb-4 flex items-center gap-2">
+          <BookOpen className="w-5 h-5 text-ink-400" />
+          Books Uploaded <span className="font-serif text-black-400 dark:text-white-500">[{books_uploaded.length}]</span>
+        </h2>
+        {books_uploaded.length === 0 ? (
+          <p className="text-sm text-gray-400">No books uploaded yet.</p>
+        ) : (
+          <HorizontalScrollRow itemCount={books_uploaded.length}>
+            {books_uploaded.map((book) => (
+              <div key={book.id} className="flex-shrink-0" style={{ width: 200 }}>
+                <BookCard book={book} />
+              </div>
+            ))}
+          </HorizontalScrollRow>
         )}
       </section>
       <ScrollToTop />
