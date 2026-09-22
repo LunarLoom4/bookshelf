@@ -285,3 +285,9 @@ export const likesApi = {
   toggle: (editionId: number) =>
     api.post<LikeStatus>(`/editions/${editionId}/like`),
 };
+
+// ── Book total likes ──────────────────────────────────────────────────────────
+export const bookLikesApi = {
+  total: (bookId: number) =>
+    api.get<number>(`/books/${bookId}/likes`),
+};

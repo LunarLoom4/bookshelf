@@ -105,3 +105,17 @@ async def toggle_like(
     )
     count = count_result.scalar_one()
     return LikeStatus(liked=liked, count=count)
+
+
+@router.get("/books/{book_id}/likes", response_model=int)
+async def get_book_total_likes(
+    book_id: int,
+    db: AsyncSession = Depends(get_db),
+):
+    """Total likes across all editions of a book."""
+    result = await db.execute(
+        select(func.count(EditionLike.id))
+        .join(Edition, Edition.id == EditionLike.edition_id)
+        .where(Edition.book_id == book_id)
+    )
+    return result.scalar_one()

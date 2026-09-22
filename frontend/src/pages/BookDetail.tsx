@@ -1,7 +1,7 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { LanguagePicker } from "@/components/ui/LanguagePicker";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { progressApi, likesApi } from "@/api";
+import { progressApi, likesApi, bookLikesApi } from "@/api";
 import { useAuthStore } from "@/stores/authStore";
 import { BookDetailSkeleton } from "@/components/ui/Skeleton";
 import { Avatar } from "@/components/ui/Avatar";
@@ -25,16 +25,13 @@ function formatBytes(bytes: number | null) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function TotalLikesBadge({ editions }: { editions: Edition[] }) {
-  const queries = editions.map(ed =>
-    useQuery({
-      queryKey: ["like", ed.id],
-      queryFn: () => likesApi.status(ed.id).then(r => r.data),
-      staleTime: 60 * 1000,
-    })
-  );
-  const total = queries.reduce((sum, q) => sum + (q.data?.count ?? 0), 0);
-  if (total === 0) return null;
+function TotalLikesBadge({ bookId }: { bookId: number }) {
+  const { data: total } = useQuery({
+    queryKey: ["book-likes", bookId],
+    queryFn: () => bookLikesApi.total(bookId).then(r => r.data),
+    staleTime: 60 * 1000,
+  });
+  if (!total) return null;
   return (
     <div className="absolute top-2 right-2 flex items-center gap-1 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full backdrop-blur-sm">
       <Heart className="w-3 h-3 fill-red-400 text-red-400" />
@@ -96,7 +93,10 @@ function EditionRow({ edition, bookId, isOwner, onDelete }: {
     onError: (_e: any, _v: any, ctx: any) => {
       if (ctx?.prev) qc.setQueryData(["like", edition.id], ctx.prev);
     },
-    onSettled: () => qc.invalidateQueries({ queryKey: ["like", edition.id] }),
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["like", edition.id] });
+      qc.invalidateQueries({ queryKey: ["book-likes", bookId] });
+    },
   });
 
   const handleDelete = async (e: React.MouseEvent) => {
@@ -465,7 +465,7 @@ export default function BookDetail() {
             )}
             {/* Total likes across all editions */}
             {book.editions.length > 0 && (
-              <TotalLikesBadge editions={book.editions} />
+              <TotalLikesBadge bookId={book.id} />
             )}
           </div>
           {/* Cover upload -- owner only */}
