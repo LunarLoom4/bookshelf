@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Bookshelf brand mark -- three stacked pages with amber bookmark ribbon -->
+  <!-- Use with background (favicon/icon): add <rect width="32" height="32" rx="6" fill="#1c3089"/> as first child -->
+
+  <!-- Back page -->
+  <rect x="8" y="4"  width="20" height="15" rx="2.5" fill="#1c3089" opacity="0.28"/>
+  <!-- Middle page -->
+  <rect x="5" y="9"  width="20" height="15" rx="2.5" fill="#1c3089" opacity="0.55"/>
+  <!-- Front page -->
+  <rect x="2" y="14" width="20" height="15" rx="2.5" fill="#1c3089"/>
+  <!-- Text lines -->
+  <rect x="6" y="19" width="9" height="2" rx="1" fill="white" opacity="0.3"/>
+  <!-- Amber bookmark ribbon -->
+  <path d="M17 14 L22 14 L22 22 L19.5 20 L17 22 Z" fill="#f59e0b"/>
+</svg>

@@ -1,34 +1,49 @@
 /**
- * BookshelfLogo -- Option C: three stacked pages with amber bookmark ribbon.
- * Colors are hardcoded to stay consistent on any background.
+ * BookshelfLogo -- three stacked pages with amber bookmark ribbon.
+ *
+ * Single source of truth for the brand mark.
+ * viewBox is 32x32 (square) -- same geometry as the favicon.
+ *
+ * showBackground=false (default): transparent bg, ink-blue pages.
+ *   Used in the Navbar on light/dark backgrounds.
+ * showBackground=true: ink-blue rounded-square bg, white pages.
+ *   Used for the favicon and any icon context where bg is needed.
  */
 interface Props {
   size?: number;
   className?: string;
+  showBackground?: boolean;
 }
 
-export function BookshelfLogo({ size = 28, className = "" }: Props) {
+export function BookshelfLogo({ size = 28, className = "", showBackground = false }: Props) {
+  const pageColor = showBackground ? "white" : "#1c3089";
+  const bgColor = "#1c3089";
+
   return (
     <svg
       width={size}
       height={size}
-      viewBox="0 0 32 20"
+      viewBox="0 0 32 32"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       aria-hidden="true"
     >
-      {/* Back page -- lightest, offset up-right */}
-      <rect x="5" y="0" width="22" height="14" rx="2.5" fill="#1c3089" opacity="0.28"/>
+      {/* Rounded square background -- only for favicon/icon context */}
+      {showBackground && (
+        <rect width="32" height="32" rx="6" fill={bgColor} />
+      )}
+
+      {/* Back page */}
+      <rect x="8" y="4"  width="20" height="15" rx="2.5" fill={pageColor} opacity="0.28" />
       {/* Middle page */}
-      <rect x="3" y="3" width="22" height="14" rx="2.5" fill="#1c3089" opacity="0.55"/>
-      {/* Front page -- full opacity */}
-      <rect x="1" y="6" width="22" height="14" rx="2.5" fill="#1c3089"/>
+      <rect x="5" y="9"  width="20" height="15" rx="2.5" fill={pageColor} opacity="0.55" />
+      {/* Front page */}
+      <rect x="2" y="14" width="20" height="15" rx="2.5" fill={pageColor} />
       {/* Text lines on front page */}
-      <rect x="5" y="11" width="10" height="1.5" rx="0.75" fill="white" opacity="0.35"/>
-      <rect x="5" y="14.5" width="7" height="1.5" rx="0.75" fill="white" opacity="0.25"/>
-      {/* Amber bookmark ribbon on top-right of front page */}
-      <path d="M19 6 L23 6 L23 14 L21 12.2 L19 14 Z" fill="#f59e0b"/>
+      <rect x="6"  y="19" width="9" height="2" rx="1" fill={showBackground ? bgColor : "white"} opacity="0.3" />
+      {/* Amber bookmark ribbon */}
+      <path d="M17 14 L22 14 L22 22 L19.5 20 L17 22 Z" fill="#f59e0b" />
     </svg>
   );
 }
