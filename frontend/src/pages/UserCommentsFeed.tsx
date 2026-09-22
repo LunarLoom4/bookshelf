@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { ArrowLeft, Search, BookOpen, MessageSquare, ChevronDown, ChevronUp, ThumbsUp, ThumbsDown } from "lucide-react";
+import { ArrowLeft, Search, X, BookOpen, MessageSquare, ChevronDown, ChevronUp, ThumbsUp, ThumbsDown } from "lucide-react";
 import { userCommentsApi } from "@/api";
 import type { CommentFeedEdition, CommentFeedItem } from "@/api";
 import { timeAgo } from "@/utils/time";
@@ -95,29 +95,29 @@ function EditionAccordion({
               <p className="text-sm font-semibold text-ink-900 dark:text-gray-100">
                 Edition {edition.edition_number}
               </p>
-              {/* (c) Year as a badge, same height as text */}
               {edition.year && (
                 <span className="text-[11px] font-medium px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 leading-none">
                   {edition.year}
                 </span>
               )}
             </div>
-            {/* (d) Metadata row: publisher · size · pages · age */}
-            <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-400 dark:text-gray-500 flex-wrap">
+            <div className="flex items-center flex-wrap mt-1 text-xs">
               {edition.publisher && (
-                <span>{edition.publisher}</span>
-              )}
-              {edition.publisher && (edition.file_size_bytes || edition.page_count) && (
-                <span className="text-gray-300 dark:text-gray-600">·</span>
+                <span className="font-medium text-gray-500 dark:text-gray-400 mr-2">{edition.publisher}</span>
               )}
               {edition.file_size_bytes != null && (
-                <span>{formatBytes(edition.file_size_bytes)}</span>
+                <>
+                  <span className="text-gray-300 dark:text-gray-600 mr-2">·</span>
+                  <span className="text-gray-400 dark:text-gray-500 mr-2">{formatBytes(edition.file_size_bytes)}</span>
+                </>
               )}
               {edition.page_count != null && (
-                <span className="flex items-center gap-0.5">
-                  <BookOpen className="w-2.5 h-2.5" />
-                  {edition.page_count} pages
-                </span>
+                <>
+                  <span className="text-gray-300 dark:text-gray-600 mr-2">·</span>
+                  <span className="text-gray-400 dark:text-gray-500 mr-2">
+                    <span className="font-medium text-gray-500 dark:text-gray-400">{edition.page_count.toLocaleString()}</span> pp
+                  </span>
+                </>
               )}
             </div>
           </div>
@@ -157,8 +157,17 @@ export default function UserCommentsFeed() {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
+  const inputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedSearch(search), 300);
+    const t = setTimeout(() => {
+      const hadFocus = document.activeElement === inputRef.current;
+      setDebouncedSearch(search);
+      // Restore focus after the state update causes a re-render
+      if (hadFocus) {
+        requestAnimationFrame(() => inputRef.current?.focus());
+      }
+    }, 300);
     return () => clearTimeout(t);
   }, [search]);
 
@@ -285,11 +294,21 @@ export default function UserCommentsFeed() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
           <input
+            ref={inputRef}
+            type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Search comments..."
-            className="input pl-9 text-sm w-full"
+            className="input pl-9 pr-8 text-sm w-full"
           />
+          {search && (
+            <button
+              onClick={() => { setSearch(""); inputRef.current?.focus(); }}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
         {/* (b) Select matches .input height exactly: py-2 = 8px top/bottom */}
         <div className="relative flex-shrink-0 sm:w-44">

@@ -7,7 +7,7 @@ import { BookDetailSkeleton } from "@/components/ui/Skeleton";
 import { Avatar } from "@/components/ui/Avatar";
 import { useRef, useState, useEffect } from "react";
 import {
-  BookOpen, Layers, User, Calendar, Globe, FileText,
+  BookOpen, Layers, User, Globe,
   Upload, Plus, X, CheckCircle, Link2, Download, Table2,
   Heart, MoreVertical, Trash2,
 } from "lucide-react";
@@ -122,28 +122,39 @@ function EditionRow({ edition, bookId, isOwner, onDelete }: {
         </div>
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <p className="text-sm font-medium text-ink-900">Edition {edition.edition_number}</p>
+            <p className="text-sm font-medium text-ink-900 dark:text-gray-100">Edition {edition.edition_number}</p>
             {edition.year && (
               <span className="text-[11px] font-medium px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 leading-none">
                 {edition.year}
               </span>
             )}
           </div>
-          <div className="flex flex-wrap items-center gap-2 mt-0.5 text-xs text-gray-400">
+          <div className="flex items-center flex-wrap mt-1 text-xs">
             {edition.publisher && (
-              <span className="flex items-center gap-1"><FileText className="w-3 h-3" />{edition.publisher}</span>
+              <span className="font-medium text-gray-500 dark:text-gray-400 mr-2">{edition.publisher}</span>
             )}
-            {edition.publisher && (edition.file_size_bytes != null || edition.page_count != null) && (
-              <span className="text-gray-300 dark:text-gray-600">·</span>
+            {edition.file_size_bytes != null && (
+              <>
+                <span className="text-gray-300 dark:text-gray-600 mr-2">·</span>
+                <span className="text-gray-400 dark:text-gray-500 mr-2">{formatBytes(edition.file_size_bytes)}</span>
+              </>
+            )}
+            {edition.page_count != null && (
+              <>
+                <span className="text-gray-300 dark:text-gray-600 mr-2">·</span>
+                <span className="text-gray-400 dark:text-gray-500 mr-2">
+                  <span className="font-medium text-gray-500 dark:text-gray-400">{edition.page_count.toLocaleString()}</span> pp
+                </span>
+              </>
             )}
             {edition.language !== "en" && (
-              <span className="flex items-center gap-1"><Globe className="w-3 h-3" />{edition.language.toUpperCase()}</span>
+              <>
+                <span className="text-gray-300 dark:text-gray-600 mr-2">·</span>
+                <span className="text-gray-400 dark:text-gray-500 mr-2 uppercase tracking-wide text-[10px]">{edition.language}</span>
+              </>
             )}
-            {edition.file_size_bytes != null && <span>{formatBytes(edition.file_size_bytes)}</span>}
-            {edition.page_count != null && (
-              <span className="flex items-center gap-1"><BookOpen className="w-3 h-3" />{edition.page_count} pages</span>
-            )}
-            <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{timeAgo(edition.created_at)}</span>
+            <span className="text-gray-300 dark:text-gray-600 mr-2">·</span>
+            <span className="text-gray-400 dark:text-gray-500">{timeAgo(edition.created_at)}</span>
           </div>
         </div>
       </div>

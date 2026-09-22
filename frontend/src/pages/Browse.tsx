@@ -89,22 +89,20 @@ export default function Browse() {
             )}
           </div>
 
-          {/* Sort dropdown -- hidden when searching */}
-          {!isSearching && (
-            <div className="relative flex-shrink-0">
-              <select
-                value={sort}
-                onChange={e => setSort(e.target.value)}
-                className="appearance-none rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm text-ink-900 dark:text-gray-100 cursor-pointer focus:outline-none focus:ring-2 focus:ring-ink-500 focus:border-transparent transition-colors hover:border-gray-400 dark:hover:border-gray-600"
-                style={{ padding: "8px 36px 8px 12px", fontWeight: 400 }}
-              >
-                {SORT_OPTIONS.map(o => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
-                ))}
-              </select>
-              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-            </div>
-          )}
+          {/* Sort dropdown -- always visible */}
+          <div className="relative flex-shrink-0">
+            <select
+              value={sort}
+              onChange={e => setSort(e.target.value)}
+              className="appearance-none rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm text-ink-900 dark:text-gray-100 cursor-pointer focus:outline-none focus:ring-2 focus:ring-ink-500 focus:border-transparent transition-colors hover:border-gray-400 dark:hover:border-gray-600"
+              style={{ padding: "8px 36px 8px 12px", fontWeight: 400 }}
+            >
+              {SORT_OPTIONS.map(o => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+          </div>
         </div>
       </div>
 
