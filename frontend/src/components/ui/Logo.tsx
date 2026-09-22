@@ -1,13 +1,14 @@
 /**
  * BookshelfLogo -- three stacked pages with amber bookmark ribbon.
  *
- * Single source of truth for the brand mark.
- * viewBox is 32x32 (square) -- same geometry as the favicon.
+ * The mark always sits inside a soft rounded-square container:
+ *   - Light mode: very light ink-tinted fill (#eef0f8), no border
+ *   - Dark mode:  deep navy fill (#1e2740), no border
+ * This gives the mark presence on both light and dark navbars
+ * without the heaviness of the full solid favicon background.
  *
- * showBackground=false (default): transparent bg, ink-blue pages.
- *   Used in the Navbar on light/dark backgrounds.
- * showBackground=true: ink-blue rounded-square bg, white pages.
- *   Used for the favicon and any icon context where bg is needed.
+ * showBackground=true (favicon): solid ink-blue square, white pages.
+ * Default (navbar): soft container, ink-blue pages.
  */
 interface Props {
   size?: number;
@@ -29,9 +30,17 @@ export function BookshelfLogo({ size = 28, className = "", showBackground = fals
       className={className}
       aria-hidden="true"
     >
-      {/* Rounded square background -- only for favicon/icon context */}
-      {showBackground && (
+      {showBackground ? (
+        /* Favicon / icon context: solid ink-blue background */
         <rect width="32" height="32" rx="6" fill={bgColor} />
+      ) : (
+        /* Navbar context: soft container that adapts to light/dark mode */
+        <>
+          {/* Light mode container */}
+          <rect width="32" height="32" rx="7" fill="#dde3f5" className="dark:hidden" />
+          {/* Dark mode container */}
+          <rect width="32" height="32" rx="7" fill="#1e2740" className="hidden dark:block" />
+        </>
       )}
 
       {/* Back page */}
@@ -41,7 +50,7 @@ export function BookshelfLogo({ size = 28, className = "", showBackground = fals
       {/* Front page */}
       <rect x="2" y="14" width="20" height="15" rx="2.5" fill={pageColor} />
       {/* Text lines on front page */}
-      <rect x="6"  y="19" width="9" height="2" rx="1" fill={showBackground ? bgColor : "white"} opacity="0.3" />
+      <rect x="6" y="19" width="9" height="2" rx="1" fill={showBackground ? bgColor : "white"} opacity="0.3" />
       {/* Amber bookmark ribbon */}
       <path d="M17 14 L22 14 L22 22 L19.5 20 L17 22 Z" fill="#f59e0b" />
     </svg>

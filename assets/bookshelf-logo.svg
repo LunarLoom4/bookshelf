@@ -1,6 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
-  <!-- Bookshelf brand mark -- three stacked pages with amber bookmark ribbon -->
-  <!-- Use with background (favicon/icon): add <rect width="32" height="32" rx="6" fill="#1c3089"/> as first child -->
+  <!--
+    Bookshelf brand mark -- stacked pages + amber bookmark.
+    Navbar usage: use this file directly (soft container below).
+    Favicon usage: replace the two <rect> containers with:
+      <rect width="32" height="32" rx="6" fill="#1c3089"/>
+    and change page fill from #1c3089 to white.
+  -->
+
+  <!-- Soft container (light mode) -->
+  <rect width="32" height="32" rx="7" fill="#dde3f5"/>
 
   <!-- Back page -->
   <rect x="8" y="4"  width="20" height="15" rx="2.5" fill="#1c3089" opacity="0.28"/>
