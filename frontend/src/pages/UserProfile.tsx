@@ -41,6 +41,7 @@ function ReadingListsSection({ username }: { username: string }) {
   const [editingListId, setEditingListId] = useState<number | null>(null);
   const [editingName, setEditingName] = useState("");
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown on outside click
@@ -49,6 +50,7 @@ function ReadingListsSection({ username }: { username: string }) {
     const handler = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setOpenMenuId(null);
+        setConfirmDeleteId(null);
       }
     };
     document.addEventListener("mousedown", handler);
@@ -241,7 +243,7 @@ function ReadingListsSection({ username }: { username: string }) {
                   </div>
                   <p className="text-xs text-gray-400">
                     {list.item_count} {list.item_count === 1 ? "book" : "books"} ·{" "}
-                    Updated {timeAgo(list.updated_at)}
+                    Updated {timeAgo(list.updated_at, true)}
                   </p>
                 </div>
               </div>
@@ -269,32 +271,56 @@ function ReadingListsSection({ username }: { username: string }) {
 
                     {openMenuId === list.id && (
                       <div className="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-20 overflow-hidden py-1">
-                        <button
-                          onClick={() => { setEditingListId(list.id); setEditingName(list.name); setOpenMenuId(null); }}
-                          className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-paper-100 dark:hover:bg-gray-800 transition-colors"
-                        >
-                          <Pencil className="w-3.5 h-3.5 text-gray-400" />
-                          Rename
-                        </button>
-                        <button
-                          onClick={() => { updateList.mutate({ listId: list.id, isPublic: !list.is_public }); setOpenMenuId(null); }}
-                          className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-paper-100 dark:hover:bg-gray-800 transition-colors"
-                        >
-                          {list.is_public
-                            ? <LockKeyhole className="w-3.5 h-3.5 text-amber-500" />
-                            : <Globe2 className="w-3.5 h-3.5 text-ink-500" />
-                          }
-                          {list.is_public ? "Make Private" : "Make Public"}
-                        </button>
-                        <div className="border-t border-gray-100 dark:border-gray-700 my-1" />
-                        <button
-                          onClick={() => { deleteList.mutate(list.id); setOpenMenuId(null); }}
-                          disabled={deleteList.isPending}
-                          className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          Delete List
-                        </button>
+                        {confirmDeleteId === list.id ? (
+                          <div className="px-3 py-2.5">
+                            <p className="text-xs font-medium text-gray-700 dark:text-gray-200 mb-2">
+                              Delete this list?
+                            </p>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => { deleteList.mutate(list.id); setOpenMenuId(null); setConfirmDeleteId(null); }}
+                                disabled={deleteList.isPending}
+                                className="flex-1 py-1 text-xs font-medium rounded bg-red-600 hover:bg-red-700 text-white transition-colors disabled:opacity-50"
+                              >
+                                Delete
+                              </button>
+                              <button
+                                onClick={() => setConfirmDeleteId(null)}
+                                className="flex-1 py-1 text-xs font-medium rounded bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 transition-colors"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => { setEditingListId(list.id); setEditingName(list.name); setOpenMenuId(null); }}
+                              className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-paper-100 dark:hover:bg-gray-800 transition-colors"
+                            >
+                              <Pencil className="w-3.5 h-3.5 text-gray-400" />
+                              Rename
+                            </button>
+                            <button
+                              onClick={() => { updateList.mutate({ listId: list.id, isPublic: !list.is_public }); setOpenMenuId(null); }}
+                              className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-paper-100 dark:hover:bg-gray-800 transition-colors"
+                            >
+                              {list.is_public
+                                ? <LockKeyhole className="w-3.5 h-3.5 text-amber-500" />
+                                : <Globe2 className="w-3.5 h-3.5 text-ink-500" />
+                              }
+                              {list.is_public ? "Make Private" : "Make Public"}
+                            </button>
+                            <div className="border-t border-gray-100 dark:border-gray-700 my-1" />
+                            <button
+                              onClick={() => setConfirmDeleteId(list.id)}
+                              className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              Delete List
+                            </button>
+                          </>
+                        )}
                       </div>
                     )}
                   </div>

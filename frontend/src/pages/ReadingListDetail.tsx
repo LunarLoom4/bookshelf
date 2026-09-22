@@ -132,7 +132,7 @@ export default function ReadingListDetail() {
           </div>
           <p className="text-sm text-gray-400">
             {books.length} {books.length === 1 ? "book" : "books"} ·{" "}
-            Updated {timeAgo(list.updated_at)}
+            Updated {timeAgo(list.updated_at, true)}
           </p>
         </div>
         {isOwner && (
