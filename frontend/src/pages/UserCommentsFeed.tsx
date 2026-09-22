@@ -158,14 +158,14 @@ export default function UserCommentsFeed() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const isFocusedRef = useRef(false);
 
   useEffect(() => {
     const t = setTimeout(() => {
-      const hadFocus = document.activeElement === inputRef.current;
       setDebouncedSearch(search);
-      // Restore focus after the state update causes a re-render
-      if (hadFocus) {
-        requestAnimationFrame(() => inputRef.current?.focus());
+      // If user was typing (input had focus), restore focus after React re-renders
+      if (isFocusedRef.current) {
+        setTimeout(() => inputRef.current?.focus(), 0);
       }
     }, 300);
     return () => clearTimeout(t);
@@ -298,6 +298,8 @@ export default function UserCommentsFeed() {
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
+            onFocus={() => { isFocusedRef.current = true; }}
+            onBlur={() => { isFocusedRef.current = false; }}
             placeholder="Search comments..."
             className="input pl-9 pr-8 text-sm w-full"
           />

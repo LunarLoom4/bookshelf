@@ -3,19 +3,31 @@ User comment feed endpoints.
 
 GET /users/{username}/commented-books
   Returns every book the user has commented on, with total comment count
-  and per-edition breakdown (edition_id, edition_number, comment count).
-  Used by the profile page Comments grid.
+  and per-edition breakdown.
 
 GET /users/{username}/comments
-  Paginated comment feed for one book (book_id required).
-  Supports: sort, search (q), page, limit.
-  Returns comments + edition metadata so the frontend can group by edition.
+  Paginated, sortable, searchable comment feed for one book.
+
+  Sort logic:
+    newest:    created_at DESC, id DESC              -- most recent first
+    oldest:    created_at ASC, id ASC               -- chronological
+    upvotes:   coalesce(score,0) DESC, created_at DESC  -- highest score first; ties go to newest
+    downvotes: coalesce(score,0) ASC, created_at DESC   -- lowest (most negative) first; ties newest
+    replies:   reply_count DESC, created_at DESC    -- most engaged threads first
+
+  Only TOP-LEVEL comments are shown (parent_id IS NULL). Replies live in
+  the reader and showing them here would be confusing and misleading.
+
+  Pagination is per-edition: each edition independently fetches page N of
+  its own comments in the requested sort order. This ensures that:
+    - The comment count badge on each edition header matches what's shown
+    - Sorting criteria apply within each edition independently
+    - Page 2 for Edition 6 doesn't mix with Edition 5's comments
 """
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
-from sqlalchemy import func, select, or_
+from sqlalchemy import func, select, case
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from app.db.session import get_db
 from app.models.book import Book
@@ -64,7 +76,7 @@ class CommentFeedEdition(BaseModel):
     publisher: str | None
     file_size_bytes: int | None
     page_count: int | None
-    comment_count: int           # total matching comments in this edition
+    comment_count: int           # total matching top-level comments for this edition
     comments: list[CommentFeedItem]
 
 
@@ -80,6 +92,38 @@ class CommentFeedResponse(BaseModel):
     has_more: bool
 
 
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
+def _build_sort_order(sort: str, vote_score_sq, reply_sq):
+    """
+    Return SQLAlchemy order_by clauses for the given sort key.
+    Always includes a stable tiebreaker (created_at DESC, id DESC) so
+    the sort is deterministic even when the primary criterion is equal.
+
+    NULL handling:
+      - vote scores: coalesce(score, 0) so unvoted comments are treated
+        as score=0, sitting between positive and negative comments.
+      - reply counts: coalesce(cnt, 0) so no-reply comments sort last
+        on replies sort.
+    """
+    score_col = func.coalesce(vote_score_sq.c.score, 0)
+    reply_col = func.coalesce(reply_sq.c.cnt, 0)
+
+    if sort == "oldest":
+        return [Comment.created_at.asc(), Comment.id.asc()]
+    elif sort == "upvotes":
+        # Highest net score first; ties broken by newest
+        return [score_col.desc(), Comment.created_at.desc(), Comment.id.desc()]
+    elif sort == "downvotes":
+        # Lowest net score first (most negative); ties broken by newest
+        return [score_col.asc(), Comment.created_at.desc(), Comment.id.desc()]
+    elif sort == "replies":
+        # Most-replied-to first; ties broken by newest
+        return [reply_col.desc(), Comment.created_at.desc(), Comment.id.desc()]
+    else:  # "newest" and any unknown sort
+        return [Comment.created_at.desc(), Comment.id.desc()]
+
+
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
 @router.get("/{username}/commented-books", response_model=list[CommentedBook])
@@ -88,15 +132,14 @@ async def get_commented_books(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Return all books the user has commented on, with per-edition counts.
-    Used by the profile page Comments section.
+    Return all books the user has commented on (top-level comments only),
+    with per-edition counts. Sorted by most commented book first.
     """
     user_result = await db.execute(select(User).where(User.username == username))
     user = user_result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # Get distinct books + editions with comment counts in one query
     rows = await db.execute(
         select(
             Book.id,
@@ -112,35 +155,14 @@ async def get_commented_books(
         .where(
             Comment.user_id == user.id,
             Comment.is_deleted.is_(False),
-            Comment.parent_id.is_(None),   # top-level only for the count
+            Comment.parent_id.is_(None),   # top-level only
         )
         .group_by(Book.id, Book.title, Book.author, Book.cover_url, Edition.id, Edition.edition_number)
         .order_by(Book.id, Edition.edition_number)
     )
 
-    # Also count replies
-    reply_rows = await db.execute(
-        select(
-            Edition.book_id,
-            Edition.id.label("edition_id"),
-            func.count(Comment.id).label("reply_count"),
-        )
-        .join(Comment, Comment.edition_id == Edition.id)
-        .where(
-            Comment.user_id == user.id,
-            Comment.is_deleted.is_(False),
-            Comment.parent_id.isnot(None),
-        )
-        .group_by(Edition.book_id, Edition.id)
-    )
-    reply_map: dict[int, int] = {}
-    for r in reply_rows.all():
-        reply_map[r.edition_id] = reply_map.get(r.edition_id, 0) + r.reply_count
-
-    # Aggregate into per-book structure
     books: dict[int, CommentedBook] = {}
     for row in rows.all():
-        edition_count = row.edition_comment_count + reply_map.get(row.edition_id, 0)
         if row.id not in books:
             books[row.id] = CommentedBook(
                 book_id=row.id,
@@ -154,23 +176,12 @@ async def get_commented_books(
             EditionCommentCount(
                 edition_id=row.edition_id,
                 edition_number=row.edition_number,
-                comment_count=edition_count,
+                comment_count=row.edition_comment_count,
             )
         )
-        books[row.id].total_comments += edition_count
+        books[row.id].total_comments += row.edition_comment_count
 
-    # Sort by most commented first
     return sorted(books.values(), key=lambda b: b.total_comments, reverse=True)
-
-
-SORT_MAP = {
-    "newest":    Comment.created_at.desc(),
-    "oldest":    Comment.created_at.asc(),
-    "upvotes":   None,   # handled with subquery
-    "downvotes": None,   # handled with subquery
-    "replies":   None,   # handled with subquery
-    "page":      None,   # page_number asc
-}
 
 
 @router.get("/{username}/comments", response_model=CommentFeedResponse)
@@ -184,8 +195,14 @@ async def get_user_comments_for_book(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Paginated comment feed for a specific user + book combination.
-    Returns comments grouped by edition, sorted and filtered.
+    Paginated comment feed for a specific user + book.
+
+    Pagination is per-edition: each edition independently paginates its own
+    comments in the requested sort order, so the comment count shown in each
+    edition's header always matches the comments actually displayed.
+
+    Only top-level comments (parent_id IS NULL) are shown. Replies belong
+    in the reader context, not in a linear feed.
     """
     user_result = await db.execute(select(User).where(User.username == username))
     user = user_result.scalar_one_or_none()
@@ -197,131 +214,128 @@ async def get_user_comments_for_book(
     if not book:
         raise HTTPException(status_code=404, detail="Book not found")
 
-    # Edition ids for this book
+    # Fetch all editions for this book, newest edition first
     editions_result = await db.execute(
-        select(Edition).where(Edition.book_id == book_id).order_by(Edition.edition_number.desc())
+        select(Edition)
+        .where(Edition.book_id == book_id)
+        .order_by(Edition.edition_number.desc())
     )
     editions = editions_result.scalars().all()
-    edition_ids = [e.id for e in editions]
-    edition_map = {e.id: e for e in editions}
 
-    if not edition_ids:
+    if not editions:
         return CommentFeedResponse(
             book_id=book_id, book_title=book.title, book_author=book.author,
             book_cover_url=book.cover_url, editions=[], total=0,
             page=page, limit=limit, has_more=False,
         )
 
-    # Base filter
-    base_filter = [
-        Comment.user_id == user.id,
-        Comment.edition_id.in_(edition_ids),
-        Comment.is_deleted.is_(False),
-    ]
-    if q.strip():
-        base_filter.append(Comment.body.ilike(f"%{q.strip()}%"))
-
-    # Vote score subquery for sorting
+    # Build shared subqueries for vote scores and reply counts
+    # These cover ALL comments so they work regardless of which edition we filter
     vote_score_sq = (
         select(Vote.comment_id, func.sum(Vote.value).label("score"))
         .group_by(Vote.comment_id)
         .subquery()
     )
-
-    # Reply count subquery
     reply_sq = (
         select(Comment.parent_id, func.count(Comment.id).label("cnt"))
         .where(Comment.is_deleted.is_(False), Comment.parent_id.isnot(None))
         .group_by(Comment.parent_id)
         .subquery()
     )
+    order_clauses = _build_sort_order(sort, vote_score_sq, reply_sq)
 
-    base_q = (
-        select(Comment, vote_score_sq.c.score, reply_sq.c.cnt)
-        .outerjoin(vote_score_sq, vote_score_sq.c.comment_id == Comment.id)
-        .outerjoin(reply_sq, reply_sq.c.parent_id == Comment.id)
-        .where(*base_filter)
-    )
+    edition_list: list[CommentFeedEdition] = []
+    grand_total = 0
+    any_has_more = False
 
-    # Apply sort
-    if sort == "newest":
-        base_q = base_q.order_by(Comment.created_at.desc())
-    elif sort == "oldest":
-        base_q = base_q.order_by(Comment.created_at.asc())
-    elif sort == "upvotes":
-        base_q = base_q.order_by((vote_score_sq.c.score).desc().nulls_last())
-    elif sort == "downvotes":
-        base_q = base_q.order_by((vote_score_sq.c.score).asc().nulls_last())
-    elif sort == "replies":
-        base_q = base_q.order_by((reply_sq.c.cnt).desc().nulls_last())
-    elif sort == "page":
-        base_q = base_q.order_by(Comment.page_number.asc().nulls_last())
-    else:
-        base_q = base_q.order_by(Comment.created_at.desc())
+    for ed in editions:
+        # Base filter for this edition: this user, top-level only, not deleted
+        base_filter = [
+            Comment.user_id == user.id,
+            Comment.edition_id == ed.id,
+            Comment.is_deleted.is_(False),
+            Comment.parent_id.is_(None),     # top-level comments only
+        ]
+        if q.strip():
+            base_filter.append(Comment.body.ilike(f"%{q.strip()}%"))
 
-    # Total count
-    count_result = await db.execute(
-        select(func.count()).select_from(
-            select(Comment.id).where(*base_filter).subquery()
+        # Count matching comments for this edition
+        count_result = await db.execute(
+            select(func.count(Comment.id)).where(*base_filter)
         )
-    )
-    total = count_result.scalar_one()
+        edition_total = count_result.scalar_one()
+        grand_total += edition_total
 
-    # Paginated fetch
-    offset = (page - 1) * limit
-    rows = await db.execute(base_q.offset(offset).limit(limit))
-    rows_all = rows.all()
+        if edition_total == 0:
+            # Include the edition in the response so the accordion always renders
+            # but with an empty comment list -- user can see all their editions
+            edition_list.append(CommentFeedEdition(
+                edition_id=ed.id,
+                edition_number=ed.edition_number,
+                year=ed.year,
+                publisher=ed.publisher,
+                file_size_bytes=ed.file_size_bytes,
+                page_count=ed.page_count,
+                comment_count=0,
+                comments=[],
+            ))
+            continue
 
-    # Group by edition
-    edition_buckets: dict[int, list[CommentFeedItem]] = {}
-    for comment, score, reply_cnt in rows_all:
-        item = CommentFeedItem(
-            id=comment.id,
-            body=comment.body,
-            page_number=comment.page_number,
-            edition_id=comment.edition_id,
-            edition_number=edition_map[comment.edition_id].edition_number,
-            parent_id=comment.parent_id,
-            vote_score=int(score or 0),
-            created_at=comment.created_at.isoformat(),
-            edited_at=comment.edited_at.isoformat() if comment.edited_at else None,
-            is_deleted=comment.is_deleted,
+        # Paginated, sorted fetch for this edition
+        offset = (page - 1) * limit
+        rows = await db.execute(
+            select(Comment, vote_score_sq.c.score, reply_sq.c.cnt)
+            .outerjoin(vote_score_sq, vote_score_sq.c.comment_id == Comment.id)
+            .outerjoin(reply_sq, reply_sq.c.parent_id == Comment.id)
+            .where(*base_filter)
+            .order_by(*order_clauses)
+            .offset(offset)
+            .limit(limit)
         )
-        edition_buckets.setdefault(comment.edition_id, []).append(item)
+        rows_all = rows.all()
 
-    # Per-edition comment counts (all matching, not just this page)
-    count_by_edition_result = await db.execute(
-        select(Comment.edition_id, func.count(Comment.id))
-        .where(*base_filter)
-        .group_by(Comment.edition_id)
-    )
-    count_by_edition = {eid: cnt for eid, cnt in count_by_edition_result.all()}
+        if (offset + len(rows_all)) < edition_total:
+            any_has_more = True
 
-    # Build edition list -- only include editions with results on this page
-    edition_list = []
-    for eid, comments in edition_buckets.items():
-        ed = edition_map[eid]
-        edition_list.append(CommentFeedEdition(
-            edition_id=eid,
-            edition_number=ed.edition_number,
-            year=ed.year if hasattr(ed, "year") else None,
-            publisher=ed.publisher if hasattr(ed, "publisher") else None,
-            file_size_bytes=ed.file_size_bytes if hasattr(ed, "file_size_bytes") else None,
-            page_count=ed.page_count if hasattr(ed, "page_count") else None,
-            comment_count=count_by_edition.get(eid, len(comments)),
-            comments=comments,
-        ))
-    # Sort editions newest first
-    edition_list.sort(key=lambda e: e.edition_number, reverse=True)
+        comments = [
+            CommentFeedItem(
+                id=c.id,
+                body=c.body,
+                page_number=c.page_number,
+                edition_id=c.edition_id,
+                edition_number=ed.edition_number,
+                parent_id=c.parent_id,
+                vote_score=int(score or 0),
+                created_at=c.created_at.isoformat(),
+                edited_at=c.edited_at.isoformat() if c.edited_at else None,
+                is_deleted=c.is_deleted,
+            )
+            for c, score, _ in rows_all
+        ]
 
+        # Only include editions that have comments on this page
+        # (editions with no matches on this page were already handled above with empty list)
+        if comments:
+            edition_list.append(CommentFeedEdition(
+                edition_id=ed.id,
+                edition_number=ed.edition_number,
+                year=ed.year,
+                publisher=ed.publisher,
+                file_size_bytes=ed.file_size_bytes,
+                page_count=ed.page_count,
+                comment_count=edition_total,
+                comments=comments,
+            ))
+
+    # Editions already sorted newest first from the DB query above
     return CommentFeedResponse(
         book_id=book_id,
         book_title=book.title,
         book_author=book.author,
         book_cover_url=book.cover_url,
         editions=edition_list,
-        total=total,
+        total=grand_total,
         page=page,
         limit=limit,
-        has_more=(offset + len(rows_all)) < total,
+        has_more=any_has_more,
     )
