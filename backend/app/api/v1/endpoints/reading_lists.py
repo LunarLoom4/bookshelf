@@ -2,6 +2,7 @@
 Reading lists: named, optionally public lists of books.
 Users manage their own lists; public lists are visible to anyone.
 """
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -260,6 +261,7 @@ async def add_book_to_list(
 
     item = ReadingListItem(list_id=list_id, book_id=book_id)
     db.add(item)
+    reading_list.updated_at = datetime.now(timezone.utc)
     await db.commit()
 
     # Notify the book uploader that someone added their book to a list
@@ -296,4 +298,5 @@ async def remove_book_from_list(
     item_obj = item_result.scalar_one_or_none()
     if item_obj:
         await db.delete(item_obj)
+        reading_list.updated_at = datetime.now(timezone.utc)
         await db.commit()

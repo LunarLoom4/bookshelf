@@ -1,10 +1,18 @@
 /**
- * timeAgo — formats a date as "5 min ago", "3 hours ago", "2 days ago"
- * WITHOUT the leading "about" that date-fns adds.
+ * timeAgo -- compact relative time string.
+ * "just now", "2m", "3h", "5d", "2mo", "1y"
  */
-import { formatDistanceToNow } from "date-fns";
-
 export function timeAgo(date: string | Date): string {
-  const raw = formatDistanceToNow(new Date(date), { addSuffix: true });
-  return raw.replace(/^about /, "");
+  const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
+  if (seconds < 45)  return "just now";
+  if (seconds < 90)  return "1m";
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60)  return `${minutes}m`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24)    return `${hours}h`;
+  const days = Math.round(hours / 24);
+  if (days < 30)     return `${days}d`;
+  const months = Math.round(days / 30);
+  if (months < 12)   return `${months}mo`;
+  return `${Math.round(days / 365)}y`;
 }
