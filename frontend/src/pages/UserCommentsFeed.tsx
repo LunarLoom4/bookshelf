@@ -19,17 +19,17 @@ const SORT_OPTIONS = [
 // (f) Numbered comment row: number side not clickable, content side navigates
 function CommentCard({ comment, index }: { comment: CommentFeedItem; index: number }) {
   return (
-    <div className="flex items-stretch">
-      {/* Number column -- NOT clickable */}
-      <div className="flex-shrink-0 w-10 flex items-center justify-center">
-        <span className="text-xs font-medium text-gray-400 dark:text-gray-500 select-none">
+    <div className="flex min-h-0">
+      {/* Number column -- NOT clickable, self-stretch so divider can fill height */}
+      <div className="flex-shrink-0 w-10 flex flex-col items-center justify-center self-stretch">
+        <span className="text-xs font-semibold text-ink-400 dark:text-indigo-400 tabular-nums">
           {index + 1}
         </span>
       </div>
 
-      {/* Vertical divider -- 82% height, centered */}
-      <div className="flex items-center py-[9%]">
-        <div className="w-px h-full bg-gray-200 dark:bg-gray-700" />
+      {/* Vertical divider -- 82% height, vertically centered via my auto */}
+      <div className="flex-shrink-0 flex flex-col self-stretch py-[9%]">
+        <div className="flex-1 w-px bg-gray-300 dark:bg-gray-600" />
       </div>
 
       {/* Content column -- clickable */}
@@ -37,8 +37,8 @@ function CommentCard({ comment, index }: { comment: CommentFeedItem; index: numb
         to={`/read/${comment.edition_id}${comment.page_number ? `?page=${comment.page_number}` : ""}`}
         className="flex-1 group min-w-0"
       >
-        <div className="px-4 py-4 hover:bg-ink-50/60 dark:hover:bg-white/5 transition-colors">
-          <p className="text-sm leading-relaxed text-ink-900 dark:text-gray-100 line-clamp-3 mb-2.5 group-hover:text-ink-600 dark:group-hover:text-indigo-300 transition-colors">
+        <div className="px-4 py-2.5 hover:bg-ink-50/60 dark:hover:bg-white/5 transition-colors">
+          <p className="text-sm leading-relaxed text-ink-900 dark:text-gray-100 line-clamp-3 mb-1.5 group-hover:text-ink-600 dark:group-hover:text-indigo-300 transition-colors">
             {comment.body}
           </p>
           <div className="flex items-center gap-3 text-xs flex-wrap">
@@ -265,13 +265,13 @@ export default function UserCommentsFeed() {
             className="input pl-9 text-sm w-full"
           />
         </div>
-        {/* (b) Custom dropdown -- equal padding all sides, centered text, icon right */}
+        {/* (b) Select matches .input height exactly: py-2 = 8px top/bottom */}
         <div className="relative flex-shrink-0 sm:w-44">
           <select
             value={sort}
             onChange={e => setSort(e.target.value)}
-            className="appearance-none w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm text-ink-900 dark:text-gray-100 font-medium cursor-pointer transition-colors hover:border-gray-300 dark:hover:border-gray-600 focus:outline-none focus:ring-2 focus:ring-ink-300 dark:focus:ring-ink-700"
-            style={{ padding: "10px 36px 10px 12px" }}
+            className="appearance-none w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm text-ink-900 dark:text-gray-100 cursor-pointer transition-colors hover:border-gray-400 dark:hover:border-gray-600 focus:outline-none focus:ring-2 focus:ring-ink-500 focus:border-transparent"
+            style={{ padding: "8px 36px 8px 12px", fontWeight: 400 }}
           >
             {SORT_OPTIONS.map(o => (
               <option key={o.value} value={o.value}>{o.label}</option>
