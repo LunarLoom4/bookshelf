@@ -1,23 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
-  <!--
-    Bookshelf brand mark -- stacked pages + amber bookmark.
-    Navbar usage: use this file directly (soft container below).
-    Favicon usage: replace the two <rect> containers with:
-      <rect width="32" height="32" rx="6" fill="#1c3089"/>
-    and change page fill from #1c3089 to white.
-  -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <!-- Bookshelf logo -- Option D, amber container, centered mark -->
+  <!-- Light mode version (amber fill). For dark mode swap fill="#fbbf24" to fill="#3d2000" and page fill to white -->
 
-  <!-- Soft container (light mode) -->
-  <rect width="32" height="32" rx="7" fill="#dde3f5"/>
+  <rect width="48" height="48" rx="10" fill="#fbbf24"/>
 
   <!-- Back page -->
-  <rect x="8" y="4"  width="20" height="15" rx="2.5" fill="#1c3089" opacity="0.28"/>
+  <rect x="14" y="6"  width="30" height="22" rx="3.5" fill="#1c3089" opacity="0.28"/>
   <!-- Middle page -->
-  <rect x="5" y="9"  width="20" height="15" rx="2.5" fill="#1c3089" opacity="0.55"/>
+  <rect x="9"  y="13" width="30" height="22" rx="3.5" fill="#1c3089" opacity="0.55"/>
   <!-- Front page -->
-  <rect x="2" y="14" width="20" height="15" rx="2.5" fill="#1c3089"/>
+  <rect x="5"  y="20" width="30" height="22" rx="3.5" fill="#1c3089"/>
   <!-- Text lines -->
-  <rect x="6" y="19" width="9" height="2" rx="1" fill="white" opacity="0.3"/>
+  <rect x="10" y="28" width="13" height="3"  rx="1.5" fill="white" opacity="0.3"/>
   <!-- Amber bookmark ribbon -->
-  <path d="M17 14 L22 14 L22 22 L19.5 20 L17 22 Z" fill="#f59e0b"/>
+  <path d="M29 20 L37 20 L37 32 L33 29 L29 32 Z" fill="#f59e0b"/>
 </svg>
