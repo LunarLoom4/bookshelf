@@ -21,8 +21,8 @@ export const authApi = {
 
 // ── Books ──────────────────────────────────────────────────────────────────────
 export const booksApi = {
-  list: (skip = 0, limit = 20) =>
-    api.get<BookListItem[]>("/books/", { params: { skip, limit } }),
+  list: (skip = 0, limit = 20, sort = "newest") =>
+    api.get<BookListItem[]>("/books/", { params: { skip, limit, sort } }),
   popular: (days = 7, limit = 6) =>
     api.get<BookListItem[]>("/books/popular", { params: { days, limit } }),
 
@@ -271,4 +271,17 @@ export const userCommentsApi = {
     api.get<CommentFeedResponse>(`/users/${username}/comments`, {
       params: { book_id: bookId, ...params },
     }),
+};
+
+// ── Edition likes ────────────────────────────────────────────────────────────
+export interface LikeStatus {
+  liked: boolean;
+  count: number;
+}
+
+export const likesApi = {
+  status: (editionId: number) =>
+    api.get<LikeStatus>(`/editions/${editionId}/like`),
+  toggle: (editionId: number) =>
+    api.post<LikeStatus>(`/editions/${editionId}/like`),
 };

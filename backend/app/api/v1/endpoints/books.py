@@ -426,26 +426,48 @@ async def delete_book(
 async def list_books(
     skip: int = 0,
     limit: int = 20,
+    sort: str = "newest",
     db: AsyncSession = Depends(get_db),
 ):
-    """Recent books, paginated."""
-    result = await db.execute(
+    """Books list with sort: newest, oldest, most_discussed, most_editions, most_liked."""
+    from app.models.edition_like import EditionLike
+
+    likes_sq = (
+        select(Edition.book_id, func.count(EditionLike.id).label("like_count"))
+        .outerjoin(EditionLike, EditionLike.edition_id == Edition.id)
+        .group_by(Edition.book_id)
+        .subquery()
+    )
+
+    base_q = (
         select(
             Book,
             func.count(Edition.id.distinct()).label("edition_count"),
             func.count(Comment.id.distinct()).label("comment_count"),
+            func.coalesce(likes_sq.c.like_count, 0).label("like_count"),
         )
         .outerjoin(Edition, Edition.book_id == Book.id)
         .outerjoin(Comment, (Comment.edition_id == Edition.id) & (Comment.is_deleted.is_(False)))
-        .group_by(Book.id)
-        .order_by(Book.created_at.desc())
-        .offset(skip)
-        .limit(limit)
+        .outerjoin(likes_sq, likes_sq.c.book_id == Book.id)
+        .group_by(Book.id, likes_sq.c.like_count)
     )
+
+    if sort == "oldest":
+        base_q = base_q.order_by(Book.created_at.asc())
+    elif sort == "most_discussed":
+        base_q = base_q.order_by(func.count(Comment.id.distinct()).desc(), Book.created_at.desc())
+    elif sort == "most_editions":
+        base_q = base_q.order_by(func.count(Edition.id.distinct()).desc(), Book.created_at.desc())
+    elif sort == "most_liked":
+        base_q = base_q.order_by(func.coalesce(likes_sq.c.like_count, 0).desc(), Book.created_at.desc())
+    else:  # newest (default)
+        base_q = base_q.order_by(Book.created_at.desc())
+
+    result = await db.execute(base_q.offset(skip).limit(limit))
     rows = result.all()
     books = []
     for row in rows:
-        book, edition_count, comment_count = row
+        book, edition_count, comment_count, _ = row
         item = BookListItem.model_validate(book)
         item.edition_count = edition_count
         item.comment_count = comment_count

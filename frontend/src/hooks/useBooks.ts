@@ -6,10 +6,10 @@ export const BOOKS_KEY = "books";
 export const COMMENTS_KEY = "comments";
 
 // ── Books ──────────────────────────────────────────────────────────────────────
-export function useBooks(skip = 0, limit = 20) {
+export function useBooks(skip = 0, limit = 20, sort = "newest") {
   return useQuery({
-    queryKey: [BOOKS_KEY, "list", skip, limit],
-    queryFn: () => booksApi.list(skip, limit).then((r) => r.data),
+    queryKey: [BOOKS_KEY, "list", skip, limit, sort],
+    queryFn: () => booksApi.list(skip, limit, sort).then((r) => r.data),
     staleTime: 5 * 60 * 1000, // 5 minutes -- book list rarely changes
   });
 }

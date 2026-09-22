@@ -263,18 +263,7 @@ async def add_book_to_list(
     db.add(item)
     reading_list.updated_at = datetime.now(timezone.utc)
     await db.commit()
-
-    # Notify the book uploader that someone added their book to a list
-    await push_notification(
-        db,
-        recipient_id=book.uploader_id,
-        actor_id=current_user.id,
-        notif_type="book_added_to_list",
-        message=f"{current_user.username} added \"{book.title}\" to their list \"{reading_list.name}\"",
-        detail=None,
-        link=f"/books/{book_id}",
-        actor_username=current_user.username,
-    )
+    # No notification for adding to a reading list
 
 
 @router.delete("/{list_id}/books/{book_id}", status_code=status.HTTP_204_NO_CONTENT)

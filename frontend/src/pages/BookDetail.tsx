@@ -1,14 +1,15 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { LanguagePicker } from "@/components/ui/LanguagePicker";
-import { useQuery } from "@tanstack/react-query";
-import { progressApi } from "@/api";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { progressApi, likesApi } from "@/api";
 import { useAuthStore } from "@/stores/authStore";
 import { BookDetailSkeleton } from "@/components/ui/Skeleton";
 import { Avatar } from "@/components/ui/Avatar";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import {
   BookOpen, Layers, User, Calendar, Globe, FileText,
   Upload, Plus, X, CheckCircle, Link2, Download, Table2,
+  Heart, MoreVertical, Trash2,
 } from "lucide-react";
 import { useBook, useUploadCover, useAddEdition, useDeleteBook } from "@/hooks/useBooks";
 import { format } from "date-fns";
@@ -24,6 +25,24 @@ function formatBytes(bytes: number | null) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+function TotalLikesBadge({ editions }: { editions: Edition[] }) {
+  const queries = editions.map(ed =>
+    useQuery({
+      queryKey: ["like", ed.id],
+      queryFn: () => likesApi.status(ed.id).then(r => r.data),
+      staleTime: 60 * 1000,
+    })
+  );
+  const total = queries.reduce((sum, q) => sum + (q.data?.count ?? 0), 0);
+  if (total === 0) return null;
+  return (
+    <div className="absolute top-2 right-2 flex items-center gap-1 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full backdrop-blur-sm">
+      <Heart className="w-3 h-3 fill-red-400 text-red-400" />
+      {total}
+    </div>
+  );
+}
+
 function EditionRow({ edition, bookId, isOwner, onDelete }: {
   edition: Edition;
   bookId: number;
@@ -31,26 +50,58 @@ function EditionRow({ edition, bookId, isOwner, onDelete }: {
   onDelete: () => void;
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   const deleteBook = useDeleteBook();
   const { isAuthenticated } = useAuthStore();
+  const qc = useQueryClient();
 
-  // 20: Fetch reading progress for this edition
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+        setConfirmDelete(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [menuOpen]);
+
   const { data: progress } = useQuery({
     queryKey: ["progress", edition.id],
     queryFn: () => progressApi.get(edition.id).then((r) => r.data),
     enabled: isAuthenticated,
-    staleTime: 0,          // always fresh when returning from reading
+    staleTime: 0,
     refetchOnWindowFocus: true,
   });
   const lastPage = progress?.last_page;
 
+  const { data: likeStatus } = useQuery({
+    queryKey: ["like", edition.id],
+    queryFn: () => likesApi.status(edition.id).then((r) => r.data),
+    staleTime: 60 * 1000,
+  });
+
+  const toggleLike = useMutation({
+    mutationFn: () => likesApi.toggle(edition.id),
+    onMutate: async () => {
+      await qc.cancelQueries({ queryKey: ["like", edition.id] });
+      const prev = qc.getQueryData(["like", edition.id]);
+      qc.setQueryData(["like", edition.id], (old: any) =>
+        old ? { liked: !old.liked, count: old.liked ? old.count - 1 : old.count + 1 } : old
+      );
+      return { prev };
+    },
+    onError: (_e: any, _v: any, ctx: any) => {
+      if (ctx?.prev) qc.setQueryData(["like", edition.id], ctx.prev);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["like", edition.id] }),
+  });
+
   const handleDelete = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!confirmDelete) {
-      setConfirmDelete(true);
-      return;
-    }
     try {
       await deleteBook.mutateAsync(bookId);
       onDelete();
@@ -60,19 +111,18 @@ function EditionRow({ edition, bookId, isOwner, onDelete }: {
     }
   };
 
+  const liked = likeStatus?.liked ?? false;
+  const likeCount = likeStatus?.count ?? 0;
+
   return (
     <div className="card flex items-center justify-between p-4 hover:shadow-md hover:border-ink-200 transition-all duration-150">
       <div className="flex items-center gap-4 flex-1 min-w-0">
-        {/* (c) E-badge instead of generic Layers icon */}
-        <div className="w-9 h-9 bg-ink-50 dark:bg-ink-900/40 rounded-lg flex items-center justify-center text-ink-600 flex-shrink-0">
+        <div className="w-9 h-9 bg-ink-50 dark:bg-ink-900/40 rounded-lg flex items-center justify-center flex-shrink-0">
           <span className="text-xs font-semibold text-ink-600 dark:text-indigo-300">E{edition.edition_number}</span>
         </div>
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <p className="text-sm font-medium text-ink-900">
-              Edition {edition.edition_number}
-            </p>
-            {/* (c) Year as a badge matching EDITED style */}
+            <p className="text-sm font-medium text-ink-900">Edition {edition.edition_number}</p>
             {edition.year && (
               <span className="text-[11px] font-medium px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 leading-none">
                 {edition.year}
@@ -81,92 +131,91 @@ function EditionRow({ edition, bookId, isOwner, onDelete }: {
           </div>
           <div className="flex flex-wrap items-center gap-2 mt-0.5 text-xs text-gray-400">
             {edition.publisher && (
-              <span className="flex items-center gap-1">
-                <FileText className="w-3 h-3" />
-                {edition.publisher}
-              </span>
+              <span className="flex items-center gap-1"><FileText className="w-3 h-3" />{edition.publisher}</span>
             )}
-            {/* (d) Visible separator between publisher and file stats */}
             {edition.publisher && (edition.file_size_bytes != null || edition.page_count != null) && (
               <span className="text-gray-300 dark:text-gray-600">·</span>
             )}
             {edition.language !== "en" && (
-              <span className="flex items-center gap-1">
-                <Globe className="w-3 h-3" />
-                {edition.language.toUpperCase()}
-              </span>
+              <span className="flex items-center gap-1"><Globe className="w-3 h-3" />{edition.language.toUpperCase()}</span>
             )}
-            {edition.file_size_bytes != null && (
-              <span>{formatBytes(edition.file_size_bytes)}</span>
-            )}
+            {edition.file_size_bytes != null && <span>{formatBytes(edition.file_size_bytes)}</span>}
             {edition.page_count != null && (
-              <span className="flex items-center gap-1">
-                <BookOpen className="w-3 h-3" />
-                {edition.page_count} pages
-              </span>
+              <span className="flex items-center gap-1"><BookOpen className="w-3 h-3" />{edition.page_count} pages</span>
             )}
-            <span className="flex items-center gap-1">
-              <Calendar className="w-3 h-3" />
-              {timeAgo(edition.created_at)}
-            </span>
+            <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />{timeAgo(edition.created_at)}</span>
           </div>
         </div>
       </div>
+
       <div className="flex items-center gap-2 flex-shrink-0 ml-4">
-        {/* 20: Continue from last page if progress exists */}
         {lastPage && lastPage > 1 ? (
-          <Link
-            to={`/read/${edition.id}`}
-            className="btn-primary py-1.5 text-xs"
-            title={`Continue from page ${lastPage}`}
-          >
-            p.{lastPage} ▶
-          </Link>
+          <Link to={`/read/${edition.id}`} className="btn-primary py-1.5 text-xs" title={`Continue from page ${lastPage}`}>p.{lastPage} ▶</Link>
         ) : (
-          <Link
-            to={`/read/${edition.id}`}
-            className="btn-primary py-1.5 text-xs"
-          >
-            Read
-          </Link>
+          <Link to={`/read/${edition.id}`} className="btn-primary py-1.5 text-xs">Read</Link>
         )}
-        {/* 26: Download PDF button */}
-        <a
-          href={`/api/v1/books/${bookId}/editions/${edition.id}/pdf`}
-          download={`${edition.edition_number ? "Edition-" + edition.edition_number : "book"}.pdf`}
-          className="btn-secondary py-1.5 text-xs flex items-center gap-1"
-          title="Download PDF"
-          onClick={(e) => e.stopPropagation()}
+
+        <button
+          onClick={() => { if (!isAuthenticated) { toast.error("Sign in to like"); return; } toggleLike.mutate(); }}
+          disabled={toggleLike.isPending}
+          title={liked ? "Unlike" : "Like this edition"}
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-md border transition-all
+            ${liked
+              ? "bg-red-50 border-red-200 text-red-500 dark:bg-red-900/20 dark:border-red-800 dark:text-red-400"
+              : "border-gray-200 text-gray-500 hover:border-red-200 hover:text-red-400 dark:border-gray-700 dark:text-gray-400"
+            }`}
         >
-          <Download className="w-3.5 h-3.5" />
-        </a>
-        {isOwner && (
-          confirmDelete ? (
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs text-red-600 font-medium">Delete book?</span>
-              <button
-                onClick={handleDelete}
-                disabled={deleteBook.isPending}
-                className="px-2 py-1 text-xs font-medium text-white bg-red-600 rounded hover:bg-red-700 transition-colors"
-              >
-                {deleteBook.isPending ? "Deleting..." : "Yes, delete"}
-              </button>
-              <button
-                onClick={(e) => { e.preventDefault(); setConfirmDelete(false); }}
-                className="px-2 py-1 text-xs text-gray-500 border border-gray-300 rounded hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
+          <Heart className={`w-3.5 h-3.5 ${liked ? "fill-current" : ""}`} />
+          {likeCount > 0 && <span className="font-medium">{likeCount}</span>}
+        </button>
+
+        <div className="relative" ref={menuRef}>
+          <button
+            onClick={() => setMenuOpen(v => !v)}
+            className="p-1.5 text-gray-400 hover:text-ink-700 rounded-md hover:bg-paper-100 dark:hover:bg-gray-700 transition-colors"
+          >
+            <MoreVertical className="w-4 h-4" />
+          </button>
+          {menuOpen && (
+            <div className="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-20 overflow-hidden py-1">
+              {confirmDelete ? (
+                <div className="px-3 py-2.5">
+                  <p className="text-xs font-medium text-gray-700 dark:text-gray-200 mb-2">Delete this book?</p>
+                  <div className="flex gap-2">
+                    <button onClick={handleDelete} disabled={deleteBook.isPending}
+                      className="flex-1 py-1 text-xs font-medium rounded bg-red-600 hover:bg-red-700 text-white transition-colors disabled:opacity-50">
+                      {deleteBook.isPending ? "Deleting..." : "Delete"}
+                    </button>
+                    <button onClick={() => setConfirmDelete(false)}
+                      className="flex-1 py-1 text-xs font-medium rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <a href={`/api/v1/books/${bookId}/editions/${edition.id}/pdf`}
+                    download={`Edition-${edition.edition_number}.pdf`}
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-paper-100 dark:hover:bg-gray-800 transition-colors">
+                    <Download className="w-3.5 h-3.5 text-gray-400" />
+                    Download PDF
+                  </a>
+                  {isOwner && (
+                    <>
+                      <div className="border-t border-gray-100 dark:border-gray-700 my-1" />
+                      <button onClick={() => setConfirmDelete(true)}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                        <Trash2 className="w-3.5 h-3.5" />
+                        Delete Book
+                      </button>
+                    </>
+                  )}
+                </>
+              )}
             </div>
-          ) : (
-            <button
-              onClick={handleDelete}
-              className="px-2 py-1.5 text-xs font-medium text-red-600 border border-red-200 rounded hover:bg-red-50 transition-colors"
-            >
-              Delete
-            </button>
-          )
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
@@ -400,19 +449,25 @@ export default function BookDetail() {
       <div className="flex flex-col sm:flex-row gap-8 mb-10">
         {/* Cover */}
         <div className="flex-shrink-0 w-40 sm:w-48">
-          {book.cover_url ? (
-            <img
-              src={book.cover_url}
-              alt={book.title}
-              loading="lazy"
-              decoding="async"
-              className="w-full rounded-lg shadow-md object-cover aspect-[3/4]"
-            />
-          ) : (
-            <div className="w-full aspect-[3/4] rounded-lg bg-paper-100 flex items-center justify-center text-paper-400">
-              <BookOpen className="w-12 h-12" />
-            </div>
-          )}
+          <div className="relative group overflow-hidden rounded-lg shadow-md">
+            {book.cover_url ? (
+              <img
+                src={book.cover_url}
+                alt={book.title}
+                loading="lazy"
+                decoding="async"
+                className="w-full object-cover aspect-[3/4] group-hover:scale-105 transition-transform duration-300"
+              />
+            ) : (
+              <div className="w-full aspect-[3/4] bg-paper-100 flex items-center justify-center text-paper-400">
+                <BookOpen className="w-12 h-12" />
+              </div>
+            )}
+            {/* Total likes across all editions */}
+            {book.editions.length > 0 && (
+              <TotalLikesBadge editions={book.editions} />
+            )}
+          </div>
           {/* Cover upload -- owner only */}
           {isOwner && <CoverUploadPanel bookId={book.id} />}
         </div>
