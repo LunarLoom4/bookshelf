@@ -7,47 +7,63 @@ import type { CommentFeedEdition, CommentFeedItem } from "@/api";
 import { timeAgo } from "@/utils/time";
 import { ScrollToTop } from "@/components/ui/ScrollToTop";
 
+// (c) Removed "By Page Number"
 const SORT_OPTIONS = [
   { value: "newest",    label: "Most Recent" },
   { value: "oldest",    label: "Oldest First" },
   { value: "upvotes",   label: "Most Upvotes" },
   { value: "downvotes", label: "Most Downvotes" },
   { value: "replies",   label: "Most Replies" },
-  { value: "page",      label: "By Page Number" },
 ];
 
-function CommentCard({ comment }: { comment: CommentFeedItem }) {
+// (f) Numbered comment row: number side not clickable, content side navigates
+function CommentCard({ comment, index }: { comment: CommentFeedItem; index: number }) {
   return (
-    <Link
-      to={`/read/${comment.edition_id}${comment.page_number ? `?page=${comment.page_number}` : ""}`}
-      className="block group"
-    >
-      <div className="px-4 py-4 hover:bg-ink-50/40 dark:hover:bg-white/5 transition-colors">
-        <p className="text-sm leading-relaxed text-ink-900 dark:text-gray-100 line-clamp-3 mb-2.5 group-hover:text-ink-600 dark:group-hover:text-indigo-300 transition-colors">
-          {comment.body}
-        </p>
-        <div className="flex items-center gap-3 text-xs flex-wrap">
-          {comment.page_number != null && (
-            <span className="page-badge">p. {comment.page_number}</span>
-          )}
-          {comment.vote_score !== 0 && (
-            <span className={`flex items-center gap-0.5 font-medium ${comment.vote_score > 0 ? "text-emerald-500" : "text-red-400"}`}>
-              {comment.vote_score > 0
-                ? <ThumbsUp className="w-3 h-3" />
-                : <ThumbsDown className="w-3 h-3" />
-              }
-              {Math.abs(comment.vote_score)}
-            </span>
-          )}
-          <span className="text-gray-400 dark:text-gray-500">{timeAgo(comment.created_at)}</span>
-          {comment.edited_at && (
-            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 tracking-wide">
-              EDITED
-            </span>
-          )}
-        </div>
+    <div className="flex items-stretch">
+      {/* Number column -- NOT clickable */}
+      <div className="flex-shrink-0 w-10 flex items-center justify-center">
+        <span className="text-xs font-medium text-gray-400 dark:text-gray-500 select-none">
+          {index + 1}
+        </span>
       </div>
-    </Link>
+
+      {/* Vertical divider -- 82% height, centered */}
+      <div className="flex items-center py-[9%]">
+        <div className="w-px h-full bg-gray-200 dark:bg-gray-700" />
+      </div>
+
+      {/* Content column -- clickable */}
+      <Link
+        to={`/read/${comment.edition_id}${comment.page_number ? `?page=${comment.page_number}` : ""}`}
+        className="flex-1 group min-w-0"
+      >
+        <div className="px-4 py-4 hover:bg-ink-50/60 dark:hover:bg-white/5 transition-colors">
+          <p className="text-sm leading-relaxed text-ink-900 dark:text-gray-100 line-clamp-3 mb-2.5 group-hover:text-ink-600 dark:group-hover:text-indigo-300 transition-colors">
+            {comment.body}
+          </p>
+          <div className="flex items-center gap-3 text-xs flex-wrap">
+            {comment.page_number != null && (
+              <span className="page-badge">p. {comment.page_number}</span>
+            )}
+            {comment.vote_score !== 0 && (
+              <span className={`flex items-center gap-0.5 font-medium ${comment.vote_score > 0 ? "text-emerald-500" : "text-red-400"}`}>
+                {comment.vote_score > 0
+                  ? <ThumbsUp className="w-3 h-3" />
+                  : <ThumbsDown className="w-3 h-3" />
+                }
+                {Math.abs(comment.vote_score)}
+              </span>
+            )}
+            <span className="text-gray-400 dark:text-gray-500">{timeAgo(comment.created_at)}</span>
+            {comment.edited_at && (
+              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 tracking-wide">
+                EDITED
+              </span>
+            )}
+          </div>
+        </div>
+      </Link>
+    </div>
   );
 }
 
@@ -92,13 +108,16 @@ function EditionAccordion({
         </div>
       </button>
 
+      {/* (a) Dividers: border-t on first comment, divide-y between rest -- gray-200 for clear visibility */}
       {open && edition.comments.length > 0 && (
-        <div className="border-t border-gray-100 dark:border-gray-800 divide-y divide-gray-100 dark:divide-gray-800">
-          {edition.comments.map(c => <CommentCard key={c.id} comment={c} />)}
+        <div className="border-t border-gray-200 dark:border-gray-700 divide-y divide-gray-200 dark:divide-gray-700">
+          {edition.comments.map((c, i) => (
+            <CommentCard key={c.id} comment={c} index={i} />
+          ))}
         </div>
       )}
       {open && edition.comments.length === 0 && (
-        <div className="px-4 py-6 text-center text-sm text-gray-400 border-t border-gray-100 dark:border-gray-800">
+        <div className="px-4 py-6 text-center text-sm text-gray-400 border-t border-gray-200 dark:border-gray-700">
           No comments match this filter.
         </div>
       )}
@@ -194,17 +213,21 @@ export default function UserCommentsFeed() {
     <div className="max-w-2xl mx-auto px-4 py-8">
       <ScrollToTop />
 
-      {/* Back link -- (e) more visible, username highlighted */}
+      {/* (d) Back link: only username is colored, "Back to" stays gray on hover */}
       <Link
         to={`/u/${username}`}
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-ink-700 dark:hover:text-gray-100 mb-6 transition-colors group"
+        className="inline-flex items-center gap-1.5 mb-6 group"
       >
-        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
-        Back to{" "}
-        <span className="text-ink-600 dark:text-indigo-400 font-semibold">{username}</span>
+        <ArrowLeft className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 group-hover:-translate-x-0.5 transition-all" />
+        <span className="text-sm font-medium text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors">
+          Back to
+        </span>
+        <span className="text-sm font-semibold text-ink-600 dark:text-indigo-400 group-hover:text-ink-800 dark:group-hover:text-indigo-300 transition-colors">
+          {username}
+        </span>
       </Link>
 
-      {/* Book header -- (b) comment count darker */}
+      {/* Book header -- (e) remove username, smaller comment count */}
       <div className="flex items-start gap-4 mb-8 p-4 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
         <div className="w-14 h-20 rounded-md overflow-hidden bg-paper-100 dark:bg-gray-800 flex-shrink-0">
           {meta.book_cover_url ? (
@@ -223,15 +246,15 @@ export default function UserCommentsFeed() {
             {meta.book_title}
           </Link>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{meta.book_author}</p>
-          <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 flex items-center gap-1.5 font-medium">
-            <MessageSquare className="w-3.5 h-3.5 text-ink-400" />
-            {total} comment{total !== 1 ? "s" : ""} by{" "}
-            <span className="text-ink-600 dark:text-indigo-400">{username}</span>
+          {/* (e) just "N comments", smaller, no username */}
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 flex items-center gap-1">
+            <MessageSquare className="w-3 h-3" />
+            {total} comment{total !== 1 ? "s" : ""}
           </p>
         </div>
       </div>
 
-      {/* Search + sort bar -- (c) custom select to center text */}
+      {/* Search + sort bar */}
       <div className="flex flex-col sm:flex-row gap-2 mb-6">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
@@ -242,12 +265,13 @@ export default function UserCommentsFeed() {
             className="input pl-9 text-sm w-full"
           />
         </div>
-        {/* Custom select wrapper for centered text + visible arrow */}
+        {/* (b) Custom dropdown -- equal padding all sides, centered text, icon right */}
         <div className="relative flex-shrink-0 sm:w-44">
           <select
             value={sort}
             onChange={e => setSort(e.target.value)}
-            className="appearance-none w-full input text-sm text-center pr-8 bg-white dark:bg-gray-900 cursor-pointer"
+            className="appearance-none w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm text-ink-900 dark:text-gray-100 font-medium cursor-pointer transition-colors hover:border-gray-300 dark:hover:border-gray-600 focus:outline-none focus:ring-2 focus:ring-ink-300 dark:focus:ring-ink-700"
+            style={{ padding: "10px 36px 10px 12px" }}
           >
             {SORT_OPTIONS.map(o => (
               <option key={o.value} value={o.value}>{o.label}</option>
@@ -277,16 +301,11 @@ export default function UserCommentsFeed() {
 
       <div ref={sentinelRef} className="h-1" />
 
+      {/* (f) Remove "All N comments loaded" -- spinner only while fetching */}
       {isFetchingNextPage && (
         <div className="flex justify-center py-8">
           <div className="w-6 h-6 border-4 border-ink-200 border-t-ink-500 rounded-full animate-spin" />
         </div>
-      )}
-
-      {!hasNextPage && total > 0 && (
-        <p className="text-center text-xs text-gray-400 dark:text-gray-600 py-6">
-          All {total} comment{total !== 1 ? "s" : ""} loaded
-        </p>
       )}
     </div>
   );
