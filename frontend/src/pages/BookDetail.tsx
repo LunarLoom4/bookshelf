@@ -276,7 +276,7 @@ function AddEditionPanel({ bookId, existingNums }: { bookId: number; existingNum
   return (
     <div className="card p-4 mt-4">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-ink-900">Add new edition</h3>
+        <h3 className="text-sm font-semibold text-ink-900">Add New Edition</h3>
         <button onClick={() => setOpen(false)} className="text-gray-400 hover:text-gray-600">
           <X className="w-4 h-4" />
         </button>
@@ -284,7 +284,7 @@ function AddEditionPanel({ bookId, existingNums }: { bookId: number; existingNum
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         {/* PDF pick */}
         <div>
-          <label className="label">PDF file <span className="text-red-400">*</span></label>
+          <label className="label">PDF File <span className="text-red-400">*</span></label>
           <input
             ref={fileRef}
             type="file"
@@ -348,7 +348,7 @@ function AddEditionPanel({ bookId, existingNums }: { bookId: number; existingNum
           disabled={addEdition.isPending || !pdfFile}
           className="btn-primary justify-center py-2"
         >
-          {addEdition.isPending ? "Uploading…" : "Upload edition"}
+          {addEdition.isPending ? "Uploading…" : "Upload Edition"}
         </button>
       </form>
     </div>
@@ -483,7 +483,7 @@ export default function BookDetail() {
                 className="btn-secondary py-1.5 text-xs flex items-center gap-1.5"
               >
                 <Table2 className="w-3.5 h-3.5" />
-                {showComparison ? "Close table" : "Compare"}
+                {showComparison ? "Close Table" : "Compare"}
               </button>
             )}
             {user && (
