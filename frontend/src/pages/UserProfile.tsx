@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ScrollToTop } from "@/components/ui/ScrollToTop";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { BookOpen, MessageSquare, Calendar, List, Lock, Trash2, Plus, BookMarked, Pencil, Check, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { BookOpen, MessageSquare, Calendar, List, LockKeyhole, Globe2, Trash2, Plus, BookMarked, Pencil, Check, X, ChevronLeft, ChevronRight, MoreVertical } from "lucide-react";
 import { format } from "date-fns";
 import { timeAgo } from "@/utils/time";
 import { usersApi, progressApi } from "@/api";
@@ -40,6 +40,20 @@ function ReadingListsSection({ username }: { username: string }) {
   const updateList = useUpdateReadingList();
   const [editingListId, setEditingListId] = useState<number | null>(null);
   const [editingName, setEditingName] = useState("");
+  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (openMenuId === null) return;
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpenMenuId(null);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [openMenuId]);
 
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState("");
@@ -191,9 +205,6 @@ function ReadingListsSection({ username }: { username: string }) {
                 })()}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 mb-1">
-                    {!list.is_public && (
-                      <Lock className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-                    )}
                     {editingListId === list.id ? (
                         <div className="flex items-center gap-1">
                           <input
@@ -235,23 +246,58 @@ function ReadingListsSection({ username }: { username: string }) {
                 </div>
               </div>
               {isOwnProfile && (
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  {/* Pencil: rename list */}
-                  <button
-                    onClick={() => { setEditingListId(list.id); setEditingName(list.name); }}
-                    className="text-gray-300 hover:text-ink-600 transition-colors p-0.5"
-                    title="Rename list"
-                  >
-                    <Pencil className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={() => deleteList.mutate(list.id)}
-                    disabled={deleteList.isPending}
-                    className="text-gray-300 hover:text-red-400 transition-colors p-0.5"
-                    title="Delete list"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                <div
+                  className="flex items-center gap-2 flex-shrink-0 self-center"
+                  ref={openMenuId === list.id ? menuRef : undefined}
+                >
+                  {/* Visibility badge */}
+                  {list.is_public ? (
+                    <Globe2 className="w-4 h-4 text-ink-500 dark:text-indigo-400 flex-shrink-0" title="Public" />
+                  ) : (
+                    <LockKeyhole className="w-4 h-4 text-amber-500 dark:text-amber-400 flex-shrink-0" title="Private" />
+                  )}
+
+                  {/* Three-dot menu */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setOpenMenuId(openMenuId === list.id ? null : list.id)}
+                      className="p-1 rounded-md text-gray-400 hover:text-ink-700 hover:bg-paper-100 dark:hover:bg-gray-700 transition-colors"
+                      title="More options"
+                    >
+                      <MoreVertical className="w-4 h-4" />
+                    </button>
+
+                    {openMenuId === list.id && (
+                      <div className="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-20 overflow-hidden py-1">
+                        <button
+                          onClick={() => { setEditingListId(list.id); setEditingName(list.name); setOpenMenuId(null); }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-paper-100 dark:hover:bg-gray-800 transition-colors"
+                        >
+                          <Pencil className="w-3.5 h-3.5 text-gray-400" />
+                          Rename
+                        </button>
+                        <button
+                          onClick={() => { updateList.mutate({ listId: list.id, isPublic: !list.is_public }); setOpenMenuId(null); }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-paper-100 dark:hover:bg-gray-800 transition-colors"
+                        >
+                          {list.is_public
+                            ? <LockKeyhole className="w-3.5 h-3.5 text-amber-500" />
+                            : <Globe2 className="w-3.5 h-3.5 text-ink-500" />
+                          }
+                          {list.is_public ? "Make Private" : "Make Public"}
+                        </button>
+                        <div className="border-t border-gray-100 dark:border-gray-700 my-1" />
+                        <button
+                          onClick={() => { deleteList.mutate(list.id); setOpenMenuId(null); }}
+                          disabled={deleteList.isPending}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-50"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          Delete List
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
