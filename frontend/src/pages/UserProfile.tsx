@@ -562,7 +562,7 @@ export default function UserProfile() {
           </h2>
           {commentedBooks.length > 0 && (
             <p className="text-sm text-gray-400 mt-0.5 ml-7">
-              On {commentedBooks.length} {commentedBooks.length === 1 ? "book" : "books"}
+              Commented on {commentedBooks.length} {commentedBooks.length === 1 ? "book" : "books"}
             </p>
           )}
         </div>
@@ -605,16 +605,18 @@ export default function UserProfile() {
                   <p className="text-[11px] text-gray-400 dark:text-gray-500 line-clamp-1">{book.author}</p>
                   {book.editions.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-1.5">
-                      {book.editions.slice(0, 3).map(ed => (
+                      {book.editions.slice(0, 4).map(ed => (
                         <span
                           key={ed.edition_id}
-                          className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full bg-ink-50 dark:bg-ink-900/30 text-ink-500 dark:text-indigo-300"
+                          className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full bg-ink-50 dark:bg-ink-900/30 text-ink-500 dark:text-indigo-300 whitespace-nowrap"
                         >
                           E{ed.edition_number} · {ed.comment_count}
                         </span>
                       ))}
-                      {book.editions.length > 3 && (
-                        <span className="text-[10px] text-gray-400 dark:text-gray-500 px-1">+{book.editions.length - 3}</span>
+                      {book.editions.length > 4 && (
+                        <span className="text-[10px] text-gray-400 dark:text-gray-500 px-1 py-0.5">
+                          +{book.editions.length - 4}
+                        </span>
                       )}
                     </div>
                   )}

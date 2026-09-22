@@ -268,7 +268,9 @@ export function CommentThread({
               {timeAgo(comment.created_at)}
             </span>
             {comment.edited_at && (
-              <span className="text-xs text-gray-300 italic">(edited)</span>
+              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 tracking-wide">
+                EDITED
+              </span>
             )}
             {comment.page_number != null && (
               <button

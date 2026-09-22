@@ -439,8 +439,10 @@ export default function BookDetail() {
             {book.uploader_username && (
               <> by <Link
                 to={`/u/${book.uploader_username}`}
-                className="text-ink-600 hover:text-ink-800 font-medium hover:underline"
-              >{book.uploader_username}</Link></>
+                className="inline-flex items-center gap-1 font-semibold text-ink-600 dark:text-indigo-400 hover:text-ink-800 dark:hover:text-indigo-300 hover:underline transition-colors"
+              >
+                {book.uploader_username}
+              </Link></>
             )}
           </p>
           {/* 19: Recent commenters avatars */}
