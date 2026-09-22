@@ -86,6 +86,7 @@ const Register = lazy(() => import("@/pages/Register"));
 const UserProfile = lazy(() => import("@/pages/UserProfile"));
 const Settings = lazy(() => import("@/pages/Settings"));
 const ReadingListDetail = lazy(() => import("@/pages/ReadingListDetail"));
+const UserCommentsFeed = lazy(() => import("@/pages/UserCommentsFeed"));
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
@@ -119,6 +120,7 @@ function InnerApp() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/u/:username" element={<UserProfile />} />
+            <Route path="/u/:username/comments/:bookId" element={<UserCommentsFeed />} />
             <Route path="/lists/:listId" element={<ReadingListDetail />} />
             <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
             <Route

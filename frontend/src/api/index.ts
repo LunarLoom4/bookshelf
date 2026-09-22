@@ -212,3 +212,61 @@ export const accountApi = {
 
   deleteAccount: () => api.delete("/account"),
 };
+
+// ── User comment feed ──────────────────────────────────────────────────────────
+export interface CommentedBook {
+  book_id: number;
+  title: string;
+  author: string;
+  cover_url: string | null;
+  total_comments: number;
+  editions: { edition_id: number; edition_number: number; comment_count: number }[];
+}
+
+export interface CommentFeedItem {
+  id: number;
+  body: string;
+  page_number: number | null;
+  edition_id: number;
+  edition_number: number;
+  parent_id: number | null;
+  vote_score: number;
+  created_at: string;
+  edited_at: string | null;
+  is_deleted: boolean;
+}
+
+export interface CommentFeedEdition {
+  edition_id: number;
+  edition_number: number;
+  year: number | null;
+  publisher: string | null;
+  comment_count: number;
+  comments: CommentFeedItem[];
+}
+
+export interface CommentFeedResponse {
+  book_id: number;
+  book_title: string;
+  book_author: string;
+  book_cover_url: string | null;
+  editions: CommentFeedEdition[];
+  total: number;
+  page: number;
+  limit: number;
+  has_more: boolean;
+}
+
+export const userCommentsApi = {
+  commentedBooks: (username: string) =>
+    api.get<CommentedBook[]>(`/users/${username}/commented-books`),
+
+  feed: (
+    username: string,
+    bookId: number,
+    params: { sort?: string; q?: string; page?: number; limit?: number }
+  ) =>
+    api.get<CommentFeedResponse>(`/users/${username}/comments`, {
+      params: { book_id: bookId, ...params },
+    }),
+};

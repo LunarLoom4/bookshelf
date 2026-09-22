@@ -5,7 +5,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { BookOpen, MessageSquare, Calendar, List, LockKeyhole, Globe2, Trash2, Plus, BookMarked, Pencil, Check, X, ChevronLeft, ChevronRight, MoreVertical } from "lucide-react";
 import { format } from "date-fns";
 import { timeAgo } from "@/utils/time";
-import { usersApi, progressApi } from "@/api";
+import { usersApi, progressApi, userCommentsApi } from "@/api";
+import type { CommentedBook } from "@/api";
 import toast from "react-hot-toast";
 import { BookCard } from "@/components/ui/BookCard";
 import {
@@ -422,9 +423,16 @@ export default function UserProfile() {
     staleTime: 0,  // always refetch on mount so avatar is never stale
   });
 
-  // ALL hooks must be declared before any early return -- Rules of Hooks
+  // ALL hooks must be before any early return
   const { user: currentUser } = useAuthStore();
   const qc = useQueryClient();
+
+  const { data: commentedBooks = [] } = useQuery<CommentedBook[]>({
+    queryKey: ["commented-books", username],
+    queryFn: () => userCommentsApi.commentedBooks(username!).then(r => r.data),
+    enabled: !!username,
+    staleTime: 60 * 1000,
+  });
 
   const removeProgress = useMutation({
     mutationFn: (editionId: number) => progressApi.delete(editionId),
@@ -545,67 +553,76 @@ export default function UserProfile() {
         )}
       </section>
 
-      {/* Recent comments -- grouped by book */}
+      {/* Comments section -- book card grid */}
       <section>
-        <h2 className="font-serif text-xl font-semibold text-ink-900 mb-4 flex items-center gap-2">
-          <MessageSquare className="w-5 h-5 text-ink-400" />
-          Recent Comments <span className="font-serif text-black-400 dark:text-white-500">[{recent_comments.filter(c => !c.is_deleted).length}]</span>
-        </h2>
-        {recent_comments.filter(c => !c.is_deleted).length === 0 ? (
+        <div className="mb-4">
+          <h2 className="font-serif text-xl font-semibold text-ink-900 flex items-center gap-2">
+            <MessageSquare className="w-5 h-5 text-ink-400" />
+            Comments
+          </h2>
+          {commentedBooks.length > 0 && (
+            <p className="text-sm text-gray-400 mt-0.5 ml-7">
+              On {commentedBooks.length} {commentedBooks.length === 1 ? "book" : "books"}
+            </p>
+          )}
+        </div>
+
+        {commentedBooks.length === 0 ? (
           <p className="text-sm text-gray-400">No comments yet.</p>
-        ) : (() => {
-          // Group comments by book
-          const activeComments = recent_comments.filter(c => !c.is_deleted);
-          const groups = new Map<number, typeof activeComments>();
-          activeComments.forEach(c => {
-            const key = c.book_id ?? c.edition_id;
-            if (!groups.has(key)) groups.set(key, []);
-            groups.get(key)!.push(c);
-          });
-          return (
-            <div className="flex flex-col gap-5">
-              {Array.from(groups.entries()).map(([bookId, groupComments]) => (
-                <div key={bookId} className="card p-0 overflow-hidden">
-                  {/* Book header */}
-                  <div className="px-4 py-2.5 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between" style={{backgroundColor:"#e8edf5"}}>
-                    <Link
-                      to={`/books/${groupComments[0].book_id}`}
-                      className="text-sm font-semibold hover:underline truncate max-w-xs dark:text-gray-100" style={{color:"#1c3089"}}
-                    >
-                      {groupComments[0].book_title ?? "Unknown book"}
-                    </Link>
-                    <span className="text-xs text-gray-400 flex-shrink-0 ml-2">
-                      {groupComments.length} {groupComments.length === 1 ? "comment" : "comments"}
-                    </span>
-                  </div>
-                  {/* Comments in this book */}
-                  <div className="divide-y divide-paper-100 dark:divide-gray-700/50">
-                    {groupComments.map((comment) => (
-                      <Link
-                        key={comment.id}
-                        to={`/read/${comment.edition_id}`}
-                        className="block px-4 py-3 hover:bg-paper-50 dark:hover:bg-gray-800/30 transition-colors"
-                      >
-                        <p className="text-sm leading-relaxed line-clamp-2 mb-1.5 dark:text-gray-200" style={{color:"#1f2937"}}>
-                          {comment.body}
-                        </p>
-                        <div className="flex items-center gap-2 text-xs text-gray-400">
-                          {comment.edition_number != null && (
-                            <span className="dark:text-gray-400" style={{color:"#6b7280"}}>Ed. {comment.edition_number}</span>
-                          )}
-                          {comment.page_number != null && (
-                            <span className="page-badge">{`p. ${comment.page_number}`}</span>
-                          )}
-                          <span>{timeAgo(comment.created_at)}</span>
-                        </div>
-                      </Link>
-                    ))}
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            {commentedBooks.map((book) => (
+              <Link
+                key={book.book_id}
+                to={`/u/${username}/comments/${book.book_id}`}
+                className="group bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm hover:shadow-md hover:border-ink-300 dark:hover:border-indigo-700 transition-all duration-200"
+              >
+                {/* Cover */}
+                <div className="aspect-[3/2] overflow-hidden bg-paper-100 dark:bg-gray-800 relative">
+                  {book.cover_url ? (
+                    <img
+                      src={book.cover_url}
+                      alt={book.title}
+                      loading="lazy"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <BookOpen className="w-6 h-6 text-gray-300 dark:text-gray-600" />
+                    </div>
+                  )}
+                  {/* Comment count badge on cover */}
+                  <div className="absolute bottom-1.5 right-1.5 flex items-center gap-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+                    <MessageSquare className="w-2.5 h-2.5" />
+                    {book.total_comments}
                   </div>
                 </div>
-              ))}
-            </div>
-          );
-        })()}
+                {/* Info */}
+                <div className="p-2.5">
+                  <p className="text-xs font-semibold text-ink-900 dark:text-gray-100 line-clamp-2 leading-snug mb-0.5">
+                    {book.title}
+                  </p>
+                  <p className="text-[11px] text-gray-400 dark:text-gray-500 line-clamp-1">{book.author}</p>
+                  {book.editions.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1.5">
+                      {book.editions.slice(0, 3).map(ed => (
+                        <span
+                          key={ed.edition_id}
+                          className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full bg-ink-50 dark:bg-ink-900/30 text-ink-500 dark:text-indigo-300"
+                        >
+                          E{ed.edition_number} · {ed.comment_count}
+                        </span>
+                      ))}
+                      {book.editions.length > 3 && (
+                        <span className="text-[10px] text-gray-400 dark:text-gray-500 px-1">+{book.editions.length - 3}</span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </section>
       <ScrollToTop />
     </div>
