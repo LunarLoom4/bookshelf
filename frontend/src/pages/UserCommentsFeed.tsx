@@ -7,7 +7,6 @@ import type { CommentFeedEdition, CommentFeedItem } from "@/api";
 import { timeAgo } from "@/utils/time";
 import { ScrollToTop } from "@/components/ui/ScrollToTop";
 
-// (c) Removed "By Page Number"
 const SORT_OPTIONS = [
   { value: "newest",    label: "Most Recent" },
   { value: "oldest",    label: "Oldest First" },
@@ -16,20 +15,24 @@ const SORT_OPTIONS = [
   { value: "replies",   label: "Most Replies" },
 ];
 
-// (f) Numbered comment row: number side not clickable, content side navigates
+function formatBytes(bytes: number): string {
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+// Numbered comment row: number side not clickable, content side navigates
 function CommentCard({ comment, index }: { comment: CommentFeedItem; index: number }) {
   return (
-    <div className="flex min-h-0">
-      {/* Number column -- NOT clickable, self-stretch so divider can fill height */}
-      <div className="flex-shrink-0 w-10 flex flex-col items-center justify-center self-stretch">
-        <span className="text-xs font-semibold text-ink-400 dark:text-indigo-400 tabular-nums">
+    <div className="relative flex">
+      {/* Vertical divider -- absolute so it never affects row height */}
+      <div
+        className="absolute left-12 top-[10%] bottom-[10%] w-px bg-gray-300 dark:bg-gray-600 pointer-events-none"
+      />
+
+      {/* Number column -- NOT clickable */}
+      <div className="flex-shrink-0 w-12 flex items-center justify-center pl-1">
+        <span className="text-sm font-semibold text-ink-400 dark:text-indigo-400 tabular-nums">
           {index + 1}
         </span>
-      </div>
-
-      {/* Vertical divider -- 82% height, vertically centered via my auto */}
-      <div className="flex-shrink-0 flex flex-col self-stretch py-[9%]">
-        <div className="flex-1 w-px bg-gray-300 dark:bg-gray-600" />
       </div>
 
       {/* Content column -- clickable */}
@@ -83,17 +86,40 @@ function EditionAccordion({
         className="w-full flex items-center justify-between px-4 py-3 hover:bg-paper-50 dark:hover:bg-gray-800/60 transition-colors"
       >
         <div className="flex items-center gap-3 text-left">
-          <div className="w-8 h-8 rounded-lg bg-ink-100 dark:bg-ink-900/40 flex items-center justify-center flex-shrink-0">
+          {/* (c + d) E-badge like in the concept, matching BookDetail style */}
+          <div className="w-9 h-9 rounded-lg bg-ink-100 dark:bg-ink-900/40 flex items-center justify-center flex-shrink-0">
             <span className="text-xs font-semibold text-ink-600 dark:text-indigo-300">E{edition.edition_number}</span>
           </div>
           <div>
-            <p className="text-sm font-semibold text-ink-900 dark:text-gray-100">
-              Edition {edition.edition_number}
-              {edition.year && <span className="font-normal text-gray-400 dark:text-gray-500 ml-1.5">· {edition.year}</span>}
-            </p>
-            {edition.publisher && (
-              <p className="text-xs text-gray-400 dark:text-gray-500">{edition.publisher}</p>
-            )}
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="text-sm font-semibold text-ink-900 dark:text-gray-100">
+                Edition {edition.edition_number}
+              </p>
+              {/* (c) Year as a badge, same height as text */}
+              {edition.year && (
+                <span className="text-[11px] font-medium px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 leading-none">
+                  {edition.year}
+                </span>
+              )}
+            </div>
+            {/* (d) Metadata row: publisher · size · pages · age */}
+            <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-400 dark:text-gray-500 flex-wrap">
+              {edition.publisher && (
+                <span>{edition.publisher}</span>
+              )}
+              {edition.publisher && (edition.file_size_bytes || edition.page_count) && (
+                <span className="text-gray-300 dark:text-gray-600">·</span>
+              )}
+              {edition.file_size_bytes != null && (
+                <span>{formatBytes(edition.file_size_bytes)}</span>
+              )}
+              {edition.page_count != null && (
+                <span className="flex items-center gap-0.5">
+                  <BookOpen className="w-2.5 h-2.5" />
+                  {edition.page_count} pages
+                </span>
+              )}
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0 ml-3">

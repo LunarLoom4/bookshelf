@@ -241,6 +241,8 @@ export interface CommentFeedEdition {
   edition_number: number;
   year: number | null;
   publisher: string | null;
+  file_size_bytes: number | null;
+  page_count: number | null;
   comment_count: number;
   comments: CommentFeedItem[];
 }

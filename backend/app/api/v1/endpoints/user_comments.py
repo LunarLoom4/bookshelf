@@ -62,6 +62,8 @@ class CommentFeedEdition(BaseModel):
     edition_number: int
     year: int | None
     publisher: str | None
+    file_size_bytes: int | None
+    page_count: int | None
     comment_count: int           # total matching comments in this edition
     comments: list[CommentFeedItem]
 
@@ -304,6 +306,8 @@ async def get_user_comments_for_book(
             edition_number=ed.edition_number,
             year=ed.year if hasattr(ed, "year") else None,
             publisher=ed.publisher if hasattr(ed, "publisher") else None,
+            file_size_bytes=ed.file_size_bytes if hasattr(ed, "file_size_bytes") else None,
+            page_count=ed.page_count if hasattr(ed, "page_count") else None,
             comment_count=count_by_edition.get(eid, len(comments)),
             comments=comments,
         ))

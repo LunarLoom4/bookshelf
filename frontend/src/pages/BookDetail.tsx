@@ -63,20 +63,32 @@ function EditionRow({ edition, bookId, isOwner, onDelete }: {
   return (
     <div className="card flex items-center justify-between p-4 hover:shadow-md hover:border-ink-200 transition-all duration-150">
       <div className="flex items-center gap-4 flex-1 min-w-0">
-        <div className="w-9 h-9 bg-ink-50 rounded-lg flex items-center justify-center text-ink-600 flex-shrink-0">
-          <Layers className="w-4 h-4" />
+        {/* (c) E-badge instead of generic Layers icon */}
+        <div className="w-9 h-9 bg-ink-50 dark:bg-ink-900/40 rounded-lg flex items-center justify-center text-ink-600 flex-shrink-0">
+          <span className="text-xs font-semibold text-ink-600 dark:text-indigo-300">E{edition.edition_number}</span>
         </div>
         <div className="min-w-0">
-          <p className="text-sm font-medium text-ink-900">
-            Edition {edition.edition_number}
-            {edition.year && <span className="text-gray-400 font-normal"> · {edition.year}</span>}
-          </p>
-          <div className="flex flex-wrap items-center gap-3 mt-0.5 text-xs text-gray-400">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="text-sm font-medium text-ink-900">
+              Edition {edition.edition_number}
+            </p>
+            {/* (c) Year as a badge matching EDITED style */}
+            {edition.year && (
+              <span className="text-[11px] font-medium px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 leading-none">
+                {edition.year}
+              </span>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-2 mt-0.5 text-xs text-gray-400">
             {edition.publisher && (
               <span className="flex items-center gap-1">
                 <FileText className="w-3 h-3" />
                 {edition.publisher}
               </span>
+            )}
+            {/* (d) Visible separator between publisher and file stats */}
+            {edition.publisher && (edition.file_size_bytes != null || edition.page_count != null) && (
+              <span className="text-gray-300 dark:text-gray-600">·</span>
             )}
             {edition.language !== "en" && (
               <span className="flex items-center gap-1">
