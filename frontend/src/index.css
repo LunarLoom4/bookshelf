@@ -365,3 +365,18 @@
 .textLayer .highlight.selected {
   background: rgba(0, 100, 255, 0.25);
 }
+
+/* Comment highlight animation -- triggered when navigating from UserCommentsFeed */
+@keyframes comment-highlight-pulse {
+  0%   { background-color: rgba(251, 191, 36, 0.0); }
+  15%  { background-color: rgba(251, 191, 36, 0.35); }
+  45%  { background-color: rgba(251, 191, 36, 0.0); }
+  60%  { background-color: rgba(251, 191, 36, 0.2); }
+  85%  { background-color: rgba(251, 191, 36, 0.0); }
+  100% { background-color: rgba(251, 191, 36, 0.0); }
+}
+
+.comment-highlight {
+  animation: comment-highlight-pulse 1.6s ease-in-out forwards;
+  border-radius: 6px;
+}

@@ -1,5 +1,8 @@
-import { useState, useRef } from "react";
+import { useState, useRef, createContext, useContext } from "react";
 import { Link } from "react-router-dom";
+
+// Context to pass targetCommentId through the reply tree without prop drilling
+export const TargetCommentContext = createContext<number>(0);
 import {
   ChevronUp, ChevronDown, MessageSquare, BookOpen,
   Loader2, Pencil, Trash2, Check, X, Share2,
@@ -79,6 +82,8 @@ interface Props {
   onCommentDeleted?: (commentId: number) => void;
   onCommentEdited?: (comment: Comment) => void;
   depth?: number;
+  highlighted?: boolean;
+  initiallyExpandReplies?: boolean;
 }
 
 export function CommentThread({
@@ -90,12 +95,18 @@ export function CommentThread({
   onCommentDeleted,
   onCommentEdited,
   depth = 0,
+  highlighted = false,
+  initiallyExpandReplies = false,
 }: Props) {
   const { user, isAuthenticated } = useAuthStore();
   const isOwner = user?.id === comment.author?.id;
   const queryClient = useQueryClient();
 
-  const [showReplies, setShowReplies] = useState(false);
+  const targetCommentId = useContext(TargetCommentContext);
+  const isTarget = targetCommentId > 0 && comment.id === targetCommentId;
+  // Auto-expand replies if target is among them
+  const replyIsTarget = targetCommentId > 0 && (comment.replies?.some((r: any) => r.id === targetCommentId) ?? false);
+  const [showReplies, setShowReplies] = useState(initiallyExpandReplies || replyIsTarget);
   const [showReplyBox, setShowReplyBox] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editBody, setEditBody] = useState(comment.body);
@@ -215,7 +226,10 @@ export function CommentThread({
   };
 
   return (
-    <div className={`flex flex-col ${depth > 0 ? "pl-3 border-l-2 border-paper-200" : ""}`}>
+    <div
+      id={`comment-${comment.id}`}
+      className={`flex flex-col ${depth > 0 ? "pl-3 border-l-2 border-paper-200" : ""} ${(highlighted || isTarget) ? "comment-highlight" : ""}`}
+    >
       <div className="flex gap-2.5 py-3">
 
         {/* Vote column -- Reddit-style animated arrows */}

@@ -6,7 +6,7 @@ import toast from "react-hot-toast";
 
 import PDFViewer, { type PDFViewerHandle } from "@/components/reader/PDFViewer";
 import { CommentBox } from "@/components/reader/CommentBox";
-import { CommentThread } from "@/components/reader/CommentThread";
+import { CommentThread, TargetCommentContext } from "@/components/reader/CommentThread";
 import { BookmarkPanel } from "@/components/reader/BookmarkPanel";
 import {
   useComments, COMMENTS_KEY, useCreateComment, useVoteComment,
@@ -41,7 +41,8 @@ export default function ReadingPage() {
   const { editionId: editionIdStr } = useParams<{ editionId: string }>();
   const editionId = Number(editionIdStr);
   const [searchParams] = useSearchParams();
-  const urlPageParam = Number(searchParams.get("page") || 0); // ?page=N from "p.N >" button
+  const urlPageParam = Number(searchParams.get("page") || 0);
+  const targetCommentId = Number(searchParams.get("comment") || 0); // from UserCommentsFeed navigation
   const viewerRef = useRef<PDFViewerHandle>(null);
   const { isAuthenticated } = useAuthStore();
   const { pdfBackMode } = usePrefsStore();
@@ -318,6 +319,29 @@ export default function ReadingPage() {
     );
   });
 
+  // Scroll to and highlight the target comment when navigating from UserCommentsFeed
+  useEffect(() => {
+    if (!targetCommentId || loadingComments || comments.length === 0) return;
+
+    // Ensure the discussion tab is active
+    setActiveTab("discussion");
+
+    // Wait one frame for the tab to render, then scroll + highlight
+    const timer = setTimeout(() => {
+      const el = document.getElementById(`comment-${targetCommentId}`);
+      if (!el) return;
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      // Trigger the animation by toggling the class (in case it already has it)
+      el.classList.remove("comment-highlight");
+      void el.offsetWidth; // force reflow to restart animation
+      el.classList.add("comment-highlight");
+    }, 300);
+
+    return () => clearTimeout(timer);
+  // Only run once when comments first load with a targetCommentId
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [targetCommentId, loadingComments, comments.length]);
+
   return (
     <div className="flex flex-col md:flex-row h-[calc(100vh-56px)] overflow-hidden">
       {/* ── Left: PDF viewer (draggable) ──────────────────────────────────── */}
@@ -537,18 +561,26 @@ export default function ReadingPage() {
                   No comments yet. Be the first to start the discussion.
                 </div>
               ) : (
-                topLevelComments.map((comment) => (
-                  <CommentThread
-                    key={comment.id}
-                    comment={comment}
-                    editionId={editionId}
-                    onVote={handleVote}
-                    onReply={handleNewComment}
-                    onJumpToPage={handleJumpToPage}
-                    onCommentDeleted={handleCommentDeleted}
-                    onCommentEdited={handleCommentEdited}
-                  />
-                ))
+                <TargetCommentContext.Provider value={targetCommentId}>
+                  {topLevelComments.map((comment) => (
+                    <CommentThread
+                      key={comment.id}
+                      comment={comment}
+                      editionId={editionId}
+                      onVote={handleVote}
+                      onReply={handleNewComment}
+                      onJumpToPage={handleJumpToPage}
+                      onCommentDeleted={handleCommentDeleted}
+                      onCommentEdited={handleCommentEdited}
+                      highlighted={comment.id === targetCommentId}
+                      initiallyExpandReplies={
+                        targetCommentId > 0 &&
+                        comment.id !== targetCommentId &&
+                        !!(comment.replies?.some((r: any) => r.id === targetCommentId))
+                      }
+                    />
+                  ))}
+                </TargetCommentContext.Provider>
               )}
             </div>
           </>

@@ -56,7 +56,7 @@ function CommentCard({ comment, index }: { comment: CommentFeedItem; index: numb
         </span>
       </div>
       <Link
-        to={`/read/${comment.edition_id}${comment.page_number ? `?page=${comment.page_number}` : ""}`}
+        to={`/read/${comment.edition_id}${comment.page_number ? `?page=${comment.page_number}` : ""}${comment.page_number ? `&comment=${comment.id}` : `?comment=${comment.id}`}`}
         className="flex-1 group min-w-0"
       >
         <div className="px-4 py-2.5 hover:bg-ink-50/60 dark:hover:bg-white/5 transition-colors">
