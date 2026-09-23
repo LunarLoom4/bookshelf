@@ -249,6 +249,8 @@ async def vote_comment(
 
     # Rate limit: 60 votes per hour per user
     await rate_limit_vote(current_user.id)
+
+    existing = await db.execute(
         select(Vote).where(Vote.user_id == current_user.id, Vote.comment_id == comment_id)
     )
     vote = existing.scalar_one_or_none()
