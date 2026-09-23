@@ -290,6 +290,24 @@
            text-ink-700 rounded cursor-pointer hover:bg-ink-200 transition-colors;
   }
 
+  /* Count pill next to section headings (Reading Lists · 1, Currently Reading · 6).
+     Translucent blue that reads well on both light and dark surfaces.
+     Deliberately avoids bg-ink-* / text-ink-* utilities which have !important overrides. */
+  .count-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 9px;
+    border-radius: 9999px;
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 18px;
+    font-variant-numeric: tabular-nums;
+    color: #2646c9;
+    background-color: rgba(37, 84, 235, 0.09);
+    box-shadow: inset 0 0 0 1px rgba(37, 84, 235, 0.18);
+  }
+
   /* Google Sign-In button -- remove white rectangle in dark mode.
      Google renders an iframe; we can't style its internals but we can
      make the container transparent and clip the Google-injected border. */
@@ -440,4 +458,10 @@
 
 html.dark .comment-highlight {
   animation: comment-glow-dark 1.58s linear 0.25s forwards;
+}
+
+html.dark .count-pill {
+  color: #93c5fd;
+  background-color: rgba(96, 165, 250, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(96, 165, 250, 0.28);
 }

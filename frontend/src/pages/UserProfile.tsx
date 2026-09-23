@@ -112,7 +112,7 @@ function ReadingListsSection({ username }: { username: string }) {
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-serif text-xl font-semibold text-ink-900 flex items-center gap-2">
           <List className="w-5 h-5 text-ink-400" />
-          Reading Lists <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-ink-100 dark:bg-gray-700/60 text-ink-600 dark:text-gray-300 align-middle ml-1.5">[{allLists.length}]</span>
+          Reading Lists <span className="count-pill">{allLists.length}</span>
         </h2>
         {isOwnProfile && (
           <button
@@ -450,7 +450,7 @@ export default function UserProfile() {
         <section>
           <SectionHeader
             icon={<BookMarked className="w-5 h-5 text-ink-400" />}
-            title={<>Currently Reading <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-ink-100 dark:bg-gray-700/60 text-ink-600 dark:text-gray-300 align-middle ml-1.5">[{currently_reading.length}]</span></>}
+            title={<>Currently Reading <span className="count-pill">{currently_reading.length}</span></>}
             viewAllHref={`/u/${username}/reading`}
           />
           <HorizontalScrollRow itemCount={currently_reading.length}>
@@ -482,7 +482,7 @@ export default function UserProfile() {
         <section>
           <SectionHeader
             icon={<MessageSquare className="w-5 h-5 text-ink-400" />}
-            title={<>Comments <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-ink-100 dark:bg-gray-700/60 text-ink-600 dark:text-gray-300 align-middle ml-1.5">[On {commentedBooks.length} {commentedBooks.length === 1 ? "book" : "books"}]</span></>}
+            title={<>Comments <span className="count-pill">{commentedBooks.length} {commentedBooks.length === 1 ? "book" : "books"}</span></>}
             viewAllHref={`/u/${username}/comments`}
           />
           <HorizontalScrollRow itemCount={commentedBooks.length}>
@@ -525,7 +525,7 @@ export default function UserProfile() {
       <section>
         <SectionHeader
           icon={<BookOpen className="w-5 h-5 text-ink-400" />}
-          title={<>Books Uploaded <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-ink-100 dark:bg-gray-700/60 text-ink-600 dark:text-gray-300 align-middle ml-1.5">[{books_uploaded.length}]</span></>}
+          title={<>Books Uploaded <span className="count-pill">{books_uploaded.length}</span></>}
         />
         {books_uploaded.length === 0 ? (
           <p className="text-sm text-gray-400">No books uploaded yet.</p>
