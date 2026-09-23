@@ -1,5 +1,4 @@
-import { useParams, useNavigate } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, BookMarked, BookOpen, X } from "lucide-react";
 import { usersApi, progressApi } from "@/api";
 import { useAuthStore } from "@/stores/authStore";

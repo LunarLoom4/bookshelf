@@ -112,7 +112,7 @@ function ReadingListsSection({ username }: { username: string }) {
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-serif text-xl font-semibold text-ink-900 flex items-center gap-2">
           <List className="w-5 h-5 text-ink-400" />
-          Reading Lists <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 tracking-wide align-middle">[{allLists.length}]</span>
+          Reading Lists <span className="font-serif text-base font-normal text-ink-400 dark:text-gray-500 ml-1">[{allLists.length}]</span>
         </h2>
         {isOwnProfile && (
           <button
@@ -450,7 +450,7 @@ export default function UserProfile() {
         <section>
           <SectionHeader
             icon={<BookMarked className="w-5 h-5 text-ink-400" />}
-            title={<>Currently Reading <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 tracking-wide align-middle">[{currently_reading.length}]</span></>}
+            title={<>Currently Reading <span className="font-serif text-base font-normal text-ink-400 dark:text-gray-500 ml-1">[{currently_reading.length}]</span></>}
             viewAllHref={`/u/${username}/reading`}
           />
           <HorizontalScrollRow itemCount={currently_reading.length}>
@@ -482,7 +482,7 @@ export default function UserProfile() {
         <section>
           <SectionHeader
             icon={<MessageSquare className="w-5 h-5 text-ink-400" />}
-            title={<>Comments <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 tracking-wide align-middle">[On {commentedBooks.length} {commentedBooks.length === 1 ? "book" : "books"}]</span></>}
+            title={<>Comments <span className="font-serif text-base font-normal text-ink-400 dark:text-gray-500 ml-1">[On {commentedBooks.length} {commentedBooks.length === 1 ? "book" : "books"}]</span></>}
             viewAllHref={`/u/${username}/comments`}
           />
           <HorizontalScrollRow itemCount={commentedBooks.length}>
@@ -525,7 +525,7 @@ export default function UserProfile() {
       <section>
         <SectionHeader
           icon={<BookOpen className="w-5 h-5 text-ink-400" />}
-          title={<>Books Uploaded <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 tracking-wide align-middle">[{books_uploaded.length}]</span></>}
+          title={<>Books Uploaded <span className="font-serif text-base font-normal text-ink-400 dark:text-gray-500 ml-1">[{books_uploaded.length}]</span></>}
         />
         {books_uploaded.length === 0 ? (
           <p className="text-sm text-gray-400">No books uploaded yet.</p>

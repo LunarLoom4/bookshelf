@@ -74,7 +74,7 @@ function CommentCard({ comment, index }: { comment: CommentFeedItem; index: numb
           </p>
           <div className="flex items-center gap-3 text-xs flex-wrap">
             {comment.page_number != null && (
-              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-ink-50 dark:bg-ink-900/40 text-ink-600 dark:text-indigo-300 tracking-wide leading-none">p.&nbsp;{comment.page_number}</span>
+              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-ink-50 dark:bg-ink-900/40 text-ink-600 dark:text-indigo-300 tracking-wide">p.&nbsp;{comment.page_number}</span>
             )}
             {comment.vote_score !== 0 && (
               <span className={`flex items-center gap-0.5 font-medium ${comment.vote_score > 0 ? "text-emerald-500" : "text-red-400"}`}>

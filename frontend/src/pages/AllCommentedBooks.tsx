@@ -1,5 +1,5 @@
 import { useRef, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { ArrowLeft, MessageSquare, BookOpen } from "lucide-react";
 import { userCommentsApi } from "@/api";

@@ -1,5 +1,5 @@
 import { useRef, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { ArrowLeft, List, Globe2, LockKeyhole, BookOpen } from "lucide-react";

@@ -287,7 +287,7 @@ export function CommentThread({
             {comment.page_number != null && (
               <button
                 onClick={() => onJumpToPage(comment.page_number!)}
-                className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-ink-50 dark:bg-ink-900/40 text-ink-600 dark:text-indigo-300 tracking-wide hover:bg-ink-100 dark:hover:bg-ink-900/60 transition-colors leading-none"
+                className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-ink-50 dark:bg-ink-900/40 text-ink-600 dark:text-indigo-300 tracking-wide hover:bg-ink-100 dark:hover:bg-ink-900/60 transition-colors"
                 title={`Jump to page ${comment.page_number}`}
               >
                 p.&nbsp;{comment.page_number}
