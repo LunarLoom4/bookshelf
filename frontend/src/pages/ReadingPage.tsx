@@ -42,7 +42,6 @@ export default function ReadingPage() {
   const editionId = Number(editionIdStr);
   const [searchParams] = useSearchParams();
   const urlPageParam = Number(searchParams.get("page") || 0);
-  const targetCommentId = Number(searchParams.get("comment") || 0); // from UserCommentsFeed navigation
   const viewerRef = useRef<PDFViewerHandle>(null);
   const { isAuthenticated } = useAuthStore();
   const { pdfBackMode } = usePrefsStore();
@@ -289,31 +288,38 @@ export default function ReadingPage() {
     voteComment.mutate({ commentId, value });
   };
 
-  // Track whether we have already triggered the highlight this page load.
+  // Read the target comment ID once from the URL on mount, store in a ref.
+  // Immediately strip it from the URL via both replaceState (updates the bar)
+  // and navigate-replace (updates React Router state), so useSearchParams
+  // returns 0 from the very next render -- preventing mode-switch / refresh
+  // re-triggers. The ref persists the value we need for the scroll.
+  const targetCommentIdRef = useRef<number>(0);
   const highlightFiredRef = useRef(false);
-
-  // Scroll to and highlight the target comment -- fires exactly once.
-  // Uses navigate(replace) to strip ?comment= so React Router's useSearchParams
-  // returns 0 on subsequent renders, preventing re-trigger on mode switch etc.
   useEffect(() => {
-    if (!targetCommentId || loadingComments || comments.length === 0) return;
-    if (highlightFiredRef.current) return;
-    highlightFiredRef.current = true;
-
-    // Strip ?comment= via React Router so useSearchParams() returns 0 hereafter.
-    // This is what actually prevents mode-switch re-triggers -- replaceState alone
-    // does not update React Router's internal state.
+    const id = Number(new URLSearchParams(window.location.search).get("comment") || 0);
+    if (!id) return;
+    targetCommentIdRef.current = id;
+    // Strip from URL bar immediately
     const params = new URLSearchParams(window.location.search);
     params.delete("comment");
     const newSearch = params.toString();
-    navigate(
-      { search: newSearch ? `?${newSearch}` : "" },
-      { replace: true }
-    );
+    window.history.replaceState({}, "", newSearch ? `?${newSearch}` : window.location.pathname);
+    // Also update React Router's internal location so useSearchParams returns 0
+    navigate({ search: newSearch ? `?${newSearch}` : "" }, { replace: true });
+  // Run once on mount only
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Scroll and highlight -- fires once when comments finish loading
+  useEffect(() => {
+    const id = targetCommentIdRef.current;
+    if (!id || loadingComments || comments.length === 0) return;
+    if (highlightFiredRef.current) return;
+    highlightFiredRef.current = true;
 
     setActiveTab("discussion");
     const timer = setTimeout(() => {
-      const el = document.getElementById(`comment-${targetCommentId}`);
+      const el = document.getElementById(`comment-${id}`);
       if (!el) return;
       el.scrollIntoView({ behavior: "smooth", block: "center" });
       el.classList.remove("comment-highlight");
@@ -322,7 +328,7 @@ export default function ReadingPage() {
     }, 150);
     return () => clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [targetCommentId, loadingComments, comments.length]);
+  }, [loadingComments, comments.length]);
 
   if (loadingEdition) {
     return (
@@ -573,7 +579,7 @@ export default function ReadingPage() {
                   No comments yet. Be the first to start the discussion.
                 </div>
               ) : (
-                <TargetCommentContext.Provider value={targetCommentId}>
+                <TargetCommentContext.Provider value={targetCommentIdRef.current}>
                   {topLevelComments.map((comment) => (
                     <CommentThread
                       key={comment.id}
@@ -584,11 +590,11 @@ export default function ReadingPage() {
                       onJumpToPage={handleJumpToPage}
                       onCommentDeleted={handleCommentDeleted}
                       onCommentEdited={handleCommentEdited}
-                      highlighted={comment.id === targetCommentId}
+                      highlighted={comment.id === targetCommentIdRef.current}
                       initiallyExpandReplies={
-                        targetCommentId > 0 &&
-                        comment.id !== targetCommentId &&
-                        !!(comment.replies?.some((r: any) => r.id === targetCommentId))
+                        targetCommentIdRef.current > 0 &&
+                        comment.id !== targetCommentIdRef.current &&
+                        !!(comment.replies?.some((r: any) => r.id === targetCommentIdRef.current))
                       }
                     />
                   ))}
