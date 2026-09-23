@@ -433,11 +433,11 @@
 }
 
 .comment-highlight {
-  animation: comment-glow-light 3.5s linear 0.55s forwards;
+  animation: comment-glow-light 2.1s linear 0.33s forwards;
   border-radius: 6px;
   outline: 1.5px solid transparent;
 }
 
 html.dark .comment-highlight {
-  animation: comment-glow-dark 3.5s linear 0.55s forwards;
+  animation: comment-glow-dark 2.1s linear 0.33s forwards;
 }
