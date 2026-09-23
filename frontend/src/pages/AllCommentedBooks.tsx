@@ -11,7 +11,6 @@ const PAGE = 30;
 export default function AllCommentedBooks() {
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
-  const _dup =<{ username: string }>();
   const sentinelCbRef = useRef<IntersectionObserver | null>(null);
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useInfiniteQuery({

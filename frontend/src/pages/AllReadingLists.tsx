@@ -37,7 +37,6 @@ function CoverCollage({ urls }: { urls: string[] }) {
 export default function AllReadingLists() {
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
-  const _dup =<{ username: string }>();
   const { user: currentUser } = useAuthStore();
   const isSelf = currentUser?.username === username;
   const [visibleCount, setVisibleCount] = useState(PAGE);

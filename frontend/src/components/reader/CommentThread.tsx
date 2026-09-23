@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 // Context to pass targetCommentId through the reply tree without prop drilling
 export const TargetCommentContext = createContext<number>(0);
 import {
-  ChevronUp, ChevronDown, MessageSquare, BookOpen,
+  ChevronUp, ChevronDown, MessageSquare,
   Loader2, Pencil, Trash2, Check, X, Share2,
 } from "lucide-react";
 import { timeAgo } from "@/utils/time";
@@ -287,10 +287,9 @@ export function CommentThread({
             {comment.page_number != null && (
               <button
                 onClick={() => onJumpToPage(comment.page_number!)}
-                className="page-badge flex items-center gap-1"
+                className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-ink-50 dark:bg-ink-900/40 text-ink-600 dark:text-indigo-300 tracking-wide hover:bg-ink-100 dark:hover:bg-ink-900/60 transition-colors leading-none"
                 title={`Jump to page ${comment.page_number}`}
               >
-                <BookOpen className="w-3 h-3" />
                 p.&nbsp;{comment.page_number}
               </button>
             )}

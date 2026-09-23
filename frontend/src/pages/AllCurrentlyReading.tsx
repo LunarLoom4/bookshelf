@@ -10,7 +10,6 @@ import toast from "react-hot-toast";
 export default function AllCurrentlyReading() {
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
-  const _dup =<{ username: string }>();
   const { user: currentUser } = useAuthStore();
   const isSelf = currentUser?.username === username;
   const qc = useQueryClient();

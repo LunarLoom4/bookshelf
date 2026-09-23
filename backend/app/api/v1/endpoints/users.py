@@ -22,6 +22,7 @@ class CurrentlyReadingItem(BaseModel):
     book_id: int
     book_title: str
     book_cover_url: str | None
+    edition_number: int = 1
 
     model_config = {"from_attributes": True}
 
@@ -94,6 +95,7 @@ async def get_user_profile(username: str, db: AsyncSession = Depends(get_db)):
             book_id=book.id,
             book_title=book.title,
             book_cover_url=book.cover_url,
+            edition_number=edition.edition_number,
         )
         for prog, book, edition in progress_result.all()
     ]
