@@ -19,19 +19,18 @@ export function Skeleton({ className = "" }: SkeletonProps) {
 /** Skeleton shaped like a BookCard */
 export function BookCardSkeleton() {
   return (
-    <div className="card flex flex-col overflow-hidden">
-      {/* Cover placeholder — 3:4 aspect ratio */}
-      <Skeleton className="w-full h-44 rounded-none flex-shrink-0" />
-      {/* Meta */}
-      <div className="p-4 flex flex-col gap-2">
-        <Skeleton className="h-4 w-4/5" />
+    <div className="flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+      {/* Cover -- aspect-[3/4] to match the real card */}
+      <div className="relative w-full aspect-[3/4] flex-shrink-0">
+        <Skeleton className="absolute inset-0 rounded-none" />
+      </div>
+      {/* Info panel */}
+      <div className="p-3 flex flex-col gap-2">
+        <Skeleton className="h-3.5 w-4/5" />
         <Skeleton className="h-3 w-3/5" />
-        <Skeleton className="h-3 w-full mt-1" />
+        <Skeleton className="h-3 w-full mt-0.5" />
         <Skeleton className="h-3 w-2/3" />
-        <div className="mt-3 flex justify-between">
-          <Skeleton className="h-3 w-16" />
-          <Skeleton className="h-3 w-20" />
-        </div>
+        <Skeleton className="h-2.5 w-16 mt-1" />
       </div>
     </div>
   );
