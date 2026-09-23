@@ -289,46 +289,47 @@ export default function ReadingPage() {
   };
 
   // Read the target comment ID once from the URL on mount, store in a ref.
-  // Immediately strip it from the URL via both replaceState (updates the bar)
-  // and navigate-replace (updates React Router state), so useSearchParams
-  // returns 0 from the very next render -- preventing mode-switch / refresh
-  // re-triggers. The ref persists the value we need for the scroll.
-  const targetCommentIdRef = useRef<number>(0);
+  // highlightedCommentId drives the class in CommentThread via TargetCommentContext.
+  // Using state (not a ref) so zeroing it after animation causes a React re-render
+  // that removes comment-highlight from the DOM -- preventing dark/light replay.
+  const [highlightedCommentId, setHighlightedCommentId] = useState<number>(0);
   const highlightFiredRef = useRef(false);
+
+  // Mount effect: read ?comment= once, strip it immediately from both the URL bar
+  // and React Router's internal state so refresh / duplicate never re-trigger.
   useEffect(() => {
     const id = Number(new URLSearchParams(window.location.search).get("comment") || 0);
     if (!id) return;
-    targetCommentIdRef.current = id;
-    // Strip from URL bar immediately
+    setHighlightedCommentId(id);
     const params = new URLSearchParams(window.location.search);
     params.delete("comment");
     const newSearch = params.toString();
     window.history.replaceState({}, "", newSearch ? `?${newSearch}` : window.location.pathname);
-    // Also update React Router's internal location so useSearchParams returns 0
     navigate({ search: newSearch ? `?${newSearch}` : "" }, { replace: true });
-  // Run once on mount only
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Scroll and highlight -- fires once when comments finish loading
+  // Scroll + animate once when comments load. Zeros highlightedCommentId after
+  // animation ends so React removes the class -- dark/light toggle can't replay it.
   useEffect(() => {
-    const id = targetCommentIdRef.current;
-    if (!id || loadingComments || comments.length === 0) return;
+    if (!highlightedCommentId || loadingComments || comments.length === 0) return;
     if (highlightFiredRef.current) return;
     highlightFiredRef.current = true;
 
     setActiveTab("discussion");
     const timer = setTimeout(() => {
-      const el = document.getElementById(`comment-${id}`);
+      const el = document.getElementById(`comment-${highlightedCommentId}`);
       if (!el) return;
       el.scrollIntoView({ behavior: "smooth", block: "center" });
-      el.classList.remove("comment-highlight");
-      void el.offsetWidth;
-      el.classList.add("comment-highlight");
+      // Animation is driven by the class React renders via TargetCommentContext --
+      // no classList manipulation needed here, just scroll.
+      // Zero state after animation: React re-renders without the class.
+      const totalMs = (1.58 + 0.25) * 1000;
+      setTimeout(() => setHighlightedCommentId(0), totalMs + 100);
     }, 150);
     return () => clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loadingComments, comments.length]);
+  }, [highlightedCommentId, loadingComments, comments.length]);
 
   if (loadingEdition) {
     return (
@@ -579,7 +580,7 @@ export default function ReadingPage() {
                   No comments yet. Be the first to start the discussion.
                 </div>
               ) : (
-                <TargetCommentContext.Provider value={targetCommentIdRef.current}>
+                <TargetCommentContext.Provider value={highlightedCommentId}>
                   {topLevelComments.map((comment) => (
                     <CommentThread
                       key={comment.id}
@@ -590,11 +591,11 @@ export default function ReadingPage() {
                       onJumpToPage={handleJumpToPage}
                       onCommentDeleted={handleCommentDeleted}
                       onCommentEdited={handleCommentEdited}
-                      highlighted={comment.id === targetCommentIdRef.current}
+                      highlighted={comment.id === highlightedCommentId}
                       initiallyExpandReplies={
-                        targetCommentIdRef.current > 0 &&
-                        comment.id !== targetCommentIdRef.current &&
-                        !!(comment.replies?.some((r: any) => r.id === targetCommentIdRef.current))
+                        highlightedCommentId > 0 &&
+                        comment.id !== highlightedCommentId &&
+                        !!(comment.replies?.some((r: any) => r.id === highlightedCommentId))
                       }
                     />
                   ))}
