@@ -226,6 +226,9 @@ export default function UserCommentsFeed() {
   });
 
   const sentinelRef = useRef<HTMLDivElement>(null);
+
+  // Always start from top regardless of which page navigated here
+  useEffect(() => { window.scrollTo(0, 0); }, []);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleIntersect = useCallback(
@@ -283,14 +286,12 @@ export default function UserCommentsFeed() {
     <div className="max-w-2xl mx-auto px-4 py-8">
       <ScrollToTop />
 
-      {/* Back button -- uses navigate(-1) so it works from both profile and AllCommentedBooks */}
+      {/* Back button */}
       <button
         onClick={() => navigate(-1)}
-        className="inline-flex items-center gap-1.5 mb-6 px-3 py-1.5 rounded-lg
-                   bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200
-                   hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-sm font-medium"
+        className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-xs font-medium mb-4"
       >
-        <ArrowLeft className="w-4 h-4" />
+        <ArrowLeft className="w-3 h-3" />
         Back
       </button>
 

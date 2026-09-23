@@ -1,4 +1,6 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { ArrowLeft, BookMarked, BookOpen, X } from "lucide-react";
 import { usersApi, progressApi } from "@/api";
 import { useAuthStore } from "@/stores/authStore";
@@ -12,6 +14,8 @@ export default function AllCurrentlyReading() {
   const { user: currentUser } = useAuthStore();
   const isSelf = currentUser?.username === username;
   const qc = useQueryClient();
+
+  useEffect(() => { window.scrollTo(0, 0); }, []);
 
   const { data, isLoading } = useQuery({
     queryKey: ["user", username],
@@ -33,19 +37,17 @@ export default function AllCurrentlyReading() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <div className="flex items-center gap-3 mb-6">
-        <button
-          onClick={() => navigate(-1)}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-sm font-medium flex-shrink-0"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back
-        </button>
-        <h1 className="font-serif text-2xl font-semibold text-ink-900 flex items-center gap-2">
-          <BookMarked className="w-5 h-5 text-ink-400" />
-          {isSelf ? "My" : `${username}'s`} Currently Reading
-        </h1>
-      </div>
+      <button
+        onClick={() => navigate(-1)}
+        className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-xs font-medium mb-4"
+      >
+        <ArrowLeft className="w-3 h-3" />
+        Back
+      </button>
+      <h1 className="font-serif text-2xl font-semibold text-ink-900 dark:text-gray-100 flex items-center gap-2 mb-6">
+        <BookMarked className="w-5 h-5 text-ink-400" />
+        {isSelf ? "My" : `${username}'s`} Currently Reading
+      </h1>
 
       {isLoading ? (
         <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-ink-200 border-t-ink-600 rounded-full animate-spin" /></div>
