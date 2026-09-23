@@ -530,13 +530,11 @@ export default function UserProfile() {
         {books_uploaded.length === 0 ? (
           <p className="text-sm text-gray-400">No books uploaded yet.</p>
         ) : (
-          <HorizontalScrollRow itemCount={books_uploaded.length}>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {books_uploaded.map((book) => (
-              <div key={book.id} className="flex-shrink-0" style={{ width: 200 }}>
-                <BookCard book={book} />
-              </div>
+              <BookCard key={book.id} book={book} />
             ))}
-          </HorizontalScrollRow>
+          </div>
         )}
       </section>
 

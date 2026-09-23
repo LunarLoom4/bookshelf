@@ -80,6 +80,8 @@ class BookSummary(BaseModel):
     cover_url: str | None
     created_at: datetime
     edition_count: int = 0
+    comment_count: int = 0
+    like_count: int = 0
 
     model_config = {"from_attributes": True}
 

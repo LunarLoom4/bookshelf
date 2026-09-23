@@ -158,18 +158,38 @@ async def get_list(
         if not current_user or current_user.id != reading_list.user_id:
             raise HTTPException(status_code=403, detail="This list is private")
 
-    # Fetch edition counts for all books in one query
+    # Fetch edition, comment, and like counts for all books in one query each
     book_ids = [item.book_id for item in reading_list.items]
     edition_counts: dict[int, int] = {}
+    comment_counts: dict[int, int] = {}
+    like_counts: dict[int, int] = {}
     if book_ids:
         from sqlalchemy import func as sqlfunc
         from app.models.edition import Edition
+        from app.models.comment import Comment
+        from app.models.edition_like import EditionLike
         counts_result = await db.execute(
             select(Edition.book_id, sqlfunc.count(Edition.id).label("edition_count"))
             .where(Edition.book_id.in_(book_ids))
             .group_by(Edition.book_id)
         )
         edition_counts = {row.book_id: row.edition_count for row in counts_result.all()}
+
+        comment_result = await db.execute(
+            select(Edition.book_id, sqlfunc.count(Comment.id).label("cnt"))
+            .join(Comment, Comment.edition_id == Edition.id)
+            .where(Edition.book_id.in_(book_ids), Comment.is_deleted.is_(False))
+            .group_by(Edition.book_id)
+        )
+        comment_counts = {row.book_id: row.cnt for row in comment_result.all()}
+
+        like_result = await db.execute(
+            select(Edition.book_id, sqlfunc.count(EditionLike.id).label("cnt"))
+            .join(EditionLike, EditionLike.edition_id == Edition.id)
+            .where(Edition.book_id.in_(book_ids))
+            .group_by(Edition.book_id)
+        )
+        like_counts = {row.book_id: row.cnt for row in like_result.all()}
 
     # Build response -- book is already loaded via selectinload, no lazy loads
     response = ReadingListDetailResponse.model_validate(reading_list)
@@ -183,6 +203,8 @@ async def get_list(
                 cover_url=orm_item.book.cover_url,
                 created_at=orm_item.book.created_at,
                 edition_count=edition_counts.get(orm_item.book.id, 0),
+                comment_count=comment_counts.get(orm_item.book.id, 0),
+                like_count=like_counts.get(orm_item.book.id, 0),
             )
     return response
 

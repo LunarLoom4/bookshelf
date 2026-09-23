@@ -2,7 +2,7 @@ import asyncio
 import time
 from collections import defaultdict
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
-from sqlalchemy import func, select, text
+from sqlalchemy import and_, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -600,12 +600,47 @@ async def popular_books(
         .limit(limit)
     )
     books = []
-    for row in result.all():
-        book, edition_count, comment_count = row
+    book_ids_popular = [row[0].id for row in result.all()]
+    rows_popular = result.all() if book_ids_popular else []
+
+    # Re-execute to get actual rows (result already consumed above check)
+    result2 = await db.execute(
+        select(
+            Book,
+            func.count(Edition.id.distinct()).label("edition_count"),
+            func.count(Comment.id.distinct()).label("comment_count"),
+        )
+        .outerjoin(Edition, Edition.book_id == Book.id)
+        .outerjoin(
+            Comment,
+            and_(
+                Comment.edition_id == Edition.id,
+                Comment.is_deleted.is_(False),
+                Comment.created_at >= cutoff,
+            )
+        )
+        .group_by(Book.id)
+        .having(func.count(Comment.id.distinct()) > 0)
+        .order_by(func.count(Comment.id.distinct()).desc())
+        .limit(limit)
+    )
+    rows_popular = result2.all()
+    book_ids_popular = [r[0].id for r in rows_popular]
+
+    from app.models.edition_like import EditionLike as EL2
+    like_result = await db.execute(
+        select(Edition.book_id, func.count(EL2.id).label("cnt"))
+        .join(EL2, EL2.edition_id == Edition.id)
+        .where(Edition.book_id.in_(book_ids_popular))
+        .group_by(Edition.book_id)
+    ) if book_ids_popular else None
+    popular_like_map = {r.book_id: r.cnt for r in like_result.all()} if like_result else {}
+
+    for book, edition_count, comment_count in rows_popular:
         item = BookListItem.model_validate(book)
         item.edition_count = edition_count
         item.comment_count = comment_count
-        item.like_count = 0
+        item.like_count = popular_like_map.get(book.id, 0)
         books.append(item)
     return books
 

@@ -54,8 +54,8 @@ export function BookCard({ book }: Props) {
         {/* Top-right: likes */}
         {likeCount > 0 && (
           <div className="absolute top-2 right-2 flex items-center gap-1
-                          bg-black/60 backdrop-blur-sm text-white text-[10px]
-                          px-1.5 py-0.5 rounded-full font-medium">
+                          bg-black/60 backdrop-blur-sm text-white text-xs
+                          px-2 py-0.5 rounded-full font-medium">
             <Heart className="w-2.5 h-2.5 fill-rose-400 text-rose-400" />
             {likeCount}
           </div>
@@ -72,8 +72,8 @@ export function BookCard({ book }: Props) {
         {/* Bottom-right: comment count */}
         {book.comment_count > 0 && (
           <div className="absolute bottom-2 right-2 flex items-center gap-1
-                          bg-black/60 backdrop-blur-sm text-white text-[10px]
-                          px-1.5 py-0.5 rounded-full font-medium">
+                          bg-black/60 backdrop-blur-sm text-white text-xs
+                          px-2 py-0.5 rounded-full font-medium">
             <MessageSquare className="w-2.5 h-2.5" />
             {book.comment_count}
           </div>
