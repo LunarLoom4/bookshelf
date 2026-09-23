@@ -8,6 +8,7 @@ from sqlalchemy.orm import selectinload
 
 from app.core.deps import get_current_user
 from app.core.config import settings
+from app.core.rate_limit import rate_limit_upload_book, rate_limit_add_edition
 from app.db.session import get_db
 from app.models.book import Book
 from app.models.comment import Comment
@@ -58,8 +59,8 @@ async def create_book_with_edition(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    # 29: Rate limit uploads per user
-    _check_upload_rate_limit(current_user.id)
+    # Rate limit: 5 uploads per hour per user
+    await rate_limit_upload_book(current_user.id)
 
     # 33: Input length validation on book metadata
     title = title.strip()
@@ -280,6 +281,9 @@ async def add_edition(
     current_user: User = Depends(get_current_user),
 ):
     """Add a new edition PDF to an existing book."""
+    # Rate limit: 10 edition uploads per hour per user
+    await rate_limit_add_edition(current_user.id)
+
     result = await db.execute(
         select(Book).options(selectinload(Book.editions)).where(Book.id == book_id)
     )
@@ -432,47 +436,124 @@ async def list_books(
     """Books list with sort: newest, oldest, most_discussed, most_editions, most_liked."""
     from app.models.edition_like import EditionLike
 
-    likes_sq = (
-        select(Edition.book_id, func.count(EditionLike.id).label("like_count"))
-        .outerjoin(EditionLike, EditionLike.edition_id == Edition.id)
-        .group_by(Edition.book_id)
-        .subquery()
-    )
-
-    base_q = (
-        select(
-            Book,
-            func.count(Edition.id.distinct()).label("edition_count"),
-            func.count(Comment.id.distinct()).label("comment_count"),
-            func.coalesce(likes_sq.c.like_count, 0).label("like_count"),
+    if sort in ("newest", "oldest"):
+        # Fast path: no joins needed, just order by created_at
+        order = Book.created_at.desc() if sort == "newest" else Book.created_at.asc()
+        result = await db.execute(
+            select(Book).order_by(order).offset(skip).limit(limit)
         )
-        .outerjoin(Edition, Edition.book_id == Book.id)
-        .outerjoin(Comment, (Comment.edition_id == Edition.id) & (Comment.is_deleted.is_(False)))
-        .outerjoin(likes_sq, likes_sq.c.book_id == Book.id)
-        .group_by(Book.id, likes_sq.c.like_count)
-    )
+        raw_books = result.scalars().all()
 
-    if sort == "oldest":
-        base_q = base_q.order_by(Book.created_at.asc())
+        # Fetch edition + comment counts in two efficient queries
+        book_ids = [b.id for b in raw_books]
+        if not book_ids:
+            return []
+
+        edition_counts_result = await db.execute(
+            select(Edition.book_id, func.count(Edition.id).label("cnt"))
+            .where(Edition.book_id.in_(book_ids))
+            .group_by(Edition.book_id)
+        )
+        edition_map = {r.book_id: r.cnt for r in edition_counts_result.all()}
+
+        comment_counts_result = await db.execute(
+            select(Edition.book_id, func.count(Comment.id).label("cnt"))
+            .join(Comment, Comment.edition_id == Edition.id)
+            .where(Edition.book_id.in_(book_ids), Comment.is_deleted.is_(False))
+            .group_by(Edition.book_id)
+        )
+        comment_map = {r.book_id: r.cnt for r in comment_counts_result.all()}
+
+        books = []
+        for b in raw_books:
+            item = BookListItem.model_validate(b)
+            item.edition_count = edition_map.get(b.id, 0)
+            item.comment_count = comment_map.get(b.id, 0)
+            books.append(item)
+        return books
+
     elif sort == "most_discussed":
-        base_q = base_q.order_by(func.count(Comment.id.distinct()).desc(), Book.created_at.desc())
-    elif sort == "most_editions":
-        base_q = base_q.order_by(func.count(Edition.id.distinct()).desc(), Book.created_at.desc())
-    elif sort == "most_liked":
-        base_q = base_q.order_by(func.coalesce(likes_sq.c.like_count, 0).desc(), Book.created_at.desc())
-    else:  # newest (default)
-        base_q = base_q.order_by(Book.created_at.desc())
+        # Join books with comment counts, order by comment count
+        result = await db.execute(
+            select(Book, func.count(Comment.id.distinct()).label("comment_count"))
+            .outerjoin(Edition, Edition.book_id == Book.id)
+            .outerjoin(Comment, (Comment.edition_id == Edition.id) & (Comment.is_deleted.is_(False)))
+            .group_by(Book.id)
+            .order_by(func.count(Comment.id.distinct()).desc(), Book.created_at.desc())
+            .offset(skip).limit(limit)
+        )
+        rows = result.all()
+        book_ids = [r[0].id for r in rows]
+        edition_counts_result = await db.execute(
+            select(Edition.book_id, func.count(Edition.id).label("cnt"))
+            .where(Edition.book_id.in_(book_ids))
+            .group_by(Edition.book_id)
+        )
+        edition_map = {r.book_id: r.cnt for r in edition_counts_result.all()}
+        books = []
+        for book, comment_count in rows:
+            item = BookListItem.model_validate(book)
+            item.edition_count = edition_map.get(book.id, 0)
+            item.comment_count = comment_count
+            books.append(item)
+        return books
 
-    result = await db.execute(base_q.offset(skip).limit(limit))
-    rows = result.all()
-    books = []
-    for row in rows:
-        book, edition_count, comment_count, _ = row
-        item = BookListItem.model_validate(book)
-        item.edition_count = edition_count
-        item.comment_count = comment_count
-        books.append(item)
-    return books
+    elif sort == "most_editions":
+        result = await db.execute(
+            select(Book, func.count(Edition.id.distinct()).label("edition_count"))
+            .outerjoin(Edition, Edition.book_id == Book.id)
+            .group_by(Book.id)
+            .order_by(func.count(Edition.id.distinct()).desc(), Book.created_at.desc())
+            .offset(skip).limit(limit)
+        )
+        rows = result.all()
+        book_ids = [r[0].id for r in rows]
+        comment_counts_result = await db.execute(
+            select(Edition.book_id, func.count(Comment.id).label("cnt"))
+            .join(Comment, Comment.edition_id == Edition.id)
+            .where(Edition.book_id.in_(book_ids), Comment.is_deleted.is_(False))
+            .group_by(Edition.book_id)
+        )
+        comment_map = {r.book_id: r.cnt for r in comment_counts_result.all()}
+        books = []
+        for book, edition_count in rows:
+            item = BookListItem.model_validate(book)
+            item.edition_count = edition_count
+            item.comment_count = comment_map.get(book.id, 0)
+            books.append(item)
+        return books
+
+    else:  # most_liked
+        result = await db.execute(
+            select(Book, func.count(EditionLike.id.distinct()).label("like_count"))
+            .outerjoin(Edition, Edition.book_id == Book.id)
+            .outerjoin(EditionLike, EditionLike.edition_id == Edition.id)
+            .group_by(Book.id)
+            .order_by(func.count(EditionLike.id.distinct()).desc(), Book.created_at.desc())
+            .offset(skip).limit(limit)
+        )
+        rows = result.all()
+        book_ids = [r[0].id for r in rows]
+        edition_counts_result = await db.execute(
+            select(Edition.book_id, func.count(Edition.id).label("cnt"))
+            .where(Edition.book_id.in_(book_ids))
+            .group_by(Edition.book_id)
+        )
+        edition_map = {r.book_id: r.cnt for r in edition_counts_result.all()}
+        comment_counts_result = await db.execute(
+            select(Edition.book_id, func.count(Comment.id).label("cnt"))
+            .join(Comment, Comment.edition_id == Edition.id)
+            .where(Edition.book_id.in_(book_ids), Comment.is_deleted.is_(False))
+            .group_by(Edition.book_id)
+        )
+        comment_map = {r.book_id: r.cnt for r in comment_counts_result.all()}
+        books = []
+        for book, _ in rows:
+            item = BookListItem.model_validate(book)
+            item.edition_count = edition_map.get(book.id, 0)
+            item.comment_count = comment_map.get(book.id, 0)
+            books.append(item)
+        return books
 
 
 @router.get("/popular", response_model=list[BookListItem])
