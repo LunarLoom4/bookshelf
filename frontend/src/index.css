@@ -101,8 +101,8 @@
 
   /* Page badges in comments */
   html.dark .page-badge {
-    background-color: #1e3a5f !important;
-    color: #90cdf4 !important;
+    background-color: #1a2e42 !important;
+    color: #6b9ab8 !important;
   }
 
   /* bg-ink-100 used for active sort buttons, active settings tabs, page badges */
@@ -366,7 +366,7 @@
   background: rgba(0, 100, 255, 0.25);
 }
 
-/* ── Comment highlight: single sine arch, 3.5s + 0.55s delay,
+/* ── Comment highlight: single sine arch, 1.58s + 0.25s delay,
    outline ring + drop-shadow for shimmer (both escape overflow:auto clip).
    Light: yellow-400.  Dark: indigo-100 near-white on #13171F. ── */
 
@@ -402,42 +402,42 @@
 }
 
 @keyframes comment-glow-dark {
-  0.0% { background-color: rgba(219,234,254,0.0000); outline: 1.5px solid rgba(219,234,254,0.000); filter: drop-shadow(0 0 0.0px rgba(199,225,255,0.000)); }
-  1.5% { background-color: rgba(219,234,254,0.0151); outline: 1.5px solid rgba(219,234,254,0.024); filter: drop-shadow(0 0 0.5px rgba(199,225,255,0.021)); }
-  3.2% { background-color: rgba(219,234,254,0.0321); outline: 1.5px solid rgba(219,234,254,0.050); filter: drop-shadow(0 0 1.0px rgba(199,225,255,0.045)); }
-  5.2% { background-color: rgba(219,234,254,0.0520); outline: 1.5px solid rgba(219,234,254,0.081); filter: drop-shadow(0 0 1.6px rgba(199,225,255,0.073)); }
-  7.5% { background-color: rgba(219,234,254,0.0747); outline: 1.5px solid rgba(219,234,254,0.117); filter: drop-shadow(0 0 2.3px rgba(199,225,255,0.105)); }
-  10.0% { background-color: rgba(219,234,254,0.0989); outline: 1.5px solid rgba(219,234,254,0.155); filter: drop-shadow(0 0 3.1px rgba(199,225,255,0.139)); }
-  13.0% { background-color: rgba(219,234,254,0.1271); outline: 1.5px solid rgba(219,234,254,0.199); filter: drop-shadow(0 0 4.0px rgba(199,225,255,0.179)); }
-  16.5% { background-color: rgba(219,234,254,0.1585); outline: 1.5px solid rgba(219,234,254,0.248); filter: drop-shadow(0 0 5.0px rgba(199,225,255,0.223)); }
-  20.5% { background-color: rgba(219,234,254,0.1921); outline: 1.5px solid rgba(219,234,254,0.300); filter: drop-shadow(0 0 6.0px rgba(199,225,255,0.270)); }
-  25.2% { background-color: rgba(219,234,254,0.2277); outline: 1.5px solid rgba(219,234,254,0.356); filter: drop-shadow(0 0 7.1px rgba(199,225,255,0.320)); }
-  30.8% { background-color: rgba(219,234,254,0.2635); outline: 1.5px solid rgba(219,234,254,0.412); filter: drop-shadow(0 0 8.2px rgba(199,225,255,0.371)); }
-  37.0% { background-color: rgba(219,234,254,0.2937); outline: 1.5px solid rgba(219,234,254,0.459); filter: drop-shadow(0 0 9.2px rgba(199,225,255,0.413)); }
-  44.0% { background-color: rgba(219,234,254,0.3143); outline: 1.5px solid rgba(219,234,254,0.491); filter: drop-shadow(0 0 9.8px rgba(199,225,255,0.442)); }
-  50.0% { background-color: rgba(219,234,254,0.3200); outline: 1.5px solid rgba(219,234,254,0.500); filter: drop-shadow(0 0 10.0px rgba(199,225,255,0.450)); }
-  56.0% { background-color: rgba(219,234,254,0.3143); outline: 1.5px solid rgba(219,234,254,0.491); filter: drop-shadow(0 0 9.8px rgba(199,225,255,0.442)); }
-  63.0% { background-color: rgba(219,234,254,0.2937); outline: 1.5px solid rgba(219,234,254,0.459); filter: drop-shadow(0 0 9.2px rgba(199,225,255,0.413)); }
-  69.5% { background-color: rgba(219,234,254,0.2618); outline: 1.5px solid rgba(219,234,254,0.409); filter: drop-shadow(0 0 8.2px rgba(199,225,255,0.368)); }
-  74.8% { background-color: rgba(219,234,254,0.2277); outline: 1.5px solid rgba(219,234,254,0.356); filter: drop-shadow(0 0 7.1px rgba(199,225,255,0.320)); }
-  79.5% { background-color: rgba(219,234,254,0.1921); outline: 1.5px solid rgba(219,234,254,0.300); filter: drop-shadow(0 0 6.0px rgba(199,225,255,0.270)); }
-  83.5% { background-color: rgba(219,234,254,0.1585); outline: 1.5px solid rgba(219,234,254,0.248); filter: drop-shadow(0 0 5.0px rgba(199,225,255,0.223)); }
-  87.0% { background-color: rgba(219,234,254,0.1271); outline: 1.5px solid rgba(219,234,254,0.199); filter: drop-shadow(0 0 4.0px rgba(199,225,255,0.179)); }
-  90.0% { background-color: rgba(219,234,254,0.0989); outline: 1.5px solid rgba(219,234,254,0.155); filter: drop-shadow(0 0 3.1px rgba(199,225,255,0.139)); }
-  92.5% { background-color: rgba(219,234,254,0.0747); outline: 1.5px solid rgba(219,234,254,0.117); filter: drop-shadow(0 0 2.3px rgba(199,225,255,0.105)); }
-  94.8% { background-color: rgba(219,234,254,0.0520); outline: 1.5px solid rgba(219,234,254,0.081); filter: drop-shadow(0 0 1.6px rgba(199,225,255,0.073)); }
-  96.8% { background-color: rgba(219,234,254,0.0321); outline: 1.5px solid rgba(219,234,254,0.050); filter: drop-shadow(0 0 1.0px rgba(199,225,255,0.045)); }
-  98.3% { background-color: rgba(219,234,254,0.0171); outline: 1.5px solid rgba(219,234,254,0.027); filter: drop-shadow(0 0 0.5px rgba(199,225,255,0.024)); }
-  99.3% { background-color: rgba(219,234,254,0.0070); outline: 1.5px solid rgba(219,234,254,0.011); filter: drop-shadow(0 0 0.2px rgba(199,225,255,0.010)); }
-  100.0% { background-color: rgba(219,234,254,0.0000); outline: 1.5px solid rgba(219,234,254,0.000); filter: drop-shadow(0 0 0.0px rgba(199,225,255,0.000)); }
+  0.0% { background-color: rgba(219,234,254,0.0000); outline: 1.5px solid rgba(219,234,254,0.0000); filter: drop-shadow(0 0 0.0px rgba(199,225,255,0.0000)); }
+  1.5% { background-color: rgba(219,234,254,0.0121); outline: 1.5px solid rgba(219,234,254,0.0192); filter: drop-shadow(0 0 0.5px rgba(199,225,255,0.0168)); }
+  3.2% { background-color: rgba(219,234,254,0.0257); outline: 1.5px solid rgba(219,234,254,0.0400); filter: drop-shadow(0 0 1.0px rgba(199,225,255,0.0360)); }
+  5.2% { background-color: rgba(219,234,254,0.0416); outline: 1.5px solid rgba(219,234,254,0.0648); filter: drop-shadow(0 0 1.6px rgba(199,225,255,0.0584)); }
+  7.5% { background-color: rgba(219,234,254,0.0598); outline: 1.5px solid rgba(219,234,254,0.0936); filter: drop-shadow(0 0 2.3px rgba(199,225,255,0.0840)); }
+  10.0% { background-color: rgba(219,234,254,0.0791); outline: 1.5px solid rgba(219,234,254,0.1240); filter: drop-shadow(0 0 3.1px rgba(199,225,255,0.1112)); }
+  13.0% { background-color: rgba(219,234,254,0.1017); outline: 1.5px solid rgba(219,234,254,0.1592); filter: drop-shadow(0 0 4.0px rgba(199,225,255,0.1432)); }
+  16.5% { background-color: rgba(219,234,254,0.1268); outline: 1.5px solid rgba(219,234,254,0.1984); filter: drop-shadow(0 0 5.0px rgba(199,225,255,0.1784)); }
+  20.5% { background-color: rgba(219,234,254,0.1537); outline: 1.5px solid rgba(219,234,254,0.2400); filter: drop-shadow(0 0 6.0px rgba(199,225,255,0.2160)); }
+  25.2% { background-color: rgba(219,234,254,0.1822); outline: 1.5px solid rgba(219,234,254,0.2848); filter: drop-shadow(0 0 7.1px rgba(199,225,255,0.2560)); }
+  30.8% { background-color: rgba(219,234,254,0.2108); outline: 1.5px solid rgba(219,234,254,0.3296); filter: drop-shadow(0 0 8.2px rgba(199,225,255,0.2968)); }
+  37.0% { background-color: rgba(219,234,254,0.2350); outline: 1.5px solid rgba(219,234,254,0.3672); filter: drop-shadow(0 0 9.2px rgba(199,225,255,0.3304)); }
+  44.0% { background-color: rgba(219,234,254,0.2514); outline: 1.5px solid rgba(219,234,254,0.3928); filter: drop-shadow(0 0 9.8px rgba(199,225,255,0.3536)); }
+  50.0% { background-color: rgba(219,234,254,0.2560); outline: 1.5px solid rgba(219,234,254,0.4000); filter: drop-shadow(0 0 10.0px rgba(199,225,255,0.3600)); }
+  56.0% { background-color: rgba(219,234,254,0.2514); outline: 1.5px solid rgba(219,234,254,0.3928); filter: drop-shadow(0 0 9.8px rgba(199,225,255,0.3536)); }
+  63.0% { background-color: rgba(219,234,254,0.2350); outline: 1.5px solid rgba(219,234,254,0.3672); filter: drop-shadow(0 0 9.2px rgba(199,225,255,0.3304)); }
+  69.5% { background-color: rgba(219,234,254,0.2094); outline: 1.5px solid rgba(219,234,254,0.3272); filter: drop-shadow(0 0 8.2px rgba(199,225,255,0.2944)); }
+  74.8% { background-color: rgba(219,234,254,0.1822); outline: 1.5px solid rgba(219,234,254,0.2848); filter: drop-shadow(0 0 7.1px rgba(199,225,255,0.2560)); }
+  79.5% { background-color: rgba(219,234,254,0.1537); outline: 1.5px solid rgba(219,234,254,0.2400); filter: drop-shadow(0 0 6.0px rgba(199,225,255,0.2160)); }
+  83.5% { background-color: rgba(219,234,254,0.1268); outline: 1.5px solid rgba(219,234,254,0.1984); filter: drop-shadow(0 0 5.0px rgba(199,225,255,0.1784)); }
+  87.0% { background-color: rgba(219,234,254,0.1017); outline: 1.5px solid rgba(219,234,254,0.1592); filter: drop-shadow(0 0 4.0px rgba(199,225,255,0.1432)); }
+  90.0% { background-color: rgba(219,234,254,0.0791); outline: 1.5px solid rgba(219,234,254,0.1240); filter: drop-shadow(0 0 3.1px rgba(199,225,255,0.1112)); }
+  92.5% { background-color: rgba(219,234,254,0.0598); outline: 1.5px solid rgba(219,234,254,0.0936); filter: drop-shadow(0 0 2.3px rgba(199,225,255,0.0840)); }
+  94.8% { background-color: rgba(219,234,254,0.0416); outline: 1.5px solid rgba(219,234,254,0.0648); filter: drop-shadow(0 0 1.6px rgba(199,225,255,0.0584)); }
+  96.8% { background-color: rgba(219,234,254,0.0257); outline: 1.5px solid rgba(219,234,254,0.0400); filter: drop-shadow(0 0 1.0px rgba(199,225,255,0.0360)); }
+  98.3% { background-color: rgba(219,234,254,0.0137); outline: 1.5px solid rgba(219,234,254,0.0216); filter: drop-shadow(0 0 0.5px rgba(199,225,255,0.0192)); }
+  99.3% { background-color: rgba(219,234,254,0.0056); outline: 1.5px solid rgba(219,234,254,0.0088); filter: drop-shadow(0 0 0.2px rgba(199,225,255,0.0080)); }
+  100.0% { background-color: rgba(219,234,254,0.0000); outline: 1.5px solid rgba(219,234,254,0.0000); filter: drop-shadow(0 0 0.0px rgba(199,225,255,0.0000)); }
 }
 
 .comment-highlight {
-  animation: comment-glow-light 2.1s linear 0.33s forwards;
+  animation: comment-glow-light 1.58s linear 0.25s forwards;
   border-radius: 6px;
   outline: 1.5px solid transparent;
 }
 
 html.dark .comment-highlight {
-  animation: comment-glow-dark 2.1s linear 0.33s forwards;
+  animation: comment-glow-dark 1.58s linear 0.25s forwards;
 }

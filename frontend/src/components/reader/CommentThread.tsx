@@ -282,7 +282,7 @@ export function CommentThread({
               {timeAgo(comment.created_at)}
             </span>
             {comment.edited_at && (
-              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 tracking-wide">
+              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-500 tracking-wide">
                 EDITED
               </span>
             )}
