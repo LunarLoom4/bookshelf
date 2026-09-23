@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ScrollToTop } from "@/components/ui/ScrollToTop";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { BookOpen, MessageSquare, List, LockKeyhole, Globe2, Trash2, Plus, BookMarked, Pencil, Check, X, ChevronLeft, ChevronRight, MoreVertical } from "lucide-react";
+import { BookOpen, MessageSquare, List, LockKeyhole, Globe2, Trash2, Plus, BookMarked, Pencil, Check, X, ChevronLeft, ChevronRight, MoreVertical, Heart, Layers } from "lucide-react";
 import { format } from "date-fns";
 import { timeAgo } from "@/utils/time";
 import { usersApi, progressApi, userCommentsApi } from "@/api";
@@ -530,11 +530,57 @@ export default function UserProfile() {
         {books_uploaded.length === 0 ? (
           <p className="text-sm text-gray-400">No books uploaded yet.</p>
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+          <HorizontalScrollRow itemCount={books_uploaded.length}>
             {books_uploaded.map((book) => (
-              <BookCard key={book.id} book={book} />
+              <div
+                key={book.id}
+                className="group relative flex-shrink-0 rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-shadow duration-200 cursor-pointer"
+                style={{ width: OVERLAY_CARD_W, height: Math.round(OVERLAY_CARD_W * 1.35) }}
+              >
+                <Link to={`/books/${book.id}`} className="absolute inset-0">
+                  {book.cover_url ? (
+                    <img
+                      src={book.cover_url}
+                      alt={book.title}
+                      loading="lazy"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-paper-200 dark:bg-gray-800 flex items-center justify-center">
+                      <BookOpen className="w-8 h-8 text-gray-300 dark:text-gray-600" />
+                    </div>
+                  )}
+
+                  {/* Likes -- top right */}
+                  {(book as any).like_count > 0 && (
+                    <div className="absolute top-2 right-2 flex items-center gap-1 bg-black/65 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+                      <Heart className="w-2.5 h-2.5 fill-rose-400 text-rose-400" />
+                      {(book as any).like_count}
+                    </div>
+                  )}
+
+                  {/* Gradient scrim + title + edition/comment pills */}
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/50 to-transparent pt-8 px-2.5 pb-2.5">
+                    <p className="text-xs font-semibold text-white line-clamp-2 leading-tight mb-1.5">
+                      {book.title}
+                    </p>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-white/20 text-white whitespace-nowrap">
+                        <Layers className="w-2.5 h-2.5" />
+                        {book.edition_count}
+                      </span>
+                      {book.comment_count > 0 && (
+                        <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-white/20 text-white whitespace-nowrap">
+                          <MessageSquare className="w-2.5 h-2.5" />
+                          {book.comment_count}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              </div>
             ))}
-          </div>
+          </HorizontalScrollRow>
         )}
       </section>
 

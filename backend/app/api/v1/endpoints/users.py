@@ -55,11 +55,34 @@ async def get_user_profile(username: str, db: AsyncSession = Depends(get_db)):
         .order_by(Book.created_at.desc())
         .limit(20)
     )
+    raw_books = books_result.all()
+    book_ids_uploaded = [row[0].id for row in raw_books]
+
+    comment_map_u: dict[int, int] = {}
+    like_map_u: dict[int, int] = {}
+    if book_ids_uploaded:
+        from app.models.edition_like import EditionLike
+        comment_res = await db.execute(
+            select(Edition.book_id, func.count(Comment.id).label("cnt"))
+            .join(Comment, Comment.edition_id == Edition.id)
+            .where(Edition.book_id.in_(book_ids_uploaded), Comment.is_deleted.is_(False))
+            .group_by(Edition.book_id)
+        )
+        comment_map_u = {r.book_id: r.cnt for r in comment_res.all()}
+        like_res = await db.execute(
+            select(Edition.book_id, func.count(EditionLike.id).label("cnt"))
+            .join(EditionLike, EditionLike.edition_id == Edition.id)
+            .where(Edition.book_id.in_(book_ids_uploaded))
+            .group_by(Edition.book_id)
+        )
+        like_map_u = {r.book_id: r.cnt for r in like_res.all()}
+
     books = []
-    for row in books_result.all():
-        book, edition_count = row
+    for book, edition_count in raw_books:
         item = BookListItem.model_validate(book)
         item.edition_count = edition_count
+        item.comment_count = comment_map_u.get(book.id, 0)
+        item.like_count = like_map_u.get(book.id, 0)
         books.append(item)
 
     # Fetch recent comments with book and edition context

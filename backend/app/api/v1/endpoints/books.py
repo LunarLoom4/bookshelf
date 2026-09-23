@@ -574,76 +574,68 @@ async def popular_books(
     limit: int = 6,
     db: AsyncSession = Depends(get_db),
 ):
-    """Books with the most comments in the last N days."""
+    """Books with the most recent-comment activity; displays ALL-TIME counts."""
     from datetime import datetime, timezone, timedelta
-    from sqlalchemy import and_
     cutoff = datetime.now(timezone.utc) - timedelta(days=days)
-
-    result = await db.execute(
-        select(
-            Book,
-            func.count(Edition.id.distinct()).label("edition_count"),
-            func.count(Comment.id.distinct()).label("comment_count"),
-        )
-        .outerjoin(Edition, Edition.book_id == Book.id)
-        .outerjoin(
-            Comment,
-            and_(
-                Comment.edition_id == Edition.id,
-                Comment.is_deleted.is_(False),
-                Comment.created_at >= cutoff,
-            )
-        )
-        .group_by(Book.id)
-        .having(func.count(Comment.id.distinct()) > 0)
-        .order_by(func.count(Comment.id.distinct()).desc())
-        .limit(limit)
-    )
-    books = []
-    book_ids_popular = [row[0].id for row in result.all()]
-    rows_popular = result.all() if book_ids_popular else []
-
-    # Re-execute to get actual rows (result already consumed above check)
-    result2 = await db.execute(
-        select(
-            Book,
-            func.count(Edition.id.distinct()).label("edition_count"),
-            func.count(Comment.id.distinct()).label("comment_count"),
-        )
-        .outerjoin(Edition, Edition.book_id == Book.id)
-        .outerjoin(
-            Comment,
-            and_(
-                Comment.edition_id == Edition.id,
-                Comment.is_deleted.is_(False),
-                Comment.created_at >= cutoff,
-            )
-        )
-        .group_by(Book.id)
-        .having(func.count(Comment.id.distinct()) > 0)
-        .order_by(func.count(Comment.id.distinct()).desc())
-        .limit(limit)
-    )
-    rows_popular = result2.all()
-    book_ids_popular = [r[0].id for r in rows_popular]
-
     from app.models.edition_like import EditionLike as EL2
-    like_result = await db.execute(
+
+    # Rank by recent comments only
+    ranking = await db.execute(
+        select(Book.id)
+        .outerjoin(Edition, Edition.book_id == Book.id)
+        .outerjoin(
+            Comment,
+            and_(
+                Comment.edition_id == Edition.id,
+                Comment.is_deleted.is_(False),
+                Comment.created_at >= cutoff,
+            )
+        )
+        .group_by(Book.id)
+        .having(func.count(Comment.id.distinct()) > 0)
+        .order_by(func.count(Comment.id.distinct()).desc())
+        .limit(limit)
+    )
+    book_ids = [r[0] for r in ranking.all()]
+    if not book_ids:
+        return []
+
+    books_res = await db.execute(select(Book).where(Book.id.in_(book_ids)))
+    books_map = {b.id: b for b in books_res.scalars().all()}
+
+    edition_res = await db.execute(
+        select(Edition.book_id, func.count(Edition.id).label("cnt"))
+        .where(Edition.book_id.in_(book_ids)).group_by(Edition.book_id)
+    )
+    edition_map = {r.book_id: r.cnt for r in edition_res.all()}
+
+    # ALL-TIME comment count (no cutoff) -- this is what shows on the card
+    comment_res = await db.execute(
+        select(Edition.book_id, func.count(Comment.id).label("cnt"))
+        .join(Comment, Comment.edition_id == Edition.id)
+        .where(Edition.book_id.in_(book_ids), Comment.is_deleted.is_(False))
+        .group_by(Edition.book_id)
+    )
+    comment_map = {r.book_id: r.cnt for r in comment_res.all()}
+
+    like_res = await db.execute(
         select(Edition.book_id, func.count(EL2.id).label("cnt"))
         .join(EL2, EL2.edition_id == Edition.id)
-        .where(Edition.book_id.in_(book_ids_popular))
-        .group_by(Edition.book_id)
-    ) if book_ids_popular else None
-    popular_like_map = {r.book_id: r.cnt for r in like_result.all()} if like_result else {}
+        .where(Edition.book_id.in_(book_ids)).group_by(Edition.book_id)
+    )
+    like_map = {r.book_id: r.cnt for r in like_res.all()}
 
-    for book, edition_count, comment_count in rows_popular:
-        item = BookListItem.model_validate(book)
-        item.edition_count = edition_count
-        item.comment_count = comment_count
-        item.like_count = popular_like_map.get(book.id, 0)
+    books = []
+    for bid in book_ids:
+        b = books_map.get(bid)
+        if not b:
+            continue
+        item = BookListItem.model_validate(b)
+        item.edition_count = edition_map.get(bid, 0)
+        item.comment_count = comment_map.get(bid, 0)
+        item.like_count = like_map.get(bid, 0)
         books.append(item)
     return books
-
 
 @router.get("/search", response_model=list[BookListItem])
 async def search_books(
