@@ -366,79 +366,104 @@
   background: rgba(0, 100, 255, 0.25);
 }
 
-/* ── Comment highlight animation ─────────────────────────────────────────────
-   True sine-wave shape: keyframes sampled from sin(x) at ~8% intervals so
-   each linear segment is short enough to look smooth. No ease-in-out between
-   keyframes -- that creates S-curves that fight each other at peaks/troughs.
-   Instead: linear interpolation between dense keyframes = smooth sine.
-
-   Two pulses: full peak at ~12% (first blink), second smaller peak at ~62%
-   ("dying" echo). Both fade fully to zero before rising again.
-
-   Light mode: saturated golden-yellow, GitHub/Notion-style, ~0.32 peak opacity
-   Dark mode:  bright indigo-violet, luminous on dark surfaces, ~0.30 peak opacity
-               (indigo because it contrasts with dark backgrounds without
-                washing out text, unlike teal which is too close to link colors)
-──────────────────────────────────────────────────────────────────────────── */
+/* ── Comment highlight: two sine pulses, mathematically sampled,
+   dense near peaks (21%, 71%) and zero-crossings for max smoothness.
+   Pulse 1: 0-42%  Silence: 42-50%  Pulse 2: 50-92%  Dead: 92-100% ── */
 
 @keyframes comment-glow-light {
-  /* Mathematically sampled from sin(π·t) -- dense near peaks (21%, 76%) and
-     zero-crossings (0%, 42%, 52%, 100%) where curvature is highest */
-  0%   { background-color: rgba(234, 179, 8, 0.000); }
-  2%   { background-color: rgba(234, 179, 8, 0.048); }
-  4%   { background-color: rgba(234, 179, 8, 0.094); }
-  7%   { background-color: rgba(234, 179, 8, 0.160); }
-  10%  { background-color: rgba(234, 179, 8, 0.218); }
-  13%  { background-color: rgba(234, 179, 8, 0.264); }
-  17%  { background-color: rgba(234, 179, 8, 0.306); }
-  21%  { background-color: rgba(234, 179, 8, 0.320); }  /* peak 1 */
-  25%  { background-color: rgba(234, 179, 8, 0.306); }
-  29%  { background-color: rgba(234, 179, 8, 0.264); }
-  33%  { background-color: rgba(234, 179, 8, 0.200); }
-  37%  { background-color: rgba(234, 179, 8, 0.117); }
-  40%  { background-color: rgba(234, 179, 8, 0.048); }
-  42%  { background-color: rgba(234, 179, 8, 0.000); }  /* zero crossing */
-  50%  { background-color: rgba(234, 179, 8, 0.000); }  /* gap */
-  54%  { background-color: rgba(234, 179, 8, 0.026); }
-  58%  { background-color: rgba(234, 179, 8, 0.077); }
-  62%  { background-color: rgba(234, 179, 8, 0.122); }
-  67%  { background-color: rgba(234, 179, 8, 0.166); }
-  72%  { background-color: rgba(234, 179, 8, 0.193); }
-  76%  { background-color: rgba(234, 179, 8, 0.200); }  /* peak 2 (softer) */
-  80%  { background-color: rgba(234, 179, 8, 0.193); }
-  84%  { background-color: rgba(234, 179, 8, 0.160); }
-  88%  { background-color: rgba(234, 179, 8, 0.104); }
-  93%  { background-color: rgba(234, 179, 8, 0.038); }
-  100% { background-color: rgba(234, 179, 8, 0.000); }  /* done */
+  0.0%  { background-color: rgba(234, 179, 8, 0.0000); }
+  0.8%  { background-color: rgba(234, 179, 8, 0.0201); }
+  1.7%  { background-color: rgba(234, 179, 8, 0.0401); }
+  2.5%  { background-color: rgba(234, 179, 8, 0.0600); }
+  3.6%  { background-color: rgba(234, 179, 8, 0.0844); }
+  4.8%  { background-color: rgba(234, 179, 8, 0.1131); }
+  6.3%  { background-color: rgba(234, 179, 8, 0.1453); }
+  8.4%  { background-color: rgba(234, 179, 8, 0.1881); }
+  11.1%  { background-color: rgba(234, 179, 8, 0.2367); }
+  14.7%  { background-color: rgba(234, 179, 8, 0.2851); }
+  18.5%  { background-color: rgba(234, 179, 8, 0.3143); }
+  21.0%  { background-color: rgba(234, 179, 8, 0.3200); }
+  23.5%  { background-color: rgba(234, 179, 8, 0.3143); }
+  27.3%  { background-color: rgba(234, 179, 8, 0.2851); }
+  31.1%  { background-color: rgba(234, 179, 8, 0.2333); }
+  34.4%  { background-color: rgba(234, 179, 8, 0.1715); }
+  36.5%  { background-color: rgba(234, 179, 8, 0.1271); }
+  38.2%  { background-color: rgba(234, 179, 8, 0.0893); }
+  39.5%  { background-color: rgba(234, 179, 8, 0.0600); }
+  40.5%  { background-color: rgba(234, 179, 8, 0.0351); }
+  41.4%  { background-color: rgba(234, 179, 8, 0.0151); }
+  42.0%  { background-color: rgba(234, 179, 8, 0.0000); }
+  50.0%  { background-color: rgba(234, 179, 8, 0.0000); }
+  50.8%  { background-color: rgba(234, 179, 8, 0.0126); }
+  51.7%  { background-color: rgba(234, 179, 8, 0.0251); }
+  52.5%  { background-color: rgba(234, 179, 8, 0.0375); }
+  53.6%  { background-color: rgba(234, 179, 8, 0.0528); }
+  54.8%  { background-color: rgba(234, 179, 8, 0.0707); }
+  56.3%  { background-color: rgba(234, 179, 8, 0.0908); }
+  58.4%  { background-color: rgba(234, 179, 8, 0.1176); }
+  61.1%  { background-color: rgba(234, 179, 8, 0.1479); }
+  64.7%  { background-color: rgba(234, 179, 8, 0.1782); }
+  68.5%  { background-color: rgba(234, 179, 8, 0.1965); }
+  71.0%  { background-color: rgba(234, 179, 8, 0.2000); }
+  73.5%  { background-color: rgba(234, 179, 8, 0.1965); }
+  77.3%  { background-color: rgba(234, 179, 8, 0.1782); }
+  81.1%  { background-color: rgba(234, 179, 8, 0.1458); }
+  84.4%  { background-color: rgba(234, 179, 8, 0.1072); }
+  86.5%  { background-color: rgba(234, 179, 8, 0.0794); }
+  88.2%  { background-color: rgba(234, 179, 8, 0.0558); }
+  89.5%  { background-color: rgba(234, 179, 8, 0.0375); }
+  90.5%  { background-color: rgba(234, 179, 8, 0.0219); }
+  91.4%  { background-color: rgba(234, 179, 8, 0.0094); }
+  92.0%  { background-color: rgba(234, 179, 8, 0.0000); }
+  100.0%  { background-color: rgba(234, 179, 8, 0.0000); }
 }
 
 @keyframes comment-glow-dark {
-  0%   { background-color: rgba(186, 230, 253, 0.000); }
-  2%   { background-color: rgba(186, 230, 253, 0.037); }
-  4%   { background-color: rgba(186, 230, 253, 0.074); }
-  7%   { background-color: rgba(186, 230, 253, 0.125); }
-  10%  { background-color: rgba(186, 230, 253, 0.170); }
-  13%  { background-color: rgba(186, 230, 253, 0.207); }
-  17%  { background-color: rgba(186, 230, 253, 0.239); }
-  21%  { background-color: rgba(186, 230, 253, 0.250); }  /* peak 1 */
-  25%  { background-color: rgba(186, 230, 253, 0.239); }
-  29%  { background-color: rgba(186, 230, 253, 0.207); }
-  33%  { background-color: rgba(186, 230, 253, 0.156); }
-  37%  { background-color: rgba(186, 230, 253, 0.091); }
-  40%  { background-color: rgba(186, 230, 253, 0.037); }
-  42%  { background-color: rgba(186, 230, 253, 0.000); }
-  50%  { background-color: rgba(186, 230, 253, 0.000); }
-  54%  { background-color: rgba(186, 230, 253, 0.020); }
-  58%  { background-color: rgba(186, 230, 253, 0.060); }
-  62%  { background-color: rgba(186, 230, 253, 0.095); }
-  67%  { background-color: rgba(186, 230, 253, 0.130); }
-  72%  { background-color: rgba(186, 230, 253, 0.151); }
-  76%  { background-color: rgba(186, 230, 253, 0.156); }  /* peak 2 (softer) */
-  80%  { background-color: rgba(186, 230, 253, 0.151); }
-  84%  { background-color: rgba(186, 230, 253, 0.125); }
-  88%  { background-color: rgba(186, 230, 253, 0.081); }
-  93%  { background-color: rgba(186, 230, 253, 0.030); }
-  100% { background-color: rgba(186, 230, 253, 0.000); }
+  0.0%  { background-color: rgba(186, 230, 253, 0.0000); }
+  0.8%  { background-color: rgba(186, 230, 253, 0.0157); }
+  1.7%  { background-color: rgba(186, 230, 253, 0.0313); }
+  2.5%  { background-color: rgba(186, 230, 253, 0.0468); }
+  3.6%  { background-color: rgba(186, 230, 253, 0.0660); }
+  4.8%  { background-color: rgba(186, 230, 253, 0.0884); }
+  6.3%  { background-color: rgba(186, 230, 253, 0.1135); }
+  8.4%  { background-color: rgba(186, 230, 253, 0.1469); }
+  11.1%  { background-color: rgba(186, 230, 253, 0.1849); }
+  14.7%  { background-color: rgba(186, 230, 253, 0.2228); }
+  18.5%  { background-color: rgba(186, 230, 253, 0.2456); }
+  21.0%  { background-color: rgba(186, 230, 253, 0.2500); }
+  23.5%  { background-color: rgba(186, 230, 253, 0.2456); }
+  27.3%  { background-color: rgba(186, 230, 253, 0.2228); }
+  31.1%  { background-color: rgba(186, 230, 253, 0.1822); }
+  34.4%  { background-color: rgba(186, 230, 253, 0.1340); }
+  36.5%  { background-color: rgba(186, 230, 253, 0.0993); }
+  38.2%  { background-color: rgba(186, 230, 253, 0.0697); }
+  39.5%  { background-color: rgba(186, 230, 253, 0.0468); }
+  40.5%  { background-color: rgba(186, 230, 253, 0.0274); }
+  41.4%  { background-color: rgba(186, 230, 253, 0.0118); }
+  42.0%  { background-color: rgba(186, 230, 253, 0.0000); }
+  50.0%  { background-color: rgba(186, 230, 253, 0.0000); }
+  50.8%  { background-color: rgba(186, 230, 253, 0.0098); }
+  51.7%  { background-color: rgba(186, 230, 253, 0.0196); }
+  52.5%  { background-color: rgba(186, 230, 253, 0.0292); }
+  53.6%  { background-color: rgba(186, 230, 253, 0.0412); }
+  54.8%  { background-color: rgba(186, 230, 253, 0.0551); }
+  56.3%  { background-color: rgba(186, 230, 253, 0.0708); }
+  58.4%  { background-color: rgba(186, 230, 253, 0.0917); }
+  61.1%  { background-color: rgba(186, 230, 253, 0.1154); }
+  64.7%  { background-color: rgba(186, 230, 253, 0.1390); }
+  68.5%  { background-color: rgba(186, 230, 253, 0.1532); }
+  71.0%  { background-color: rgba(186, 230, 253, 0.1560); }
+  73.5%  { background-color: rgba(186, 230, 253, 0.1532); }
+  77.3%  { background-color: rgba(186, 230, 253, 0.1390); }
+  81.1%  { background-color: rgba(186, 230, 253, 0.1137); }
+  84.4%  { background-color: rgba(186, 230, 253, 0.0836); }
+  86.5%  { background-color: rgba(186, 230, 253, 0.0620); }
+  88.2%  { background-color: rgba(186, 230, 253, 0.0435); }
+  89.5%  { background-color: rgba(186, 230, 253, 0.0292); }
+  90.5%  { background-color: rgba(186, 230, 253, 0.0171); }
+  91.4%  { background-color: rgba(186, 230, 253, 0.0073); }
+  92.0%  { background-color: rgba(186, 230, 253, 0.0000); }
+  100.0%  { background-color: rgba(186, 230, 253, 0.0000); }
 }
 
 .comment-highlight {
