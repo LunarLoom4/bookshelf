@@ -46,7 +46,7 @@ export default function AllCurrentlyReading() {
       </button>
       <h1 className="font-serif text-2xl font-semibold text-ink-900 dark:text-gray-100 flex items-center gap-2 mb-6">
         <BookMarked className="w-5 h-5 text-ink-400" />
-        {isSelf ? "My" : `${username}'s`} Currently Reading
+        {isSelf ? "My Currently Reading" : "Currently Reading"}
       </h1>
 
       {isLoading ? (
@@ -54,38 +54,44 @@ export default function AllCurrentlyReading() {
       ) : items.length === 0 ? (
         <p className="text-sm text-gray-400 py-10 text-center">Nothing currently being read.</p>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
           {items.map(item => (
-            <div key={item.edition_id} className="group relative flex flex-col gap-2">
-              <Link to={`/read/${item.edition_id}`} className="flex flex-col gap-2">
-                <div className="rounded-lg overflow-hidden bg-paper-100 dark:bg-gray-800 relative aspect-[3/4]">
-                  {item.book_cover_url ? (
-                    <img
-                      src={item.book_cover_url}
-                      alt={item.book_title}
-                      loading="lazy"
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <BookOpen className="w-8 h-8 text-gray-300 dark:text-gray-600" />
-                    </div>
-                  )}
-                  {/* Page progress badge */}
-                  <span className="absolute bottom-1.5 right-1.5 bg-black/65 text-white text-[10px] px-1.5 py-0.5 rounded font-mono">
-                    p.{item.last_page}
+            <div key={item.edition_id} className="group relative">
+              <Link to={`/read/${item.edition_id}`} className="block relative rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-shadow duration-200 aspect-[3/4]">
+                {/* Cover */}
+                {item.book_cover_url ? (
+                  <img
+                    src={item.book_cover_url}
+                    alt={item.book_title}
+                    loading="lazy"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-paper-200 dark:bg-gray-800 flex items-center justify-center">
+                    <BookOpen className="w-8 h-8 text-gray-300 dark:text-gray-600" />
+                  </div>
+                )}
+                {/* Page badge top-right */}
+                <span className="absolute top-2 right-2 bg-black/70 text-white text-[10px] px-1.5 py-0.5 rounded font-mono">
+                  p.{item.last_page}
+                </span>
+                {/* Gradient scrim + text overlay */}
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/50 to-transparent pt-10 px-2.5 pb-2.5">
+                  <p className="text-xs font-semibold text-white line-clamp-2 leading-tight mb-1">
+                    {item.book_title}
+                  </p>
+                  <span className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full bg-white/20 text-white whitespace-nowrap">
+                    Ed. {(item as any).edition_number ?? 1}
                   </span>
                 </div>
-                <p className="text-xs font-medium text-ink-900 dark:text-gray-100 line-clamp-2 leading-tight">
-                  {item.book_title}
-                </p>
               </Link>
+              {/* Remove button */}
               {isSelf && (
                 <button
                   onClick={() => removeProgress.mutate(item.edition_id)}
                   disabled={removeProgress.isPending}
                   title="Remove from Currently Reading"
-                  className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 z-10"
+                  className="absolute top-2 left-2 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 z-10"
                 >
                   <X className="w-3 h-3" />
                 </button>

@@ -4,6 +4,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { ArrowLeft, MessageSquare, BookOpen } from "lucide-react";
 import { userCommentsApi } from "@/api";
 import type { CommentedBook } from "@/api";
+import { useAuthStore } from "@/stores/authStore";
 import { ScrollToTop } from "@/components/ui/ScrollToTop";
 
 const PAGE = 30;
@@ -11,13 +12,16 @@ const PAGE = 30;
 export default function AllCommentedBooks() {
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
+  const { user: currentUser } = useAuthStore();
+  const isSelf = currentUser?.username === username;
   const sentinelCbRef = useRef<IntersectionObserver | null>(null);
+
+  useEffect(() => { window.scrollTo(0, 0); }, []);
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useInfiniteQuery({
     queryKey: ["all-commented-books", username],
     queryFn: async ({ pageParam = 1 }) => {
       const all = await userCommentsApi.commentedBooks(username!).then(r => r.data);
-      // commentedBooks returns all at once -- slice for virtual pagination
       const start = ((pageParam as number) - 1) * PAGE;
       return all.slice(start, start + PAGE);
     },
@@ -41,8 +45,6 @@ export default function AllCommentedBooks() {
 
   const books: CommentedBook[] = data?.pages.flat() ?? [];
 
-  useEffect(() => { window.scrollTo(0, 0); }, []);
-
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <button
@@ -54,7 +56,7 @@ export default function AllCommentedBooks() {
       </button>
       <h1 className="font-serif text-2xl font-semibold text-ink-900 dark:text-gray-100 flex items-center gap-2 mb-6">
         <MessageSquare className="w-5 h-5 text-ink-400" />
-        {username}'s Comments
+        {isSelf ? "My Comments" : `${username}'s Comments`}
       </h1>
 
       {isLoading ? (
@@ -67,35 +69,39 @@ export default function AllCommentedBooks() {
             <Link
               key={book.book_id}
               to={`/u/${username}/comments/${book.book_id}`}
-              className="group bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm hover:shadow-md hover:border-ink-300 dark:hover:border-indigo-700 transition-all duration-200"
+              className="group block relative rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-shadow duration-200 aspect-[3/4]"
             >
-              <div className="aspect-[3/4] overflow-hidden bg-paper-100 dark:bg-gray-800 relative">
-                {book.cover_url ? (
-                  <img src={book.cover_url} alt={book.title} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <BookOpen className="w-8 h-8 text-gray-300 dark:text-gray-600" />
-                  </div>
-                )}
-                <div className="absolute bottom-1.5 right-1.5 flex items-center gap-1 bg-black/65 text-white text-[10px] px-1.5 py-0.5 rounded-full">
-                  <MessageSquare className="w-2.5 h-2.5" />
-                  {book.total_comments}
+              {/* Cover */}
+              {book.cover_url ? (
+                <img src={book.cover_url} alt={book.title} loading="lazy"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+              ) : (
+                <div className="w-full h-full bg-paper-200 dark:bg-gray-800 flex items-center justify-center">
+                  <BookOpen className="w-8 h-8 text-gray-300 dark:text-gray-600" />
                 </div>
+              )}
+              {/* Comment count badge top-right */}
+              <div className="absolute top-2 right-2 flex items-center gap-1 bg-black/70 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+                <MessageSquare className="w-2.5 h-2.5" />
+                {book.total_comments}
               </div>
-              <div className="p-2.5">
-                <p className="text-xs font-semibold text-ink-900 dark:text-gray-100 line-clamp-2 leading-snug mb-0.5">
+              {/* Gradient scrim + text + edition pills */}
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/50 to-transparent pt-10 px-2.5 pb-2.5">
+                <p className="text-xs font-semibold text-white line-clamp-2 leading-tight mb-0.5">
                   {book.title}
                 </p>
-                <p className="text-[11px] text-gray-400 dark:text-gray-500 line-clamp-1">{book.author}</p>
+                <p className="text-[10px] text-white/70 line-clamp-1 mb-1.5">{book.author}</p>
                 {book.editions.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-1.5">
-                    {book.editions.slice(0, 3).map(ed => (
-                      <span key={ed.edition_id} className="inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full bg-ink-50 dark:bg-ink-900/30 text-ink-500 dark:text-indigo-300 whitespace-nowrap">
-                        E{ed.edition_number} · {ed.comment_count}
+                  <div className="flex flex-wrap gap-1">
+                    {book.editions.slice(0, 2).map(ed => (
+                      <span key={ed.edition_id} className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full bg-white/20 text-white whitespace-nowrap">
+                        E{ed.edition_number}&nbsp;·&nbsp;{ed.comment_count}
                       </span>
                     ))}
-                    {book.editions.length > 3 && (
-                      <span className="text-[10px] text-gray-400 px-1 py-0.5">+{book.editions.length - 3}</span>
+                    {book.editions.length > 2 && (
+                      <span className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full bg-white/15 text-white/80 whitespace-nowrap">
+                        +{book.editions.length - 2}
+                      </span>
                     )}
                   </div>
                 )}
