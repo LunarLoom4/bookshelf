@@ -367,42 +367,64 @@
 }
 
 /* ── Comment highlight animation ─────────────────────────────────────────────
-   Triggered when navigating to a specific comment from UserCommentsFeed.
+   True sine-wave shape: keyframes sampled from sin(x) at ~8% intervals so
+   each linear segment is short enough to look smooth. No ease-in-out between
+   keyframes -- that creates S-curves that fight each other at peaks/troughs.
+   Instead: linear interpolation between dense keyframes = smooth sine.
 
-   Two full sine-wave pulses over 4s:
-     0%   → silence
-     25%  → peak (first pulse)
-     50%  → silence (trough between pulses)
-     75%  → peak (second pulse, slightly softer -- "dying" feel)
-     100% → silence
+   Two pulses: full peak at ~12% (first blink), second smaller peak at ~62%
+   ("dying" echo). Both fade fully to zero before rising again.
 
-   Each segment uses ease-in-out so acceleration mimics sin(x).
-
-   Light mode: warm amber-gold -- reading-lamp warmth, brand-adjacent
-   Dark mode:  teal/cyan glow -- screen spotlight in a dark room
+   Light mode: saturated golden-yellow, GitHub/Notion-style, ~0.32 peak opacity
+   Dark mode:  bright indigo-violet, luminous on dark surfaces, ~0.30 peak opacity
+               (indigo because it contrasts with dark backgrounds without
+                washing out text, unlike teal which is too close to link colors)
 ──────────────────────────────────────────────────────────────────────────── */
 
 @keyframes comment-glow-light {
-  0%   { background-color: transparent; box-shadow: none; }
-  25%  { background-color: rgba(245, 158, 11, 0.18); box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.25); }
-  50%  { background-color: transparent; box-shadow: none; }
-  75%  { background-color: rgba(245, 158, 11, 0.11); box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.15); }
-  100% { background-color: transparent; box-shadow: none; }
+  /* sin curve sampled at every ~8% -- linear segments look smooth */
+  0%   { background-color: rgba(234, 179, 8, 0.00); }   /* yellow-500 */
+  4%   { background-color: rgba(234, 179, 8, 0.12); }
+  8%   { background-color: rgba(234, 179, 8, 0.24); }
+  12%  { background-color: rgba(234, 179, 8, 0.32); }   /* first peak */
+  16%  { background-color: rgba(234, 179, 8, 0.24); }
+  20%  { background-color: rgba(234, 179, 8, 0.12); }
+  26%  { background-color: rgba(234, 179, 8, 0.02); }
+  32%  { background-color: rgba(234, 179, 8, 0.00); }   /* full silence */
+  40%  { background-color: rgba(234, 179, 8, 0.00); }   /* hold silence */
+  46%  { background-color: rgba(234, 179, 8, 0.06); }
+  54%  { background-color: rgba(234, 179, 8, 0.17); }
+  62%  { background-color: rgba(234, 179, 8, 0.21); }   /* second peak (softer) */
+  70%  { background-color: rgba(234, 179, 8, 0.12); }
+  80%  { background-color: rgba(234, 179, 8, 0.04); }
+  90%  { background-color: rgba(234, 179, 8, 0.01); }
+  100% { background-color: rgba(234, 179, 8, 0.00); }   /* fully gone */
 }
 
 @keyframes comment-glow-dark {
-  0%   { background-color: transparent; box-shadow: none; }
-  25%  { background-color: rgba(34, 211, 238, 0.14); box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.22), 0 0 12px rgba(34, 211, 238, 0.08); }
-  50%  { background-color: transparent; box-shadow: none; }
-  75%  { background-color: rgba(34, 211, 238, 0.09); box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.14); }
-  100% { background-color: transparent; box-shadow: none; }
+  0%   { background-color: rgba(139, 92, 246, 0.00); }  /* violet-500 */
+  4%   { background-color: rgba(139, 92, 246, 0.10); }
+  8%   { background-color: rgba(139, 92, 246, 0.21); }
+  12%  { background-color: rgba(139, 92, 246, 0.30); }  /* first peak */
+  16%  { background-color: rgba(139, 92, 246, 0.21); }
+  20%  { background-color: rgba(139, 92, 246, 0.10); }
+  26%  { background-color: rgba(139, 92, 246, 0.02); }
+  32%  { background-color: rgba(139, 92, 246, 0.00); }
+  40%  { background-color: rgba(139, 92, 246, 0.00); }  /* hold silence */
+  46%  { background-color: rgba(139, 92, 246, 0.05); }
+  54%  { background-color: rgba(139, 92, 246, 0.15); }
+  62%  { background-color: rgba(139, 92, 246, 0.20); }  /* second peak (softer) */
+  70%  { background-color: rgba(139, 92, 246, 0.11); }
+  80%  { background-color: rgba(139, 92, 246, 0.04); }
+  90%  { background-color: rgba(139, 92, 246, 0.01); }
+  100% { background-color: rgba(139, 92, 246, 0.00); }
 }
 
 .comment-highlight {
-  animation: comment-glow-light 4s ease-in-out forwards;
+  animation: comment-glow-light 4.2s linear forwards;
   border-radius: 6px;
 }
 
 html.dark .comment-highlight {
-  animation: comment-glow-dark 4s ease-in-out forwards;
+  animation: comment-glow-dark 4.2s linear forwards;
 }
