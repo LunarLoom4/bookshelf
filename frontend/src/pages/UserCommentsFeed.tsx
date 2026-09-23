@@ -96,17 +96,18 @@ function CommentCard({ comment, index }: { comment: CommentFeedItem; index: numb
 
 function EditionAccordion({
   edition,
-  defaultOpen,
+  open,
+  onToggle,
 }: {
   edition: CommentFeedEdition;
-  defaultOpen: boolean;
+  open: boolean;
+  onToggle: () => void;
 }) {
-  const [open, setOpen] = useState(defaultOpen);
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
       <button
-        onClick={() => setOpen(v => !v)}
+        onClick={onToggle}
         className="w-full flex items-center justify-between px-4 py-3 hover:bg-paper-50 dark:hover:bg-gray-800/60 transition-colors"
       >
         <div className="flex items-center gap-3 text-left">
@@ -184,6 +185,20 @@ export default function UserCommentsFeed() {
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebounce(query, 400);
 
+  // Lift accordion open state here so it survives query/sort changes (issue b)
+  const [openEditions, setOpenEditions] = useState<Record<number, boolean>>({});
+  const toggleEdition = useCallback((editionId: number, isFirstOnFirstLoad: boolean) => {
+    setOpenEditions(prev => {
+      // If not yet in map, default first edition to open
+      const current = editionId in prev ? prev[editionId] : isFirstOnFirstLoad;
+      return { ...prev, [editionId]: !current };
+    });
+  }, []);
+  const isEditionOpen = (editionId: number, index: number) => {
+    if (editionId in openEditions) return openEditions[editionId];
+    return index === 0; // default: first edition open
+  };
+
   const {
     data,
     fetchNextPage,
@@ -202,9 +217,11 @@ export default function UserCommentsFeed() {
       lastPage.has_more ? lastPage.page + 1 : undefined,
     enabled: !!username && !!bookId,
     staleTime: 60 * 1000,
+    placeholderData: (prev) => prev,  // keep previous data visible while fetching new -- prevents flicker (issue c)
   });
 
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleIntersect = useCallback(
     (entries: IntersectionObserverEntry[]) => {
@@ -307,15 +324,19 @@ export default function UserCommentsFeed() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
           <input
+            ref={inputRef}
             type="text"
-            value={query}
+            defaultValue=""
             onChange={e => setQuery(e.target.value)}
             placeholder="Search comments..."
             className="input pl-9 pr-8 text-sm w-full"
           />
           {query && (
             <button
-              onClick={() => setQuery("")}
+              onClick={() => {
+                setQuery("");
+                if (inputRef.current) { inputRef.current.value = ""; inputRef.current.focus(); }
+              }}
               className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
             >
               <X className="w-4 h-4" />
@@ -350,7 +371,8 @@ export default function UserCommentsFeed() {
             <EditionAccordion
               key={ed.edition_id}
               edition={ed}
-              defaultOpen={i === 0}
+              open={isEditionOpen(ed.edition_id, i)}
+              onToggle={() => toggleEdition(ed.edition_id, i === 0)}
             />
           ))}
         </div>

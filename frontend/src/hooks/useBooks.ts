@@ -10,7 +10,8 @@ export function useBooks(skip = 0, limit = 20, sort = "newest") {
   return useQuery({
     queryKey: [BOOKS_KEY, "list", skip, limit, sort],
     queryFn: () => booksApi.list(skip, limit, sort).then((r) => r.data),
-    staleTime: 5 * 60 * 1000, // 5 minutes -- book list rarely changes
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,  // keep previous results visible while new sort/page loads
   });
 }
 
@@ -19,7 +20,8 @@ export function useBookSearch(q: string) {
     queryKey: [BOOKS_KEY, "search", q],
     queryFn: () => booksApi.search(q).then((r) => r.data),
     enabled: q.length > 0,
-    staleTime: 5 * 60 * 1000, // 5 minutes -- search results stable
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (prev) => prev,  // keep previous search results while new query loads
   });
 }
 

@@ -111,7 +111,7 @@ export default function Browse() {
           {Array.from({ length: PAGE_SIZE }).map((_, i) => <BookCardSkeleton key={i} />)}
         </div>
       ) : books && books.length > 0 ? (
-        <>
+        <div className="min-h-[400px]">
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {books.map((book) => <BookCard key={book.id} book={book} />)}
           </div>
@@ -120,7 +120,7 @@ export default function Browse() {
               {loading && <div className="w-6 h-6 border-4 border-ink-200 border-t-ink-600 rounded-full animate-spin" />}
             </div>
           )}
-        </>
+        </div>
       ) : (
         <div className="text-center py-24 text-gray-400">
           <BookOpen className="w-12 h-12 mx-auto mb-4 opacity-30" />
