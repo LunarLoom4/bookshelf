@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -72,14 +73,19 @@ async def get_user_profile(username: str, db: AsyncSession = Depends(get_db)):
     )
     comment_rows = comments_result.all()
 
-    # 17: Currently reading -- editions the user has progress on, newest first
+    # Currently reading -- editions with progress updated in the last 21 days
+    # Books not opened in 3 weeks are considered inactive and removed from this section
+    expiry_cutoff = datetime.now(timezone.utc) - timedelta(days=21)
     progress_result = await db.execute(
         select(ReadingProgress, Book, Edition)
         .join(Edition, Edition.id == ReadingProgress.edition_id)
         .join(Book, Book.id == Edition.book_id)
-        .where(ReadingProgress.user_id == user.id)
+        .where(
+            ReadingProgress.user_id == user.id,
+            ReadingProgress.updated_at >= expiry_cutoff,
+        )
         .order_by(ReadingProgress.updated_at.desc())
-        .limit(6)
+        .limit(20)
     )
     currently_reading = [
         CurrentlyReadingItem(

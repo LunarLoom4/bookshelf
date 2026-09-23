@@ -33,7 +33,8 @@ export default function Browse() {
   const { data: searchResults, isLoading: loadingSearch } = useBookSearch(debouncedQuery);
 
   const isSearching = debouncedQuery.length > 0;
-  const books = isSearching ? searchResults : allBooks;
+  // Use allBooks as placeholder while search results are loading -- prevents skeleton flash
+  const books = isSearching ? (searchResults ?? allBooks) : allBooks;
   const loading = isSearching ? loadingSearch : loadingAll;
   const hasMore = !isSearching && !!allBooks && allBooks.length >= limit;
 
