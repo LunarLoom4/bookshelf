@@ -289,22 +289,37 @@ export default function ReadingPage() {
     voteComment.mutate({ commentId, value });
   };
 
-  // Scroll to and highlight the target comment when navigating from UserCommentsFeed
-  // MUST be before early returns to satisfy Rules of Hooks
+  // Track whether we have already triggered the highlight this page load.
+  // A ref (not state) so it doesn't cause re-renders.
+  const highlightFiredRef = useRef(false);
+
+  // Scroll to and highlight the target comment when navigating from UserCommentsFeed.
+  // MUST be before early returns to satisfy Rules of Hooks.
+  // Fires exactly once: when comments first load AND a ?comment= param is present.
+  // Immediately strips ?comment= from the URL so refresh / tab-duplicate / mode-switch
+  // never re-trigger it.
   useEffect(() => {
     if (!targetCommentId || loadingComments || comments.length === 0) return;
+    if (highlightFiredRef.current) return;
+    highlightFiredRef.current = true;
+
+    // Remove ?comment= from the URL right away so it can never re-fire
+    const url = new URL(window.location.href);
+    url.searchParams.delete("comment");
+    window.history.replaceState({}, "", url.toString());
+
     setActiveTab("discussion");
     const timer = setTimeout(() => {
       const el = document.getElementById(`comment-${targetCommentId}`);
       if (!el) return;
       el.scrollIntoView({ behavior: "smooth", block: "center" });
-      // Add class immediately -- animation-delay in CSS holds it transparent
-      // while scroll settles, then fires. No nested timeout = no early flash.
       el.classList.remove("comment-highlight");
       void el.offsetWidth;
       el.classList.add("comment-highlight");
     }, 150);
     return () => clearTimeout(timer);
+  // targetCommentId is stable (from URL, stripped after first fire).
+  // Re-run only when comments finish loading.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [targetCommentId, loadingComments, comments.length]);
 
