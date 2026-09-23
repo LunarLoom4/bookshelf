@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 
 interface Props {
   onSubmit: (body: string, pageNumber?: number, parentId?: number) => Promise<void>;
+  onCancel?: () => void;
   onChange?: (value: string) => void;
   parentId?: number;
   currentPage?: number;
@@ -11,7 +12,7 @@ interface Props {
   autoFocusPage?: boolean;
 }
 
-export function CommentBox({ onSubmit, parentId, currentPage, placeholder, autoFocusPage, onChange }: Props) {
+export function CommentBox({ onSubmit, onCancel, parentId, currentPage, placeholder, autoFocusPage, onChange }: Props) {
   const { isAuthenticated } = useAuthStore();
   const [body, setBody] = useState("");
   const [pageEnabled, setPageEnabled] = useState(false);
@@ -58,6 +59,7 @@ export function CommentBox({ onSubmit, parentId, currentPage, placeholder, autoF
   };
 
   const suggestedMention = placeholder?.startsWith("@") ? placeholder.trim() : null;
+  const isReply = !!suggestedMention;
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-2">
@@ -66,6 +68,12 @@ export function CommentBox({ onSubmit, parentId, currentPage, placeholder, autoF
         value={body}
         onChange={(e) => { setBody(e.target.value); onChange?.(e.target.value); }}
         onKeyDown={(e) => {
+          // Escape: blur the textarea (defocus), text stays intact
+          if (e.key === "Escape") {
+            e.preventDefault();
+            textareaRef.current?.blur();
+            return;
+          }
           // Tab autocomplete: if body is empty and there's a suggested @mention, insert it
           if (e.key === "Tab" && suggestedMention && !body) {
             e.preventDefault();
@@ -78,7 +86,7 @@ export function CommentBox({ onSubmit, parentId, currentPage, placeholder, autoF
             if (body.trim() && !loading) handleSubmit(e as any);
           }
         }}
-        placeholder={placeholder?.startsWith("@") ? `Reply to ${placeholder.trim()}... (Tab to mention)` : "Write a comment..."}
+        placeholder={isReply ? `Reply to ${suggestedMention}... (Tab to mention)` : "Write a comment..."}
         rows={3}
         className="input resize-none text-sm"
       />
@@ -110,13 +118,25 @@ export function CommentBox({ onSubmit, parentId, currentPage, placeholder, autoF
           )}
         </div>
 
-        <button
-          type="submit"
-          disabled={loading || !body.trim()}
-          className="btn-primary py-1.5 text-xs"
-        >
-          {loading ? "Posting..." : "Post"}
-        </button>
+        {/* Cancel (reply only) + Post */}
+        <div className="flex items-center gap-2">
+          {isReply && onCancel && (
+            <button
+              type="button"
+              onClick={onCancel}
+              className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+            >
+              Cancel
+            </button>
+          )}
+          <button
+            type="submit"
+            disabled={loading || !body.trim()}
+            className="btn-primary py-1.5 text-xs"
+          >
+            {loading ? "Posting..." : "Post"}
+          </button>
+        </div>
       </div>
     </form>
   );

@@ -60,32 +60,17 @@ export default function ReadingPage() {
   const dragStartX = useRef(0);
   const dragStartPct = useRef(DEFAULT_PDF_PCT);
 
-  // 6: Escape key = go back to book page (when not in fullscreen)
-  // 9: Warn before leaving if comment box has unsaved text
+  // Warn before leaving if comment box has unsaved text
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !document.fullscreenElement) {
-        if (unsavedCommentRef.current.trim()) {
-          if (!window.confirm("You have an unsaved comment. Leave anyway?")) return;
-        }
-        navigate(-1);
-      }
-    };
-
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (unsavedCommentRef.current.trim()) {
         e.preventDefault();
         e.returnValue = "";
       }
     };
-
-    window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-    };
-  }, [navigate]);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, []);
 
   // Sync fullscreen state on Escape key
   useEffect(() => {

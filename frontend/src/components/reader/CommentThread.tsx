@@ -269,10 +269,12 @@ export function CommentThread({
           <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 mb-1">
             <Link
               to={`/u/${comment.author?.username ?? ""}`}
-              className="flex items-center gap-1.5 text-xs font-medium text-ink-700 hover:underline leading-none"
+              className="flex items-center gap-1.5 leading-none group"
             >
               <Avatar username={comment.author?.username ?? "…"} avatarUrl={comment.author?.avatar_url} size="xs" />
-              {comment.author?.username ?? ""}
+              <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 group-hover:text-ink-600 dark:group-hover:text-white group-hover:underline transition-colors">
+                {comment.author?.username ?? ""}
+              </span>
             </Link>
             <span className="text-xs text-gray-500 dark:text-gray-400 leading-none">
               {timeAgo(comment.created_at)}
@@ -323,7 +325,7 @@ export function CommentThread({
                 </button>
                 <button
                   onClick={() => { setEditing(false); setEditBody(comment.body); }}
-                  className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600"
+                  className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
                 >
                   <X className="w-3.5 h-3.5" />
                   Cancel
@@ -338,20 +340,22 @@ export function CommentThread({
           {!editing && (
             <div className="mt-2 flex items-center gap-3 flex-wrap">
 
-              {/* Reply */}
-              <button
-                onClick={() => setShowReplyBox(v => !v)}
-                className="flex items-center gap-1 text-xs text-gray-400 hover:text-ink-600 transition-colors"
-              >
-                <MessageSquare className="w-3.5 h-3.5" />
-                {showReplyBox ? "Cancel" : "Reply"}
-              </button>
+              {/* Reply -- only shown when reply box is closed */}
+              {!showReplyBox && (
+                <button
+                  onClick={() => setShowReplyBox(true)}
+                  className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-ink-700 dark:hover:text-gray-200 transition-colors font-medium"
+                >
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  Reply
+                </button>
+              )}
 
               {/* Show/hide replies */}
               {comment.reply_count > 0 && (
                 <button
                   onClick={() => setShowReplies(v => !v)}
-                  className="flex items-center gap-1 text-xs text-gray-400 hover:text-ink-600 transition-colors"
+                  className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-ink-700 dark:hover:text-gray-200 transition-colors"
                 >
                   {loadingReplies
                     ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -363,7 +367,7 @@ export function CommentThread({
                 </button>
               )}
 
-              {/* 27: Share comment link */}
+              {/* Share */}
               <button
                 onClick={() => {
                   const url = `${window.location.origin}${window.location.pathname}?comment=${comment.id}`;
@@ -371,7 +375,7 @@ export function CommentThread({
                   setShared(true);
                   setTimeout(() => setShared(false), 2000);
                 }}
-                className="flex items-center gap-1 text-xs text-gray-400 hover:text-ink-600 transition-colors"
+                className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-ink-700 dark:hover:text-gray-200 transition-colors"
                 title="Copy link to this comment"
               >
                 <Share2 className="w-3 h-3" />
@@ -383,7 +387,7 @@ export function CommentThread({
                 <>
                   <button
                     onClick={() => { setEditing(true); setEditBody(comment.body); }}
-                    className="flex items-center gap-1 text-xs text-gray-400 hover:text-ink-600 transition-colors"
+                    className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 hover:text-ink-700 dark:hover:text-gray-200 transition-colors"
                     title="Edit comment"
                   >
                     <Pencil className="w-3 h-3" />
@@ -391,7 +395,7 @@ export function CommentThread({
                   </button>
                   <button
                     onClick={() => setConfirmDelete(true)}
-                    className="flex items-center gap-1 text-xs text-gray-400 hover:text-red-500 transition-colors"
+                    className="flex items-center gap-1 text-xs text-red-400 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 transition-colors font-medium"
                     title="Delete comment"
                   >
                     <Trash2 className="w-3 h-3" />
@@ -430,6 +434,7 @@ export function CommentThread({
           <QuotePreview body={comment.body} username={comment.author?.username ?? ""} />
           <CommentBox
             onSubmit={handleReplySubmit}
+            onCancel={() => setShowReplyBox(false)}
             parentId={comment.id}
             placeholder={`@${comment.author?.username ?? ""} `}
           />
