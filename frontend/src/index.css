@@ -366,26 +366,43 @@
   background: rgba(0, 100, 255, 0.25);
 }
 
-/* Comment highlight animation -- triggered when navigating from UserCommentsFeed */
-@keyframes comment-highlight-pulse {
-  0%   { background-color: transparent; }
-  12%  { background-color: rgba(99, 102, 241, 0.22); }  /* fast rise -- indigo-500 tint */
-  30%  { background-color: rgba(99, 102, 241, 0.16); }  /* hold at slightly lower peak */
-  100% { background-color: transparent; }               /* long slow fade */
+/* ── Comment highlight animation ─────────────────────────────────────────────
+   Triggered when navigating to a specific comment from UserCommentsFeed.
+
+   Two full sine-wave pulses over 4s:
+     0%   → silence
+     25%  → peak (first pulse)
+     50%  → silence (trough between pulses)
+     75%  → peak (second pulse, slightly softer -- "dying" feel)
+     100% → silence
+
+   Each segment uses ease-in-out so acceleration mimics sin(x).
+
+   Light mode: warm amber-gold -- reading-lamp warmth, brand-adjacent
+   Dark mode:  teal/cyan glow -- screen spotlight in a dark room
+──────────────────────────────────────────────────────────────────────────── */
+
+@keyframes comment-glow-light {
+  0%   { background-color: transparent; box-shadow: none; }
+  25%  { background-color: rgba(245, 158, 11, 0.18); box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.25); }
+  50%  { background-color: transparent; box-shadow: none; }
+  75%  { background-color: rgba(245, 158, 11, 0.11); box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.15); }
+  100% { background-color: transparent; box-shadow: none; }
 }
 
-@keyframes comment-highlight-pulse-dark {
-  0%   { background-color: transparent; }
-  12%  { background-color: rgba(129, 140, 248, 0.28); } /* fast rise -- indigo-400 glows on dark */
-  30%  { background-color: rgba(129, 140, 248, 0.20); } /* hold */
-  100% { background-color: transparent; }
+@keyframes comment-glow-dark {
+  0%   { background-color: transparent; box-shadow: none; }
+  25%  { background-color: rgba(34, 211, 238, 0.14); box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.22), 0 0 12px rgba(34, 211, 238, 0.08); }
+  50%  { background-color: transparent; box-shadow: none; }
+  75%  { background-color: rgba(34, 211, 238, 0.09); box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.14); }
+  100% { background-color: transparent; box-shadow: none; }
 }
 
 .comment-highlight {
-  animation: comment-highlight-pulse 3.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: comment-glow-light 4s ease-in-out forwards;
   border-radius: 6px;
 }
 
 html.dark .comment-highlight {
-  animation: comment-highlight-pulse-dark 3.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: comment-glow-dark 4s ease-in-out forwards;
 }
