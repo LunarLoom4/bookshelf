@@ -63,7 +63,7 @@ function DeletedComment({ comment }: { comment: Comment }) {
         <div className="flex items-center gap-2 mb-1">
           <div className="w-5 h-5 rounded-full bg-gray-200 flex-shrink-0" />
           <span className="text-xs text-gray-400 italic">Deleted</span>
-          <span className="text-xs text-gray-300">
+          <span className="text-xs text-gray-500 dark:text-gray-400">
             {timeAgo(comment.created_at)}
           </span>
         </div>
@@ -152,11 +152,7 @@ export function CommentThread({
   }
 
   const handleReplySubmit = async (body: string, pn?: number) => {
-    // Prepend @username if not already there
-    const mentionedBody = body.startsWith(`@${comment.author?.username ?? ""}`)
-      ? body
-      : `@${comment.author?.username ?? ""} ${body}`;
-    await onReply(mentionedBody, pn, comment.id);
+    await onReply(body, pn, comment.id);
     setShowReplies(true);
     setShowReplyBox(false);
   };
@@ -269,16 +265,16 @@ export function CommentThread({
 
         {/* Content */}
         <div className="flex-1 min-w-0">
-          {/* Header row */}
-          <div className="flex flex-wrap items-center gap-2 mb-1">
+          {/* Header row -- items-baseline keeps username text and time on same line */}
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 mb-1">
             <Link
               to={`/u/${comment.author?.username ?? ""}`}
-              className="flex items-center gap-1.5 text-xs font-medium text-ink-700 hover:underline"
+              className="flex items-center gap-1.5 text-xs font-medium text-ink-700 hover:underline leading-none"
             >
               <Avatar username={comment.author?.username ?? "…"} avatarUrl={comment.author?.avatar_url} size="xs" />
               {comment.author?.username ?? ""}
             </Link>
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-gray-500 dark:text-gray-400 leading-none">
               {timeAgo(comment.created_at)}
             </span>
             {comment.edited_at && (

@@ -1,11 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuthStore } from "@/stores/authStore";
 import { Link } from "react-router-dom";
-import { Hash } from "lucide-react";
 
 interface Props {
   onSubmit: (body: string, pageNumber?: number, parentId?: number) => Promise<void>;
-  onChange?: (value: string) => void; // 9: called on every keystroke for unsaved-comment tracking
+  onChange?: (value: string) => void;
   parentId?: number;
   currentPage?: number;
   placeholder?: string;
@@ -15,17 +14,22 @@ interface Props {
 export function CommentBox({ onSubmit, parentId, currentPage, placeholder, autoFocusPage, onChange }: Props) {
   const { isAuthenticated } = useAuthStore();
   const [body, setBody] = useState("");
-  const [pageNumber, setPageNumber] = useState<string>(currentPage ? String(currentPage) : "");
+  const [pageEnabled, setPageEnabled] = useState(false);
+  const [pageNumber, setPageNumber] = useState<string>("");
   const [loading, setLoading] = useState(false);
-  // Track whether the user has manually edited the page field so we don't
-  // overwrite their input when the viewer scrolls to a new page
   const pageFieldDirty = useRef(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // When page checkbox is first enabled, pre-fill with current page
   useEffect(() => {
-    if (!pageFieldDirty.current) {
-      setPageNumber(currentPage ? String(currentPage) : "");
+    if (pageEnabled && !pageFieldDirty.current && currentPage) {
+      setPageNumber(String(currentPage));
     }
-  }, [currentPage]);
+    if (!pageEnabled) {
+      setPageNumber("");
+      pageFieldDirty.current = false;
+    }
+  }, [pageEnabled, currentPage]);
 
   if (!isAuthenticated) {
     return (
@@ -41,10 +45,11 @@ export function CommentBox({ onSubmit, parentId, currentPage, placeholder, autoF
     if (!body.trim()) return;
     setLoading(true);
     try {
-      const pn = pageNumber ? parseInt(pageNumber, 10) : undefined;
+      const pn = pageEnabled && pageNumber ? parseInt(pageNumber, 10) : undefined;
       await onSubmit(body.trim(), isNaN(pn!) ? undefined : pn, parentId);
-      onChange?.(""); // 9: clear unsaved tracking after successful submit
+      onChange?.("");
       setBody("");
+      setPageEnabled(false);
       setPageNumber("");
       pageFieldDirty.current = false;
     } finally {
@@ -52,37 +57,57 @@ export function CommentBox({ onSubmit, parentId, currentPage, placeholder, autoF
     }
   };
 
+  const suggestedMention = placeholder?.startsWith("@") ? placeholder.trim() : null;
+
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-2">
       <textarea
+        ref={textareaRef}
         value={body}
         onChange={(e) => { setBody(e.target.value); onChange?.(e.target.value); }}
         onKeyDown={(e) => {
+          // Tab autocomplete: if body is empty and there's a suggested @mention, insert it
+          if (e.key === "Tab" && suggestedMention && !body) {
+            e.preventDefault();
+            setBody(suggestedMention + " ");
+            onChange?.(suggestedMention + " ");
+            return;
+          }
           if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
             e.preventDefault();
             if (body.trim() && !loading) handleSubmit(e as any);
           }
         }}
-        placeholder={placeholder || "Write a comment... (Ctrl+Enter to post)"}
+        placeholder={placeholder?.startsWith("@") ? `Reply to ${placeholder.trim()}... (Tab to mention)` : "Write a comment..."}
         rows={3}
         className="input resize-none text-sm"
       />
 
       <div className="flex items-center justify-between">
-        {/* Page number input */}
-        <div className="flex items-center gap-1.5 text-sm">
-          <Hash className="w-3.5 h-3.5 text-gray-400" />
-          <input
-            type="number"
-            min={1}
-            value={pageNumber}
-            onChange={(e) => { pageFieldDirty.current = true; setPageNumber(e.target.value); }}
-            placeholder="Page"
-            autoFocus={autoFocusPage}
-            className="w-20 px-2 py-1 border border-gray-200 rounded text-xs text-gray-600
-                       placeholder:text-gray-300 focus:outline-none focus:ring-1 focus:ring-ink-400"
-          />
-          <span className="text-xs text-gray-400">optional</span>
+        {/* Page number -- gated behind a checkbox */}
+        <div className="flex items-center gap-2 text-sm">
+          <label className="flex items-center gap-1.5 cursor-pointer select-none text-xs text-gray-400 hover:text-gray-600">
+            <input
+              type="checkbox"
+              checked={pageEnabled}
+              onChange={(e) => setPageEnabled(e.target.checked)}
+              className="w-3.5 h-3.5 accent-ink-600 cursor-pointer"
+            />
+            Page
+          </label>
+          {pageEnabled && (
+            <input
+              type="number"
+              min={1}
+              value={pageNumber}
+              onChange={(e) => { pageFieldDirty.current = true; setPageNumber(e.target.value); }}
+              placeholder={currentPage ? String(currentPage) : "—"}
+              autoFocus={autoFocusPage}
+              className="w-16 px-2 py-1 border border-gray-200 dark:border-gray-700 rounded text-xs
+                         text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-900
+                         placeholder:text-gray-300 focus:outline-none focus:ring-1 focus:ring-ink-400"
+            />
+          )}
         </div>
 
         <button
