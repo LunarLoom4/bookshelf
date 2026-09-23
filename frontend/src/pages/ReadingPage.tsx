@@ -298,10 +298,13 @@ export default function ReadingPage() {
       const el = document.getElementById(`comment-${targetCommentId}`);
       if (!el) return;
       el.scrollIntoView({ behavior: "smooth", block: "center" });
-      el.classList.remove("comment-highlight");
-      void el.offsetWidth;
-      el.classList.add("comment-highlight");
-    }, 300);
+      // Wait for scroll to settle, then trigger the animation
+      setTimeout(() => {
+        el.classList.remove("comment-highlight");
+        void el.offsetWidth;
+        el.classList.add("comment-highlight");
+      }, 500);
+    }, 350);
     return () => clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [targetCommentId, loadingComments, comments.length]);

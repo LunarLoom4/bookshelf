@@ -368,15 +368,24 @@
 
 /* Comment highlight animation -- triggered when navigating from UserCommentsFeed */
 @keyframes comment-highlight-pulse {
-  0%   { background-color: rgba(251, 191, 36, 0.0); }
-  15%  { background-color: rgba(251, 191, 36, 0.35); }
-  45%  { background-color: rgba(251, 191, 36, 0.0); }
-  60%  { background-color: rgba(251, 191, 36, 0.2); }
-  85%  { background-color: rgba(251, 191, 36, 0.0); }
-  100% { background-color: rgba(251, 191, 36, 0.0); }
+  0%   { background-color: transparent; }
+  12%  { background-color: rgba(99, 102, 241, 0.22); }  /* fast rise -- indigo-500 tint */
+  30%  { background-color: rgba(99, 102, 241, 0.16); }  /* hold at slightly lower peak */
+  100% { background-color: transparent; }               /* long slow fade */
+}
+
+@keyframes comment-highlight-pulse-dark {
+  0%   { background-color: transparent; }
+  12%  { background-color: rgba(129, 140, 248, 0.28); } /* fast rise -- indigo-400 glows on dark */
+  30%  { background-color: rgba(129, 140, 248, 0.20); } /* hold */
+  100% { background-color: transparent; }
 }
 
 .comment-highlight {
-  animation: comment-highlight-pulse 1.6s ease-in-out forwards;
+  animation: comment-highlight-pulse 3.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
   border-radius: 6px;
+}
+
+html.dark .comment-highlight {
+  animation: comment-highlight-pulse-dark 3.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
