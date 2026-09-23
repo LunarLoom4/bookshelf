@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { ArrowLeft, Search, X, BookOpen, MessageSquare, ChevronDown, ChevronUp, ThumbsUp, ThumbsDown } from "lucide-react";
 import { userCommentsApi } from "@/api";
@@ -46,7 +46,10 @@ function BodyWithMentions({ body }: { body: string }) {
 }
 
 function CommentCard({ comment, index }: { comment: CommentFeedItem; index: number }) {
+  const navigate = useNavigate();
   const isReply = comment.parent_id !== null;
+  const target = `/read/${comment.edition_id}${comment.page_number ? `?page=${comment.page_number}&comment=${comment.id}` : `?comment=${comment.id}`}`;
+
   return (
     <div className="relative flex">
       <div className="absolute left-12 top-[10%] bottom-[10%] w-px bg-gray-300 dark:bg-gray-600 pointer-events-none" />
@@ -55,9 +58,10 @@ function CommentCard({ comment, index }: { comment: CommentFeedItem; index: numb
           {index + 1}
         </span>
       </div>
-      <Link
-        to={`/read/${comment.edition_id}${comment.page_number ? `?page=${comment.page_number}` : ""}${comment.page_number ? `&comment=${comment.id}` : `?comment=${comment.id}`}`}
-        className="flex-1 group min-w-0"
+      {/* div instead of Link to avoid <a> inside <a> -- mentions are real links */}
+      <div
+        onClick={() => navigate(target)}
+        className="flex-1 group min-w-0 cursor-pointer"
       >
         <div className="px-4 py-2.5 hover:bg-ink-50/60 dark:hover:bg-white/5 transition-colors">
           {isReply && (
@@ -89,7 +93,7 @@ function CommentCard({ comment, index }: { comment: CommentFeedItem; index: numb
             )}
           </div>
         </div>
-      </Link>
+      </div>
     </div>
   );
 }

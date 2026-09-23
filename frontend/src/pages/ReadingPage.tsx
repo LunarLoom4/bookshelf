@@ -289,6 +289,23 @@ export default function ReadingPage() {
     voteComment.mutate({ commentId, value });
   };
 
+  // Scroll to and highlight the target comment when navigating from UserCommentsFeed
+  // MUST be before early returns to satisfy Rules of Hooks
+  useEffect(() => {
+    if (!targetCommentId || loadingComments || comments.length === 0) return;
+    setActiveTab("discussion");
+    const timer = setTimeout(() => {
+      const el = document.getElementById(`comment-${targetCommentId}`);
+      if (!el) return;
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.classList.remove("comment-highlight");
+      void el.offsetWidth;
+      el.classList.add("comment-highlight");
+    }, 300);
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [targetCommentId, loadingComments, comments.length]);
+
   if (loadingEdition) {
     return (
       <div className="flex justify-center items-center h-[calc(100vh-56px)]">
@@ -318,29 +335,6 @@ export default function ReadingPage() {
       c.author?.username?.toLowerCase().includes(q)
     );
   });
-
-  // Scroll to and highlight the target comment when navigating from UserCommentsFeed
-  useEffect(() => {
-    if (!targetCommentId || loadingComments || comments.length === 0) return;
-
-    // Ensure the discussion tab is active
-    setActiveTab("discussion");
-
-    // Wait one frame for the tab to render, then scroll + highlight
-    const timer = setTimeout(() => {
-      const el = document.getElementById(`comment-${targetCommentId}`);
-      if (!el) return;
-      el.scrollIntoView({ behavior: "smooth", block: "center" });
-      // Trigger the animation by toggling the class (in case it already has it)
-      el.classList.remove("comment-highlight");
-      void el.offsetWidth; // force reflow to restart animation
-      el.classList.add("comment-highlight");
-    }, 300);
-
-    return () => clearTimeout(timer);
-  // Only run once when comments first load with a targetCommentId
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [targetCommentId, loadingComments, comments.length]);
 
   return (
     <div className="flex flex-col md:flex-row h-[calc(100vh-56px)] overflow-hidden">
