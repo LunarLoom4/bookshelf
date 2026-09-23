@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { ArrowLeft, Search, X, BookOpen, MessageSquare, ChevronDown, ChevronUp, ThumbsUp, ThumbsDown } from "lucide-react";
@@ -6,6 +6,7 @@ import { userCommentsApi } from "@/api";
 import type { CommentFeedEdition, CommentFeedItem } from "@/api";
 import { timeAgo } from "@/utils/time";
 import { ScrollToTop } from "@/components/ui/ScrollToTop";
+import { useDebounce } from "@/hooks/useDebounce";
 
 const SORT_OPTIONS = [
   { value: "newest",    label: "Most Recent" },
@@ -20,29 +21,52 @@ function formatBytes(bytes: number): string {
 }
 
 // Numbered comment row: number side not clickable, content side navigates
+function BodyWithMentions({ body }: { body: string }) {
+  const parts = body.split(/(@\w+)/g);
+  return (
+    <span>
+      {parts.map((part, i) => {
+        if (/^@\w+$/.test(part)) {
+          const uname = part.slice(1);
+          return (
+            <Link
+              key={i}
+              to={`/u/${uname}`}
+              onClick={e => e.stopPropagation()}
+              className="text-ink-600 dark:text-indigo-400 font-medium hover:underline"
+            >
+              {part}
+            </Link>
+          );
+        }
+        return <span key={i}>{part}</span>;
+      })}
+    </span>
+  );
+}
+
 function CommentCard({ comment, index }: { comment: CommentFeedItem; index: number }) {
+  const isReply = comment.parent_id !== null;
   return (
     <div className="relative flex">
-      {/* Vertical divider -- absolute so it never affects row height */}
-      <div
-        className="absolute left-12 top-[10%] bottom-[10%] w-px bg-gray-300 dark:bg-gray-600 pointer-events-none"
-      />
-
-      {/* Number column -- NOT clickable */}
+      <div className="absolute left-12 top-[10%] bottom-[10%] w-px bg-gray-300 dark:bg-gray-600 pointer-events-none" />
       <div className="flex-shrink-0 w-12 flex items-center justify-center pl-1">
         <span className="text-sm font-semibold text-ink-400 dark:text-indigo-400 tabular-nums">
           {index + 1}
         </span>
       </div>
-
-      {/* Content column -- clickable */}
       <Link
         to={`/read/${comment.edition_id}${comment.page_number ? `?page=${comment.page_number}` : ""}`}
         className="flex-1 group min-w-0"
       >
         <div className="px-4 py-2.5 hover:bg-ink-50/60 dark:hover:bg-white/5 transition-colors">
+          {isReply && (
+            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-gray-400 dark:text-gray-500 mb-1">
+              <span className="text-gray-300 dark:text-gray-600">↩</span> reply
+            </span>
+          )}
           <p className="text-sm leading-relaxed text-ink-900 dark:text-gray-100 line-clamp-3 mb-1.5 group-hover:text-ink-600 dark:group-hover:text-indigo-300 transition-colors">
-            {comment.body}
+            <BodyWithMentions body={comment.body} />
           </p>
           <div className="flex items-center gap-3 text-xs flex-wrap">
             {comment.page_number != null && (
@@ -102,23 +126,26 @@ function EditionAccordion({
               )}
             </div>
             <div className="flex items-center flex-wrap mt-1 text-xs">
-              {edition.publisher && (
-                <span className="font-medium text-gray-500 dark:text-gray-400 mr-2">{edition.publisher}</span>
-              )}
-              {edition.file_size_bytes != null && (
-                <>
-                  <span className="text-gray-300 dark:text-gray-600 mr-2">·</span>
-                  <span className="text-gray-400 dark:text-gray-500 mr-2">{formatBytes(edition.file_size_bytes)}</span>
-                </>
-              )}
-              {edition.page_count != null && (
-                <>
-                  <span className="text-gray-300 dark:text-gray-600 mr-2">·</span>
-                  <span className="text-gray-400 dark:text-gray-500 mr-2">
+              {(() => {
+                const items: React.ReactNode[] = [];
+                if (edition.publisher) items.push(
+                  <span key="pub" className="font-medium text-gray-500 dark:text-gray-400">{edition.publisher}</span>
+                );
+                if (edition.file_size_bytes != null) items.push(
+                  <span key="size" className="text-gray-400 dark:text-gray-500">{formatBytes(edition.file_size_bytes)}</span>
+                );
+                if (edition.page_count != null) items.push(
+                  <span key="pages" className="text-gray-400 dark:text-gray-500">
                     <span className="font-medium text-gray-500 dark:text-gray-400">{edition.page_count.toLocaleString()}</span> pp
                   </span>
-                </>
-              )}
+                );
+                return items.map((item, i) => (
+                  <span key={i} className="flex items-center">
+                    {i > 0 && <span className="text-gray-300 dark:text-gray-600 mx-1.5">·</span>}
+                    {item}
+                  </span>
+                ));
+              })()}
             </div>
           </div>
         </div>
@@ -154,22 +181,8 @@ function EditionAccordion({
 export default function UserCommentsFeed() {
   const { username, bookId } = useParams<{ username: string; bookId: string }>();
   const [sort, setSort] = useState("newest");
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-
-  const inputRef = useRef<HTMLInputElement>(null);
-  const isFocusedRef = useRef(false);
-
-  useEffect(() => {
-    const t = setTimeout(() => {
-      setDebouncedSearch(search);
-      // If user was typing (input had focus), restore focus after React re-renders
-      if (isFocusedRef.current) {
-        setTimeout(() => inputRef.current?.focus(), 0);
-      }
-    }, 300);
-    return () => clearTimeout(t);
-  }, [search]);
+  const [query, setQuery] = useState("");
+  const debouncedQuery = useDebounce(query, 400);
 
   const {
     data,
@@ -179,10 +192,10 @@ export default function UserCommentsFeed() {
     isLoading,
     isError,
   } = useInfiniteQuery({
-    queryKey: ["user-comments-feed", username, bookId, sort, debouncedSearch],
+    queryKey: ["user-comments-feed", username, bookId, sort, debouncedQuery],
     queryFn: ({ pageParam = 1 }) =>
       userCommentsApi
-        .feed(username!, Number(bookId), { sort, q: debouncedSearch, page: pageParam as number, limit: 30 })
+        .feed(username!, Number(bookId), { sort, q: debouncedQuery, page: pageParam as number, limit: 30 })
         .then(r => r.data),
     initialPageParam: 1,
     getNextPageParam: (lastPage) =>
@@ -294,18 +307,15 @@ export default function UserCommentsFeed() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
           <input
-            ref={inputRef}
             type="text"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            onFocus={() => { isFocusedRef.current = true; }}
-            onBlur={() => { isFocusedRef.current = false; }}
+            value={query}
+            onChange={e => setQuery(e.target.value)}
             placeholder="Search comments..."
             className="input pl-9 pr-8 text-sm w-full"
           />
-          {search && (
+          {query && (
             <button
-              onClick={() => { setSearch(""); inputRef.current?.focus(); }}
+              onClick={() => setQuery("")}
               className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
             >
               <X className="w-4 h-4" />

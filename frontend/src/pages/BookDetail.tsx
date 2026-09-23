@@ -1,3 +1,4 @@
+import React from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { LanguagePicker } from "@/components/ui/LanguagePicker";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -130,31 +131,32 @@ function EditionRow({ edition, bookId, isOwner, onDelete }: {
             )}
           </div>
           <div className="flex items-center flex-wrap mt-1 text-xs">
-            {edition.publisher && (
-              <span className="font-medium text-gray-500 dark:text-gray-400 mr-2">{edition.publisher}</span>
-            )}
-            {edition.file_size_bytes != null && (
-              <>
-                <span className="text-gray-300 dark:text-gray-600 mr-2">·</span>
-                <span className="text-gray-400 dark:text-gray-500 mr-2">{formatBytes(edition.file_size_bytes)}</span>
-              </>
-            )}
-            {edition.page_count != null && (
-              <>
-                <span className="text-gray-300 dark:text-gray-600 mr-2">·</span>
-                <span className="text-gray-400 dark:text-gray-500 mr-2">
+            {(() => {
+              const items: React.ReactNode[] = [];
+              if (edition.publisher) items.push(
+                <span key="pub" className="font-medium text-gray-500 dark:text-gray-400">{edition.publisher}</span>
+              );
+              if (edition.file_size_bytes != null) items.push(
+                <span key="size" className="text-gray-400 dark:text-gray-500">{formatBytes(edition.file_size_bytes)}</span>
+              );
+              if (edition.page_count != null) items.push(
+                <span key="pages" className="text-gray-400 dark:text-gray-500">
                   <span className="font-medium text-gray-500 dark:text-gray-400">{edition.page_count.toLocaleString()}</span> pp
                 </span>
-              </>
-            )}
-            {edition.language !== "en" && (
-              <>
-                <span className="text-gray-300 dark:text-gray-600 mr-2">·</span>
-                <span className="text-gray-400 dark:text-gray-500 mr-2 uppercase tracking-wide text-[10px]">{edition.language}</span>
-              </>
-            )}
-            <span className="text-gray-300 dark:text-gray-600 mr-2">·</span>
-            <span className="text-gray-400 dark:text-gray-500">{timeAgo(edition.created_at)}</span>
+              );
+              if (edition.language !== "en") items.push(
+                <span key="lang" className="text-gray-400 dark:text-gray-500 uppercase tracking-wide text-[10px]">{edition.language}</span>
+              );
+              items.push(
+                <span key="age" className="text-gray-400 dark:text-gray-500">{timeAgo(edition.created_at)}</span>
+              );
+              return items.map((item, i) => (
+                <span key={i} className="flex items-center">
+                  {i > 0 && <span className="text-gray-300 dark:text-gray-600 mx-1.5">·</span>}
+                  {item}
+                </span>
+              ));
+            })()}
           </div>
         </div>
       </div>

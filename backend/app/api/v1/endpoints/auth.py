@@ -1,8 +1,9 @@
 import re
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from jose import JWTError
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
+from app.core.rate_limit import rate_limit_register, rate_limit_login
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_current_user
@@ -63,7 +64,8 @@ def _clear_attempts(identifier: str) -> None:
 # ── Email / password auth ──────────────────────────────────────────────────────
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
-async def register(payload: RegisterRequest, db: AsyncSession = Depends(get_db)):
+async def register(payload: RegisterRequest, request: Request, db: AsyncSession = Depends(get_db)):
+    await rate_limit_register(request)
     # Check email and username separately to give specific error messages
     from sqlalchemy import func as sqlfunc
     email_taken = await db.execute(select(User).where(User.email == payload.email))
@@ -96,7 +98,8 @@ async def register(payload: RegisterRequest, db: AsyncSession = Depends(get_db))
 
 
 @router.post("/login", response_model=TokenResponse)
-async def login(payload: LoginRequest, db: AsyncSession = Depends(get_db)):
+async def login(payload: LoginRequest, request: Request, db: AsyncSession = Depends(get_db)):
+    await rate_limit_login(request)
     # Allow login with email address or username
     from sqlalchemy import or_
     result = await db.execute(

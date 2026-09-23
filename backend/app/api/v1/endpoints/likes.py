@@ -7,6 +7,7 @@ from sqlalchemy import select, func, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_current_user, get_current_user_optional
+from app.core.rate_limit import rate_limit_like
 from app.db.session import get_db
 from app.models.book import Book
 from app.models.edition import Edition
@@ -52,6 +53,9 @@ async def toggle_like(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    # Rate limit: 60 likes per hour per user
+    await rate_limit_like(current_user.id)
+
     edition_result = await db.execute(
         select(Edition).where(Edition.id == edition_id)
     )

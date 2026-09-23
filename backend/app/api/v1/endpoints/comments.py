@@ -4,8 +4,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.deps import get_current_user, get_current_user_optional
+from app.core.rate_limit import rate_limit_post_comment, rate_limit_vote
 from app.db.session import get_db
-from app.models.book import Book
 from app.models.book import Book
 from app.models.comment import Comment
 from app.models.edition import Edition
@@ -67,6 +67,9 @@ async def create_comment(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    # Rate limit: 30 comments per hour per user
+    await rate_limit_post_comment(current_user.id)
+
     # Verify edition exists
     edition = await db.get(Edition, edition_id)
     if not edition:
@@ -244,7 +247,8 @@ async def vote_comment(
     if not comment or comment.edition_id != edition_id:
         raise HTTPException(status_code=404, detail="Comment not found")
 
-    existing = await db.execute(
+    # Rate limit: 60 votes per hour per user
+    await rate_limit_vote(current_user.id)
         select(Vote).where(Vote.user_id == current_user.id, Vote.comment_id == comment_id)
     )
     vote = existing.scalar_one_or_none()

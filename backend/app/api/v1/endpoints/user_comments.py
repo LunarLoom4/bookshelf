@@ -155,7 +155,6 @@ async def get_commented_books(
         .where(
             Comment.user_id == user.id,
             Comment.is_deleted.is_(False),
-            Comment.parent_id.is_(None),   # top-level only
         )
         .group_by(Book.id, Book.title, Book.author, Book.cover_url, Edition.id, Edition.edition_number)
         .order_by(Book.id, Edition.edition_number)
@@ -254,7 +253,6 @@ async def get_user_comments_for_book(
             Comment.user_id == user.id,
             Comment.edition_id == ed.id,
             Comment.is_deleted.is_(False),
-            Comment.parent_id.is_(None),     # top-level comments only
         ]
         if q.strip():
             base_filter.append(Comment.body.ilike(f"%{q.strip()}%"))
