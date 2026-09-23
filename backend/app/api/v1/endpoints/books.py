@@ -464,11 +464,20 @@ async def list_books(
         )
         comment_map = {r.book_id: r.cnt for r in comment_counts_result.all()}
 
+        like_counts_result = await db.execute(
+            select(Edition.book_id, func.count(EditionLike.id).label("cnt"))
+            .join(EditionLike, EditionLike.edition_id == Edition.id)
+            .where(Edition.book_id.in_(book_ids))
+            .group_by(Edition.book_id)
+        )
+        like_map = {r.book_id: r.cnt for r in like_counts_result.all()}
+
         books = []
         for b in raw_books:
             item = BookListItem.model_validate(b)
             item.edition_count = edition_map.get(b.id, 0)
             item.comment_count = comment_map.get(b.id, 0)
+            item.like_count = like_map.get(b.id, 0)
             books.append(item)
         return books
 
@@ -495,6 +504,7 @@ async def list_books(
             item = BookListItem.model_validate(book)
             item.edition_count = edition_map.get(book.id, 0)
             item.comment_count = comment_count
+            item.like_count = 0  # not the primary sort; skip extra query
             books.append(item)
         return books
 
@@ -520,6 +530,7 @@ async def list_books(
             item = BookListItem.model_validate(book)
             item.edition_count = edition_count
             item.comment_count = comment_map.get(book.id, 0)
+            item.like_count = 0
             books.append(item)
         return books
 
@@ -548,10 +559,11 @@ async def list_books(
         )
         comment_map = {r.book_id: r.cnt for r in comment_counts_result.all()}
         books = []
-        for book, _ in rows:
+        for book, like_count in rows:
             item = BookListItem.model_validate(book)
             item.edition_count = edition_map.get(book.id, 0)
             item.comment_count = comment_map.get(book.id, 0)
+            item.like_count = like_count
             books.append(item)
         return books
 
@@ -593,6 +605,7 @@ async def popular_books(
         item = BookListItem.model_validate(book)
         item.edition_count = edition_count
         item.comment_count = comment_count
+        item.like_count = 0
         books.append(item)
     return books
 

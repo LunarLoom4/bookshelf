@@ -2,7 +2,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ScrollToTop } from "@/components/ui/ScrollToTop";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { BookOpen, MessageSquare, List, LockKeyhole, Globe2, Trash2, Plus, BookMarked, Pencil, Check, X, ChevronLeft, ChevronRight, MoreVertical, ChevronRight as ViewAll } from "lucide-react";
+import { BookOpen, MessageSquare, List, LockKeyhole, Globe2, Trash2, Plus, BookMarked, Pencil, Check, X, ChevronLeft, ChevronRight, MoreVertical } from "lucide-react";
 import { format } from "date-fns";
 import { timeAgo } from "@/utils/time";
 import { usersApi, progressApi, userCommentsApi } from "@/api";
@@ -112,7 +112,7 @@ function ReadingListsSection({ username }: { username: string }) {
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-serif text-xl font-semibold text-ink-900 flex items-center gap-2">
           <List className="w-5 h-5 text-ink-400" />
-          Reading Lists <span className="font-serif text-black-400 dark:text-white-500">[{allLists.length}]</span>
+          Reading Lists <span className="font-sans text-sm font-normal text-gray-400 dark:text-gray-500">[{allLists.length}]</span>
         </h2>
         {isOwnProfile && (
           <button
@@ -161,7 +161,7 @@ function ReadingListsSection({ username }: { username: string }) {
         <p className="text-sm text-gray-400">{isOwnProfile ? "No reading lists yet." : "No public reading lists."}</p>
       ) : (
         <>
-          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {lists.map((list) => (
               <div key={list.id} className="card p-4 flex items-start justify-between gap-3">
                 <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -299,57 +299,89 @@ function HorizontalScrollRow({ children, itemCount }: { children: React.ReactNod
   );
 }
 
-// ── Section header with "View all" link ───────────────────────────────────────
-function SectionHeader({ icon, title, count, viewAllHref, viewAllLabel }: {
-  icon: React.ReactNode; title: string; count: number; viewAllHref?: string; viewAllLabel?: string;
+// ── Section header with "View All" link ───────────────────────────────────────
+function SectionHeader({ icon, title, count, viewAllHref }: {
+  icon: React.ReactNode; title: React.ReactNode; count?: number; viewAllHref?: string;
 }) {
   return (
     <div className="flex items-center justify-between mb-4">
       <h2 className="font-serif text-xl font-semibold text-ink-900 flex items-center gap-2">
         {icon}
-        {title} <span className="font-serif text-black-400 dark:text-white-500">[{count}]</span>
+        {title}
       </h2>
-      {viewAllHref && count > 0 && (
-        <Link to={viewAllHref} className="text-sm text-ink-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
-          {viewAllLabel ?? "View all"}
-          <ViewAll className="w-3.5 h-3.5" />
+      {viewAllHref && (
+        <Link
+          to={viewAllHref}
+          className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium
+                     bg-ink-50 dark:bg-gray-800 text-ink-600 dark:text-indigo-400
+                     hover:bg-ink-100 dark:hover:bg-gray-700 transition-colors no-underline"
+        >
+          View All
+          <ChevronRight className="w-3 h-3" />
         </Link>
       )}
     </div>
   );
 }
 
-// ── Uniform portrait card (used for both Currently Reading and Comments) ──────
-// Width: CARD_W (140px). Aspect ratio 3:4 (portrait book cover). Same card, different data.
-function PortraitCard({ coverUrl, title, subtitle, badge, footer, href, onRemove }: {
-  coverUrl?: string | null; title: string; subtitle?: string;
-  badge?: React.ReactNode; footer?: React.ReactNode;
-  href: string; onRemove?: () => void;
+// ── Overlay card (Currently Reading + Comments) ───────────────────────────────
+// Cover fills the entire card. Text overlays the bottom with a gradient scrim.
+// Squarish aspect (2:3 portrait, not too tall). Max 2 per row, responsive.
+// Used in both Currently Reading and Comments sections.
+const OVERLAY_CARD_W = 160; // px
+
+function OverlayCard({ coverUrl, title, subtitle, badge, pills, href, onRemove }: {
+  coverUrl?: string | null;
+  title: string;
+  subtitle?: string;
+  badge?: React.ReactNode;
+  pills?: React.ReactNode;
+  href: string;
+  onRemove?: () => void;
 }) {
   return (
-    <div className="group relative flex flex-col gap-1.5 flex-shrink-0" style={{ width: CARD_W }}>
-      <Link to={href} className="flex flex-col gap-1.5">
-        <div className="rounded-md overflow-hidden bg-paper-100 dark:bg-gray-800 relative" style={{ width: CARD_W, height: Math.round(CARD_W * 4 / 3) }}>
-          {coverUrl ? (
-            <img src={coverUrl} alt={title} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200" />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <BookOpen className="w-6 h-6 text-gray-300 dark:text-gray-600" />
-            </div>
+    <div
+      className="group relative flex-shrink-0 rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-shadow duration-200 cursor-pointer"
+      style={{ width: OVERLAY_CARD_W, height: Math.round(OVERLAY_CARD_W * 1.35) }}
+    >
+      <Link to={href} className="absolute inset-0">
+        {/* Cover image */}
+        {coverUrl ? (
+          <img
+            src={coverUrl}
+            alt={title}
+            loading="lazy"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+        ) : (
+          <div className="w-full h-full bg-paper-200 dark:bg-gray-800 flex items-center justify-center">
+            <BookOpen className="w-8 h-8 text-gray-300 dark:text-gray-600" />
+          </div>
+        )}
+
+        {/* Top badge (e.g. page number, comment count) */}
+        {badge && (
+          <div className="absolute top-2 right-2">{badge}</div>
+        )}
+
+        {/* Gradient scrim + text overlay at bottom */}
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent pt-8 px-2.5 pb-2.5">
+          <p className="text-xs font-semibold text-white line-clamp-2 leading-tight mb-0.5">
+            {title}
+          </p>
+          {subtitle && (
+            <p className="text-[10px] text-white/70 line-clamp-1">{subtitle}</p>
           )}
-          {badge && (
-            <div className="absolute bottom-1.5 right-1.5">{badge}</div>
-          )}
+          {pills && <div className="mt-1.5">{pills}</div>}
         </div>
-        <p className="text-xs font-medium text-ink-900 dark:text-gray-100 line-clamp-2 leading-tight">{title}</p>
-        {subtitle && <p className="text-[11px] text-gray-400 dark:text-gray-500 line-clamp-1">{subtitle}</p>}
-        {footer && <div className="mt-0.5">{footer}</div>}
       </Link>
+
+      {/* Remove button */}
       {onRemove && (
         <button
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); onRemove(); }}
           title="Remove"
-          className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 z-10"
+          className="absolute top-2 left-2 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 z-10"
         >
           <X className="w-3 h-3" />
         </button>
@@ -418,20 +450,18 @@ export default function UserProfile() {
         <section>
           <SectionHeader
             icon={<BookMarked className="w-5 h-5 text-ink-400" />}
-            title="Currently Reading"
-            count={currently_reading.length}
+            title={<>Currently Reading <span className="font-sans text-sm font-normal text-gray-400 dark:text-gray-500">[{currently_reading.length}]</span></>}
             viewAllHref={`/u/${username}/reading`}
-            viewAllLabel="View all"
           />
           <HorizontalScrollRow itemCount={currently_reading.length}>
             {currently_reading.map((item: CurrentlyReadingItem) => (
-              <PortraitCard
+              <OverlayCard
                 key={item.edition_id}
                 href={`/read/${item.edition_id}`}
                 coverUrl={item.book_cover_url}
                 title={item.book_title}
                 badge={
-                  <span className="bg-black/65 text-white text-[10px] px-1.5 py-0.5 rounded font-mono">
+                  <span className="bg-black/70 text-white text-[10px] px-1.5 py-0.5 rounded font-mono">
                     p.{item.last_page}
                   </span>
                 }
@@ -442,40 +472,38 @@ export default function UserProfile() {
         </section>
       )}
 
-      {/* 3. Comments */}
+      {/* 3. Comments [On N books] */}
       {commentedBooks.length > 0 && (
         <section>
           <SectionHeader
             icon={<MessageSquare className="w-5 h-5 text-ink-400" />}
-            title="Comments"
-            count={commentedBooks.length}
+            title={<>Comments <span className="font-sans text-sm font-normal text-gray-400 dark:text-gray-500">[On {commentedBooks.length} {commentedBooks.length === 1 ? "book" : "books"}]</span></>}
             viewAllHref={`/u/${username}/comments`}
-            viewAllLabel="View all"
           />
           <HorizontalScrollRow itemCount={commentedBooks.length}>
             {commentedBooks.map((book: CommentedBook) => (
-              <PortraitCard
+              <OverlayCard
                 key={book.book_id}
                 href={`/u/${username}/comments/${book.book_id}`}
                 coverUrl={book.cover_url}
                 title={book.title}
                 subtitle={book.author}
                 badge={
-                  <div className="flex items-center gap-1 bg-black/65 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+                  <div className="flex items-center gap-1 bg-black/70 text-white text-[10px] px-1.5 py-0.5 rounded-full">
                     <MessageSquare className="w-2.5 h-2.5" />
                     {book.total_comments}
                   </div>
                 }
-                footer={
+                pills={
                   book.editions.length > 0 ? (
                     <div className="flex flex-wrap gap-1">
                       {book.editions.slice(0, 2).map(ed => (
-                        <span key={ed.edition_id} className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full bg-ink-50 dark:bg-ink-900/30 text-ink-500 dark:text-indigo-300 whitespace-nowrap">
+                        <span key={ed.edition_id} className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full bg-white/20 text-white whitespace-nowrap">
                           E{ed.edition_number}·{ed.comment_count}
                         </span>
                       ))}
                       {book.editions.length > 2 && (
-                        <span className="text-[10px] text-gray-400 px-0.5 py-0.5">+{book.editions.length - 2}</span>
+                        <span className="text-[10px] text-white/60 px-0.5 py-0.5">+{book.editions.length - 2}</span>
                       )}
                     </div>
                   ) : null
@@ -490,8 +518,7 @@ export default function UserProfile() {
       <section>
         <SectionHeader
           icon={<BookOpen className="w-5 h-5 text-ink-400" />}
-          title="Books Uploaded"
-          count={books_uploaded.length}
+          title={<>Books Uploaded <span className="font-sans text-sm font-normal text-gray-400 dark:text-gray-500">[{books_uploaded.length}]</span></>}
         />
         {books_uploaded.length === 0 ? (
           <p className="text-sm text-gray-400">No books uploaded yet.</p>

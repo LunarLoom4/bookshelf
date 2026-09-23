@@ -1,4 +1,4 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, BookMarked, BookOpen, X } from "lucide-react";
 import { usersApi, progressApi } from "@/api";
@@ -9,6 +9,8 @@ import toast from "react-hot-toast";
 
 export default function AllCurrentlyReading() {
   const { username } = useParams<{ username: string }>();
+  const navigate = useNavigate();
+  const _dup =<{ username: string }>();
   const { user: currentUser } = useAuthStore();
   const isSelf = currentUser?.username === username;
   const qc = useQueryClient();
@@ -34,9 +36,13 @@ export default function AllCurrentlyReading() {
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <div className="flex items-center gap-3 mb-6">
-        <Link to={`/u/${username}`} className="text-gray-400 hover:text-ink-700 transition-colors">
-          <ArrowLeft className="w-5 h-5" />
-        </Link>
+        <button
+          onClick={() => navigate(-1)}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-sm font-medium flex-shrink-0"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back
+        </button>
         <h1 className="font-serif text-2xl font-semibold text-ink-900 flex items-center gap-2">
           <BookMarked className="w-5 h-5 text-ink-400" />
           {isSelf ? "My" : `${username}'s`} Currently Reading

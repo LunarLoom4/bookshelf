@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { BookOpen, Layers, MessageSquare } from "lucide-react";
+import { BookOpen, Layers, MessageSquare, Heart } from "lucide-react";
 import type { BookListItem } from "@/types";
 import { timeAgo } from "@/utils/time";
 import { useQueryClient } from "@tanstack/react-query";
@@ -15,8 +15,6 @@ export function BookCard({ book }: Props) {
   const queryClient = useQueryClient();
 
   const handleMouseEnter = () => {
-    // Prefetch the book detail when the user hovers the card.
-    // If data is already cached and fresh, this is a no-op.
     queryClient.prefetchQuery({
       queryKey: [BOOKS_KEY, book.id],
       queryFn: () => booksApi.get(book.id).then((r) => r.data),
@@ -30,7 +28,6 @@ export function BookCard({ book }: Props) {
       className="card group flex flex-col h-full hover:shadow-md transition-shadow duration-200 overflow-hidden"
       onMouseEnter={handleMouseEnter}
     >
-      {/* Cover: fixed height so cards look square regardless of grid width */}
       <div className="h-44 bg-paper-100 flex items-center justify-center overflow-hidden flex-shrink-0">
         {book.cover_url ? (
           <img
@@ -48,7 +45,6 @@ export function BookCard({ book }: Props) {
         )}
       </div>
 
-      {/* Meta */}
       <div className="p-4 flex flex-col gap-1 flex-1">
         <h3 className="font-serif text-base font-semibold text-ink-900 line-clamp-2 leading-snug">
           {book.title}
@@ -62,7 +58,7 @@ export function BookCard({ book }: Props) {
           </Tooltip>
         )}
         <div className="mt-auto pt-3 flex items-center justify-between text-xs text-gray-400">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <span className="flex items-center gap-1">
               <Layers className="w-3 h-3" />
               {book.edition_count}
@@ -71,6 +67,12 @@ export function BookCard({ book }: Props) {
               <span className="flex items-center gap-1">
                 <MessageSquare className="w-3 h-3" />
                 {book.comment_count}
+              </span>
+            )}
+            {(book as any).like_count > 0 && (
+              <span className="flex items-center gap-1 text-rose-400 dark:text-rose-400">
+                <Heart className="w-3 h-3 fill-rose-400" />
+                {(book as any).like_count}
               </span>
             )}
           </div>

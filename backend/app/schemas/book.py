@@ -48,6 +48,7 @@ class BookListItem(BaseModel):
     uploader_id: int | None
     created_at: datetime
     edition_count: int = 0
-    comment_count: int = 0  # 16: total comments across all editions
+    comment_count: int = 0
+    like_count: int = 0
 
     model_config = {"from_attributes": True}

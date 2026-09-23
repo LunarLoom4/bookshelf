@@ -282,19 +282,16 @@ export default function UserCommentsFeed() {
     <div className="max-w-2xl mx-auto px-4 py-8">
       <ScrollToTop />
 
-      {/* (d) Back link: only username is colored, "Back to" stays gray on hover */}
-      <Link
-        to={`/u/${username}`}
-        className="inline-flex items-center gap-1.5 mb-6 group"
+      {/* Back button -- uses navigate(-1) so it works from both profile and AllCommentedBooks */}
+      <button
+        onClick={() => navigate(-1)}
+        className="inline-flex items-center gap-1.5 mb-6 px-3 py-1.5 rounded-lg
+                   bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200
+                   hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-sm font-medium"
       >
-        <ArrowLeft className="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 group-hover:-translate-x-0.5 transition-all" />
-        <span className="text-sm font-medium text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors">
-          Back to
-        </span>
-        <span className="text-sm font-semibold text-ink-600 dark:text-indigo-400 group-hover:text-ink-800 dark:group-hover:text-indigo-300 transition-colors">
-          {username}
-        </span>
-      </Link>
+        <ArrowLeft className="w-4 h-4" />
+        Back
+      </button>
 
       {/* Book header -- (e) remove username, smaller comment count */}
       <div className="flex items-start gap-4 mb-8 p-4 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
