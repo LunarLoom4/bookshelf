@@ -290,23 +290,26 @@ export default function ReadingPage() {
   };
 
   // Track whether we have already triggered the highlight this page load.
-  // A ref (not state) so it doesn't cause re-renders.
   const highlightFiredRef = useRef(false);
 
-  // Scroll to and highlight the target comment when navigating from UserCommentsFeed.
-  // MUST be before early returns to satisfy Rules of Hooks.
-  // Fires exactly once: when comments first load AND a ?comment= param is present.
-  // Immediately strips ?comment= from the URL so refresh / tab-duplicate / mode-switch
-  // never re-trigger it.
+  // Scroll to and highlight the target comment -- fires exactly once.
+  // Uses navigate(replace) to strip ?comment= so React Router's useSearchParams
+  // returns 0 on subsequent renders, preventing re-trigger on mode switch etc.
   useEffect(() => {
     if (!targetCommentId || loadingComments || comments.length === 0) return;
     if (highlightFiredRef.current) return;
     highlightFiredRef.current = true;
 
-    // Remove ?comment= from the URL right away so it can never re-fire
-    const url = new URL(window.location.href);
-    url.searchParams.delete("comment");
-    window.history.replaceState({}, "", url.toString());
+    // Strip ?comment= via React Router so useSearchParams() returns 0 hereafter.
+    // This is what actually prevents mode-switch re-triggers -- replaceState alone
+    // does not update React Router's internal state.
+    const params = new URLSearchParams(window.location.search);
+    params.delete("comment");
+    const newSearch = params.toString();
+    navigate(
+      { search: newSearch ? `?${newSearch}` : "" },
+      { replace: true }
+    );
 
     setActiveTab("discussion");
     const timer = setTimeout(() => {
@@ -318,8 +321,6 @@ export default function ReadingPage() {
       el.classList.add("comment-highlight");
     }, 150);
     return () => clearTimeout(timer);
-  // targetCommentId is stable (from URL, stripped after first fire).
-  // Re-run only when comments finish loading.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [targetCommentId, loadingComments, comments.length]);
 
