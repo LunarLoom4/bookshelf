@@ -723,10 +723,10 @@ export default function BookDetail() {
               </div>
             </div>
             {/* Footer: on mobile Cancel is above Save (flex-col); on desktop side-by-side right-aligned */}
-            <div className="flex flex-col sm:flex-row sm:justify-end gap-2 px-6 py-4 border-t border-gray-100 dark:border-gray-800 flex-shrink-0 min-w-0">
+            <div className="flex flex-col sm:flex-row items-end sm:justify-end gap-2 px-6 py-4 border-t border-gray-100 dark:border-gray-800 flex-shrink-0">
               <button
                 onClick={() => setShowEditInfo(false)}
-                className="btn-secondary py-2 px-4 text-sm w-full sm:w-auto overflow-hidden text-ellipsis"
+                className="btn-secondary py-2 px-4 text-sm"
               >
                 Cancel
               </button>
@@ -757,7 +757,7 @@ export default function BookDetail() {
                     setEditSaving(false);
                   }
                 }}
-                className="btn-primary py-2 px-4 text-sm w-full sm:w-auto overflow-hidden text-ellipsis"
+                className="btn-primary py-2 px-4 text-sm"
               >
                 {editSaving ? "Saving…" : "Save Changes"}
               </button>
