@@ -13,6 +13,7 @@ class EditionResponse(BaseModel):
     file_size_bytes: int | None
     page_count: int | None
     created_at: datetime
+    comment_count: int = 0
 
     model_config = {"from_attributes": True}
 
@@ -34,7 +35,8 @@ class BookResponse(BaseModel):
     uploader_username: str | None = None
     created_at: datetime
     editions: list[EditionResponse] = []
-    recent_commenters: list[CommenterInfo] = []  # 19: avatars of recent commenters
+    recent_commenters: list[CommenterInfo] = []
+    total_comment_count: int = 0
 
     model_config = {"from_attributes": True}
 

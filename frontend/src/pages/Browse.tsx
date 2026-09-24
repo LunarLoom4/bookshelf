@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Search, X, BookOpen, ChevronDown } from "lucide-react";
 import { useBooks, useBookSearch } from "@/hooks/useBooks";
-import { BookCard } from "@/components/ui/BookCard";
+import { OverlayBookCard } from "@/components/ui/OverlayBookCard";
 import { BookCardSkeleton } from "@/components/ui/Skeleton";
 import { ScrollToTop } from "@/components/ui/ScrollToTop";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -114,7 +114,7 @@ export default function Browse() {
       ) : books && books.length > 0 ? (
         <div className="min-h-[400px]">
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-            {books.map((book) => <BookCard key={book.id} book={book} />)}
+            {books.map((book) => <OverlayBookCard key={book.id} book={book} />)}
           </div>
           {!isSearching && hasMore && (
             <div ref={sentinelRef} className="h-10 flex items-center justify-center mt-6">

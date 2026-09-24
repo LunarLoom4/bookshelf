@@ -10,9 +10,9 @@ import { useRef, useState, useEffect } from "react";
 import {
   BookOpen, Layers, User, Globe,
   Upload, Plus, X, CheckCircle, Link2, Download, Table2,
-  Heart, MoreVertical, Trash2,
+  Heart, MoreVertical, Trash2, MessageSquare, Pencil,
 } from "lucide-react";
-import { useBook, useUploadCover, useAddEdition, useDeleteBook } from "@/hooks/useBooks";
+import { useBook, useUploadCover, useAddEdition, useDeleteBook, BOOKS_KEY } from "@/hooks/useBooks";
 import { format } from "date-fns";
 import { timeAgo } from "@/utils/time";
 import toast from "react-hot-toast";
@@ -41,11 +41,12 @@ function TotalLikesBadge({ bookId }: { bookId: number }) {
   );
 }
 
-function EditionRow({ edition, bookId, isOwner, onDelete }: {
+function EditionRow({ edition, bookId, isOwner, onDelete, onEditInfo }: {
   edition: Edition;
   bookId: number;
   isOwner: boolean;
   onDelete: () => void;
+  onEditInfo: () => void;
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -150,6 +151,12 @@ function EditionRow({ edition, bookId, isOwner, onDelete }: {
               items.push(
                 <span key="age" className="text-gray-400 dark:text-gray-500">{timeAgo(edition.created_at)}</span>
               );
+              if ((edition as any).comment_count > 0) items.push(
+                <span key="comments" className="flex items-center gap-1 text-gray-400 dark:text-gray-500">
+                  <MessageSquare className="w-3 h-3" />
+                  {(edition as any).comment_count}
+                </span>
+              );
               return items.map((item, i) => (
                 <span key={i} className="flex items-center">
                   {i > 0 && <span className="text-gray-300 dark:text-gray-600 mx-1.5">·</span>}
@@ -207,6 +214,18 @@ function EditionRow({ edition, bookId, isOwner, onDelete }: {
                 </div>
               ) : (
                 <>
+                  {isOwner && (
+                    <>
+                      <button
+                        onClick={() => { setMenuOpen(false); onEditInfo(); }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-paper-100 dark:hover:bg-gray-800 transition-colors"
+                      >
+                        <Pencil className="w-3.5 h-3.5 text-gray-400" />
+                        Edit Info
+                      </button>
+                      <div className="border-t border-gray-100 dark:border-gray-700 my-1" />
+                    </>
+                  )}
                   <a href={`/api/v1/books/${bookId}/editions/${edition.id}/pdf`}
                     download={`Edition-${edition.edition_number}.pdf`}
                     onClick={() => setMenuOpen(false)}
@@ -435,8 +454,14 @@ export default function BookDetail() {
   const navigate = useNavigate();
   const { data: book, isLoading, error } = useBook(Number(bookId));
   const { user } = useAuthStore();
-  const [copied, setCopied] = useState(false); // must be before early returns
-  const [showComparison, setShowComparison] = useState(false); // must be before early returns
+  const qc = useQueryClient();
+  const [copied, setCopied] = useState(false);
+  const [showComparison, setShowComparison] = useState(false);
+  const [showEditInfo, setShowEditInfo] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editAuthor, setEditAuthor] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
 
   if (isLoading) {
     return <BookDetailSkeleton />;
@@ -479,6 +504,13 @@ export default function BookDetail() {
             {/* Total likes across all editions */}
             {book.editions.length > 0 && (
               <TotalLikesBadge bookId={book.id} />
+            )}
+            {/* Total comments across all editions */}
+            {(book as any).total_comment_count > 0 && (
+              <div className="absolute top-2 left-2 flex items-center gap-1 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full backdrop-blur-sm font-medium">
+                <MessageSquare className="w-3 h-3" />
+                {(book as any).total_comment_count}
+              </div>
             )}
           </div>
           {/* Cover upload -- owner only */}
@@ -621,10 +653,68 @@ export default function BookDetail() {
                   bookId={book.id}
                   isOwner={isOwner}
                   onDelete={() => navigate("/browse")}
+                  onEditInfo={() => {
+                    setEditTitle(book.title);
+                    setEditAuthor(book.author);
+                    setEditDescription(book.description ?? "");
+                    setShowEditInfo(true);
+                  }}
                 />
               ))}
           </div>
         )}
+
+      {/* ── Edit Info modal (owner only) ── */}
+      {showEditInfo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-lg p-6">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="font-serif text-lg font-semibold text-ink-900 dark:text-gray-100">Edit Info</h2>
+              <button onClick={() => setShowEditInfo(false)} className="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="flex flex-col gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Title</label>
+                <input value={editTitle} onChange={e => setEditTitle(e.target.value)} className="input w-full" maxLength={500} />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Author</label>
+                <input value={editAuthor} onChange={e => setEditAuthor(e.target.value)} className="input w-full" maxLength={500} />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Description</label>
+                <textarea value={editDescription} onChange={e => setEditDescription(e.target.value)} className="input w-full resize-none" rows={4} maxLength={2000} />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-6">
+              <button onClick={() => setShowEditInfo(false)} className="btn-secondary py-2 text-sm">Cancel</button>
+              <button
+                disabled={editSaving || !editTitle.trim() || !editAuthor.trim()}
+                onClick={async () => {
+                  setEditSaving(true);
+                  try {
+                    const token = localStorage.getItem("token");
+                    await fetch(`/api/v1/books/${book.id}`, {
+                      method: "PATCH",
+                      headers: { "Content-Type": "application/json", ...(token ? { "Authorization": `Bearer ${token}` } : {}) },
+                      body: JSON.stringify({ title: editTitle.trim(), author: editAuthor.trim(), description: editDescription.trim() || null }),
+                    });
+                    toast.success("Book info updated");
+                    setShowEditInfo(false);
+                    qc.invalidateQueries({ queryKey: [BOOKS_KEY, Number(bookId)] });
+                  } catch { toast.error("Failed to update"); }
+                  finally { setEditSaving(false); }
+                }}
+                className="btn-primary py-2 text-sm"
+              >
+                {editSaving ? "Saving…" : "Save Changes"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       </div>
     </div>
   );

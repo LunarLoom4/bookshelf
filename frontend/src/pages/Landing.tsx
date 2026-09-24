@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useRef, useState, useCallback, useEffect } from "react";
 import { booksApi } from "@/api";
-import { BookCard } from "@/components/ui/BookCard";
+import { OverlayBookCard } from "@/components/ui/OverlayBookCard";
 import { ScrollToTop } from "@/components/ui/ScrollToTop";
 import { BookOpen, MessageSquare, Layers, Download, Bookmark, List, ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
@@ -208,7 +208,7 @@ export default function Landing() {
             </p>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
               {popularBooks.map((book) => (
-                <BookCard key={book.id} book={book} />
+                <OverlayBookCard key={book.id} book={book} />
               ))}
             </div>
           </div>

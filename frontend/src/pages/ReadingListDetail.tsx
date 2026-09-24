@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useUpdateReadingList } from "@/hooks/useBooks";
 import { readingListsApi } from "@/api";
 import { useAuthStore } from "@/stores/authStore";
-import { BookCard } from "@/components/ui/BookCard";
+import { OverlayBookCard } from "@/components/ui/OverlayBookCard";
 import { BookCardSkeleton } from "@/components/ui/Skeleton";
 import { Lock, Trash2, ArrowLeft, BookOpen, Pencil, Check, X } from "lucide-react";
 import { timeAgo } from "@/utils/time";
@@ -79,9 +79,9 @@ export default function ReadingListDetail() {
       {/* Back */}
       <button
         onClick={() => navigate(-1)}
-        className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-ink-600 mb-6 transition-colors"
+        className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-xs font-medium mb-4"
       >
-        <ArrowLeft className="w-4 h-4" />
+        <ArrowLeft className="w-3 h-3" />
         Back
       </button>
 
@@ -163,20 +163,12 @@ export default function ReadingListDetail() {
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
           {books.map((book) => (
-            <div key={book.id} className="relative group h-full">
-              <BookCard book={book} />
-              {isOwner && (
-                <button
-                  onClick={() => removeBook.mutate(book.id)}
-                  disabled={removeBook.isPending}
-                  title="Remove from list"
-                  className="absolute top-2 left-2 w-7 h-7 rounded-full bg-white/90 shadow text-gray-400
-                             hover:text-red-500 hover:bg-white flex items-center justify-center
-                             opacity-0 group-hover:opacity-100 transition-all duration-150 z-10"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              )}
+            <div key={book.id} className="h-full">
+              <OverlayBookCard
+                book={book}
+                onRemove={isOwner ? () => removeBook.mutate(book.id) : undefined}
+                removeIcon={<Trash2 className="w-3.5 h-3.5" />}
+              />
             </div>
           ))}
         </div>

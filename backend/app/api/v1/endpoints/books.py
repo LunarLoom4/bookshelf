@@ -394,6 +394,36 @@ async def proxy_pdf(
     return RedirectResponse(url=edition.pdf_url, status_code=302)
 
 
+@router.patch("/{book_id}", response_model=BookResponse)
+async def update_book(
+    book_id: int,
+    payload: dict,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Update book title, author and/or description. Owner only."""
+    result = await db.execute(select(Book).where(Book.id == book_id))
+    book = result.scalar_one_or_none()
+    if not book:
+        raise HTTPException(status_code=404, detail="Book not found")
+    if book.uploader_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not the uploader")
+    if "title" in payload and payload["title"]:
+        book.title = payload["title"].strip()
+    if "author" in payload and payload["author"]:
+        book.author = payload["author"].strip()
+    if "description" in payload:
+        book.description = payload["description"].strip() if payload["description"] else None
+    await db.commit()
+    await db.refresh(book)
+    from sqlalchemy.orm import selectinload
+    result2 = await db.execute(select(Book).options(selectinload(Book.editions)).where(Book.id == book_id))
+    book = result2.scalar_one()
+    response = BookResponse.model_validate(book)
+    response.uploader_username = current_user.username
+    return response
+
+
 @router.delete("/{book_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_book(
     book_id: int,
@@ -719,8 +749,22 @@ async def get_book(book_id: int, db: AsyncSession = Depends(get_db)):
         username = user_result.scalar_one_or_none()
         response.uploader_username = username
 
-    # 19: Fetch up to 8 distinct recent commenters for avatar row
+    # Fetch edition and total comment counts
     edition_ids = [e.id for e in book.editions]
+    edition_comment_map: dict[int, int] = {}
+    if edition_ids:
+        ed_comment_result = await db.execute(
+            select(Comment.edition_id, func.count(Comment.id).label("cnt"))
+            .where(Comment.edition_id.in_(edition_ids), Comment.is_deleted.is_(False))
+            .group_by(Comment.edition_id)
+        )
+        edition_comment_map = {r.edition_id: r.cnt for r in ed_comment_result.all()}
+
+    # Attach per-edition comment counts to the response editions
+    for ed_resp in response.editions:
+        ed_resp.comment_count = edition_comment_map.get(ed_resp.id, 0)
+    response.total_comment_count = sum(edition_comment_map.values())
+
     if edition_ids:
         commenters_result = await db.execute(
             select(User.username, User.avatar_url)
