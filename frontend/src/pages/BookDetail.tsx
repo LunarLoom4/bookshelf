@@ -42,16 +42,21 @@ function TotalLikesBadge({ bookId }: { bookId: number }) {
   );
 }
 
-function EditionRow({ edition, bookId, isOwner, onDelete, onEditInfo }: {
+function EditionRow({ edition, bookId, isOwner, onDelete, onEditInfo, totalEditions }: {
   edition: Edition;
   bookId: number;
   isOwner: boolean;
   onDelete: () => void;
   onEditInfo: () => void;
+  totalEditions: number;
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [showBookDeleteModal, setShowBookDeleteModal] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const isLastEdition = totalEditions === 1;
+  const navigate = useNavigate();
+
   const deleteEdition = useMutation({
     mutationFn: () => booksApi.deleteEdition(bookId, edition.id),
     onSuccess: () => {
@@ -61,6 +66,16 @@ function EditionRow({ edition, bookId, isOwner, onDelete, onEditInfo }: {
       toast.success("Edition deleted");
     },
     onError: () => toast.error("Failed to delete edition"),
+  });
+
+  const deleteBook = useMutation({
+    mutationFn: () => booksApi.delete(bookId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [BOOKS_KEY] });
+      toast.success("Book deleted");
+      navigate("/browse");
+    },
+    onError: () => toast.error("Failed to delete book"),
   });
   const { isAuthenticated } = useAuthStore();
   const qc = useQueryClient();
@@ -114,7 +129,11 @@ function EditionRow({ edition, bookId, isOwner, onDelete, onEditInfo }: {
   const handleDelete = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    deleteEdition.mutate();
+    if (isLastEdition) {
+      deleteBook.mutate();
+    } else {
+      deleteEdition.mutate();
+    }
   };
 
   const liked = likeStatus?.liked ?? false;
@@ -204,11 +223,13 @@ function EditionRow({ edition, bookId, isOwner, onDelete, onEditInfo }: {
             <div className="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-20 overflow-hidden py-1">
               {confirmDelete ? (
                 <div className="px-3 py-2.5">
-                  <p className="text-xs font-medium text-gray-700 dark:text-gray-200 mb-2">Delete this edition?</p>
+                  <p className="text-xs font-medium text-gray-700 dark:text-gray-200 mb-2">
+                    {isLastEdition ? "Delete this edition?" : "Delete this edition?"}
+                  </p>
                   <div className="flex gap-2">
-                    <button onClick={handleDelete} disabled={deleteEdition.isPending}
+                    <button onClick={handleDelete} disabled={deleteEdition.isPending || deleteBook.isPending}
                       className="flex-1 py-1 text-xs font-medium rounded bg-red-600 hover:bg-red-700 text-white transition-colors disabled:opacity-50">
-                      {deleteEdition.isPending ? "Deleting..." : "Delete"}
+                      {(deleteEdition.isPending || deleteBook.isPending) ? "Deleting..." : "Delete"}
                     </button>
                     <button onClick={() => setConfirmDelete(false)}
                       className="flex-1 py-1 text-xs font-medium rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
@@ -240,7 +261,14 @@ function EditionRow({ edition, bookId, isOwner, onDelete, onEditInfo }: {
                   {isOwner && (
                     <>
                       <div className="border-t border-gray-100 dark:border-gray-700 my-1" />
-                      <button onClick={() => setConfirmDelete(true)}
+                      <button onClick={() => {
+                          setMenuOpen(false);
+                          if (isLastEdition) {
+                            setShowBookDeleteModal(true);
+                          } else {
+                            setConfirmDelete(true);
+                          }
+                        }}
                         className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
                         <Trash2 className="w-3.5 h-3.5" />
                         Delete Edition
@@ -254,6 +282,40 @@ function EditionRow({ edition, bookId, isOwner, onDelete, onEditInfo }: {
         </div>
       </div>
     </div>
+
+    {/* Full-screen modal for deleting the last edition (= deletes the entire book) */}
+    {showBookDeleteModal && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-md p-6">
+          <div className="mb-5">
+            <h2 className="font-serif text-lg font-semibold text-ink-900 dark:text-gray-100 mb-2">
+              Delete this book?
+            </h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              This is the only edition. Deleting it will permanently remove the entire book, its PDF, all comments, and all reading history.
+            </p>
+            <p className="text-xs text-red-500 dark:text-red-400 mt-2 font-medium">
+              This action cannot be undone.
+            </p>
+          </div>
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+            <button
+              onClick={() => setShowBookDeleteModal(false)}
+              className="btn-secondary py-2 px-4 text-sm w-full sm:w-auto"
+            >
+              Cancel
+            </button>
+            <button
+              disabled={deleteBook.isPending}
+              onClick={() => deleteBook.mutate()}
+              className="py-2 px-4 text-sm font-medium rounded-md bg-red-600 hover:bg-red-700 text-white transition-colors disabled:opacity-50 w-full sm:w-auto"
+            >
+              {deleteBook.isPending ? "Deleting..." : "Delete Book"}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
   );
 }
 
@@ -694,6 +756,7 @@ export default function BookDetail() {
                   edition={ed}
                   bookId={book.id}
                   isOwner={isOwner}
+                  totalEditions={book.editions.length}
                   onDelete={() => { /* edition removed, query already invalidated */ }}
                   onEditInfo={() => {
                     setEditTitle(book.title);

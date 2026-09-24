@@ -10,6 +10,7 @@ interface AuthState {
   setUser: (user: User) => void;
   logout: () => void;
   isAuthenticated: boolean;
+  _hydrated: boolean;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -19,6 +20,7 @@ export const useAuthStore = create<AuthState>()(
       accessToken: null,
       refreshToken: null,
       isAuthenticated: false,
+      _hydrated: false,
 
       setTokens: (access, refresh) =>
         set({ accessToken: access, refreshToken: refresh, isAuthenticated: true }),
@@ -30,8 +32,6 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: "bookshelf-auth",
-      // Use default localStorage but listen for cross-tab storage events
-      // so Navbar avatar updates instantly when changed in another tab
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         accessToken: state.accessToken,
@@ -39,6 +39,9 @@ export const useAuthStore = create<AuthState>()(
         user: state.user,
         isAuthenticated: state.isAuthenticated,
       }),
+      onRehydrateStorage: () => () => {
+        useAuthStore.setState({ _hydrated: true });
+      },
     }
   )
 );
