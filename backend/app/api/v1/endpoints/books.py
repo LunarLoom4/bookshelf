@@ -486,7 +486,32 @@ async def delete_book(
     await db.commit()
 
 
-@router.get("/", response_model=list[BookListItem])
+@router.delete("/{book_id}/editions/{edition_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_edition(
+    book_id: int,
+    edition_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Delete a single edition. Only the book uploader can do this."""
+    result = await db.execute(select(Book).where(Book.id == book_id))
+    book = result.scalar_one_or_none()
+    if not book:
+        raise HTTPException(status_code=404, detail="Book not found")
+    if book.uploader_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the uploader can delete editions")
+    from app.models.edition import Edition as Ed
+    ed_result = await db.execute(select(Ed).where(Ed.id == edition_id, Ed.book_id == book_id))
+    edition = ed_result.scalar_one_or_none()
+    if not edition:
+        raise HTTPException(status_code=404, detail="Edition not found")
+    if edition.pdf_r2_key:
+        storage.delete_object(edition.pdf_r2_key)
+    await db.delete(edition)
+    await db.commit()
+
+
+
 async def list_books(
     skip: int = 0,
     limit: int = 20,

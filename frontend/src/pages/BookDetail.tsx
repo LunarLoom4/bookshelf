@@ -13,7 +13,7 @@ import {
   Upload, Plus, X, CheckCircle, Link2, Download, Table2,
   Heart, MoreVertical, Trash2, MessageSquare, Pencil,
 } from "lucide-react";
-import { useBook, useUploadCover, useAddEdition, useDeleteBook, BOOKS_KEY } from "@/hooks/useBooks";
+import { useBook, useUploadCover, useAddEdition, BOOKS_KEY } from "@/hooks/useBooks";
 import { format } from "date-fns";
 import { timeAgo } from "@/utils/time";
 import toast from "react-hot-toast";
@@ -52,7 +52,16 @@ function EditionRow({ edition, bookId, isOwner, onDelete, onEditInfo }: {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const deleteBook = useDeleteBook();
+  const deleteEdition = useMutation({
+    mutationFn: () => booksApi.deleteEdition(bookId, edition.id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [BOOKS_KEY, bookId] });
+      qc.invalidateQueries({ queryKey: [BOOKS_KEY] });
+      onDelete();
+      toast.success("Edition deleted");
+    },
+    onError: () => toast.error("Failed to delete edition"),
+  });
   const { isAuthenticated } = useAuthStore();
   const qc = useQueryClient();
 
@@ -105,13 +114,7 @@ function EditionRow({ edition, bookId, isOwner, onDelete, onEditInfo }: {
   const handleDelete = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    try {
-      await deleteBook.mutateAsync(bookId);
-      onDelete();
-      toast.success("Book deleted");
-    } catch {
-      toast.error("Failed to delete book");
-    }
+    deleteEdition.mutate();
   };
 
   const liked = likeStatus?.liked ?? false;
@@ -201,11 +204,11 @@ function EditionRow({ edition, bookId, isOwner, onDelete, onEditInfo }: {
             <div className="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-20 overflow-hidden py-1">
               {confirmDelete ? (
                 <div className="px-3 py-2.5">
-                  <p className="text-xs font-medium text-gray-700 dark:text-gray-200 mb-2">Delete this book?</p>
+                  <p className="text-xs font-medium text-gray-700 dark:text-gray-200 mb-2">Delete this edition?</p>
                   <div className="flex gap-2">
-                    <button onClick={handleDelete} disabled={deleteBook.isPending}
+                    <button onClick={handleDelete} disabled={deleteEdition.isPending}
                       className="flex-1 py-1 text-xs font-medium rounded bg-red-600 hover:bg-red-700 text-white transition-colors disabled:opacity-50">
-                      {deleteBook.isPending ? "Deleting..." : "Delete"}
+                      {deleteEdition.isPending ? "Deleting..." : "Delete"}
                     </button>
                     <button onClick={() => setConfirmDelete(false)}
                       className="flex-1 py-1 text-xs font-medium rounded bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
@@ -240,7 +243,7 @@ function EditionRow({ edition, bookId, isOwner, onDelete, onEditInfo }: {
                       <button onClick={() => setConfirmDelete(true)}
                         className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
                         <Trash2 className="w-3.5 h-3.5" />
-                        Delete Book
+                        Delete Edition
                       </button>
                     </>
                   )}
@@ -691,7 +694,7 @@ export default function BookDetail() {
                   edition={ed}
                   bookId={book.id}
                   isOwner={isOwner}
-                  onDelete={() => navigate("/browse")}
+                  onDelete={() => { /* edition removed, query already invalidated */ }}
                   onEditInfo={() => {
                     setEditTitle(book.title);
                     setEditAuthor(book.author);

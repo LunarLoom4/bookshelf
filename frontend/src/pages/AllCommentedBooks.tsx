@@ -92,15 +92,17 @@ export default function AllCommentedBooks() {
                 </p>
                 <p className="text-[10px] text-white/70 line-clamp-1 mb-1.5">{book.author}</p>
                 {book.editions.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {book.editions.slice(0, 2).map(ed => (
-                      <span key={ed.edition_id} className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full bg-white/20 text-white whitespace-nowrap">
-                        E{ed.edition_number}&nbsp;·&nbsp;{ed.comment_count}
-                      </span>
-                    ))}
+                  <div className="flex flex-col gap-1">
+                    <div className="flex flex-wrap gap-1">
+                      {book.editions.slice(0, 2).map(ed => (
+                        <span key={ed.edition_id} className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full bg-white/20 text-white whitespace-nowrap">
+                          E{ed.edition_number}&nbsp;·&nbsp;{ed.comment_count}
+                        </span>
+                      ))}
+                    </div>
                     {book.editions.length > 2 && (
-                      <span className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full bg-white/20 text-white font-semibold whitespace-nowrap ml-0.5">
-                        +{book.editions.length - 2}
+                      <span className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-500/70 text-white font-semibold whitespace-nowrap self-start">
+                        +{book.editions.length - 2} more
                       </span>
                     )}
                   </div>

@@ -69,6 +69,7 @@ export const booksApi = {
     }),
 
   delete: (bookId: number) => api.delete(`/books/${bookId}`),
+  deleteEdition: (bookId: number, editionId: number) => api.delete(`/books/${bookId}/editions/${editionId}`),
 
   uploadCover: (bookId: number, formData: FormData) =>
     api.post<Book>(`/books/${bookId}/cover`, formData, {
