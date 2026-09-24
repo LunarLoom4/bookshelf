@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useRef, useState, useCallback, useEffect } from "react";
 import { booksApi } from "@/api";
+import { HorizontalScrollRow, SCROLL_CARD_W } from "@/components/ui/HorizontalScrollRow";
 import { OverlayBookCard } from "@/components/ui/OverlayBookCard";
 import { ScrollToTop } from "@/components/ui/ScrollToTop";
 import { BookOpen, MessageSquare, Layers, Download, Bookmark, List, ChevronLeft, ChevronRight } from "lucide-react";
@@ -206,11 +207,13 @@ export default function Landing() {
             <p className="text-sm text-gray-500 text-center mb-8">
               Most Discussed in the Last 7 Days
             </p>
-            <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            <HorizontalScrollRow itemCount={popularBooks.length}>
               {popularBooks.map((book) => (
-                <OverlayBookCard key={book.id} book={book} />
+                <div key={book.id} className="flex-shrink-0" style={{ width: SCROLL_CARD_W }}>
+                  <OverlayBookCard book={book} />
+                </div>
               ))}
-            </div>
+            </HorizontalScrollRow>
           </div>
         </section>
       )}
