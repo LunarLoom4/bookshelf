@@ -466,6 +466,7 @@ export default function BookDetail() {
   const [editEditionId, setEditEditionId] = useState<number | null>(null);
   const [editPublisher, setEditPublisher] = useState("");
   const [editYear, setEditYear] = useState("");
+  const [editEditionNum, setEditEditionNum] = useState("");
   const [editLanguage, setEditLanguage] = useState("en");
 
   if (isLoading) {
