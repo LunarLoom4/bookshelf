@@ -1,8 +1,9 @@
 import React from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { LanguagePicker } from "@/components/ui/LanguagePicker";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { progressApi, likesApi, bookLikesApi } from "@/api";
+import api from "@/api/client";
+import { LanguagePicker } from "@/components/ui/LanguagePicker";
 import { useAuthStore } from "@/stores/authStore";
 import { BookDetailSkeleton } from "@/components/ui/Skeleton";
 import { Avatar } from "@/components/ui/Avatar";
@@ -523,27 +524,30 @@ export default function BookDetail() {
 
         {/* Meta */}
         <div className="flex flex-col gap-2 flex-1">
-          <h1 className="font-serif text-3xl font-semibold text-ink-900 leading-tight">
-            {book.title}
-          </h1>
-          <div className="flex items-center gap-3">
-            <p className="text-gray-500 flex items-center gap-1.5">
-              <User className="w-4 h-4" />
-              {book.author}
-            </p>
-            {/* 12: Copy link */}
+          <div className="flex items-start gap-2">
+            <h1 className="font-serif text-3xl font-semibold text-ink-900 leading-tight flex-1">
+              {book.title}
+            </h1>
             <button
               onClick={() => {
                 navigator.clipboard.writeText(window.location.href);
                 setCopied(true);
                 setTimeout(() => setCopied(false), 2000);
               }}
-              className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-ink-600 transition-colors"
               title="Copy link to this book"
+              className="flex-shrink-0 mt-1.5 p-1.5 rounded-md text-gray-400 hover:text-ink-600 hover:bg-paper-100 dark:hover:bg-gray-700 transition-colors"
             >
-              <Link2 className="w-3 h-3" />
-              {copied ? "Copied!" : "Copy link"}
+              {copied
+                ? <CheckCircle className="w-4 h-4 text-green-500" />
+                : <Link2 className="w-4 h-4" />
+              }
             </button>
+          </div>
+          <div className="flex items-center gap-3">
+            <p className="text-gray-500 flex items-center gap-1.5">
+              <User className="w-4 h-4" />
+              {book.author}
+            </p>
           </div>
           {book.description && (
             <p className="text-sm text-gray-600 leading-relaxed mt-2 max-w-xl">
@@ -665,6 +669,7 @@ export default function BookDetail() {
                     setEditPublisher(ed.publisher ?? "");
                     setEditYear(ed.year ? String(ed.year) : "");
                     setEditLanguage(ed.language ?? "en");
+                    setEditEditionNum(String(ed.edition_number));
                     setShowEditInfo(true);
                   }}
                 />
@@ -676,15 +681,13 @@ export default function BookDetail() {
       {showEditInfo && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-lg flex flex-col max-h-[90vh]">
-            {/* Header */}
             <div className="flex items-center justify-between px-6 pt-6 pb-4 flex-shrink-0">
               <h2 className="font-serif text-lg font-semibold text-ink-900 dark:text-gray-100">Edit Info</h2>
               <button onClick={() => setShowEditInfo(false)} className="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                 <X className="w-4 h-4" />
               </button>
             </div>
-            {/* Scrollable body */}
-            <div className="overflow-y-auto flex-1 px-6 pb-2">
+            <div className="overflow-y-auto flex-1 px-6 pb-4">
               <div className="flex flex-col gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Title</label>
@@ -704,59 +707,53 @@ export default function BookDetail() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
+                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Edition No.</label>
+                    <input value={editEditionNum} onChange={e => setEditEditionNum(e.target.value)} className="input w-full" placeholder="e.g. 6" type="number" min="1" max="99" />
+                  </div>
+                  <div>
                     <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Year</label>
                     <input value={editYear} onChange={e => setEditYear(e.target.value)} className="input w-full" placeholder="" type="number" min="1800" max="2099" />
                   </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Language</label>
-                    <select value={editLanguage} onChange={e => setEditLanguage(e.target.value)} className="input w-full">
-                      <option value="en">English</option>
-                      <option value="es">Spanish</option>
-                      <option value="fr">French</option>
-                      <option value="de">German</option>
-                      <option value="zh">Chinese</option>
-                      <option value="hi">Hindi</option>
-                      <option value="ar">Arabic</option>
-                      <option value="pt">Portuguese</option>
-                      <option value="ru">Russian</option>
-                      <option value="ja">Japanese</option>
-                      <option value="ko">Korean</option>
-                      <option value="it">Italian</option>
-                    </select>
-                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Language</label>
+                  <LanguagePicker value={editLanguage} onChange={setEditLanguage} />
                 </div>
               </div>
             </div>
-            {/* Footer -- always visible, flex-wrap so Cancel+Save stack vertically on tiny screens */}
-            <div className="flex flex-wrap items-center justify-end gap-2 px-6 py-4 border-t border-gray-100 dark:border-gray-800 flex-shrink-0">
-              <button onClick={() => setShowEditInfo(false)} className="btn-secondary py-2 px-4 text-sm whitespace-nowrap order-2 sm:order-1">Cancel</button>
+            {/* Cancel top / Save bottom on mobile; side-by-side on desktop */}
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 px-6 py-4 border-t border-gray-100 dark:border-gray-800 flex-shrink-0">
+              <button onClick={() => setShowEditInfo(false)} className="btn-secondary py-2 px-4 text-sm whitespace-nowrap w-full sm:w-auto">
+                Cancel
+              </button>
               <button
                 disabled={editSaving || !editTitle.trim() || !editAuthor.trim()}
                 onClick={async () => {
                   setEditSaving(true);
                   try {
-                    const token = localStorage.getItem("token");
-                    const headers: Record<string, string> = { "Content-Type": "application/json" };
-                    if (token) headers["Authorization"] = `Bearer ${token}`;
-                    // Patch book-level fields
-                    await fetch(`/api/v1/books/${book.id}`, {
-                      method: "PATCH", headers,
-                      body: JSON.stringify({ title: editTitle.trim(), author: editAuthor.trim(), description: editDescription.trim() || null }),
+                    await api.patch(`/books/${book.id}`, {
+                      title: editTitle.trim(),
+                      author: editAuthor.trim(),
+                      description: editDescription.trim() || null,
                     });
-                    // Patch edition-level fields if we know which edition
                     if (editEditionId) {
-                      await fetch(`/api/v1/books/${book.id}/editions/${editEditionId}`, {
-                        method: "PATCH", headers,
-                        body: JSON.stringify({ publisher: editPublisher.trim() || null, year: editYear ? Number(editYear) : null, language: editLanguage }),
+                      await api.patch(`/books/${book.id}/editions/${editEditionId}`, {
+                        publisher: editPublisher.trim() || null,
+                        edition_number: editEditionNum ? Number(editEditionNum) : undefined,
+                        year: editYear ? Number(editYear) : null,
+                        language: editLanguage || "en",
                       });
                     }
                     toast.success("Book info updated");
                     setShowEditInfo(false);
                     qc.invalidateQueries({ queryKey: [BOOKS_KEY, Number(bookId)] });
-                  } catch { toast.error("Failed to update"); }
-                  finally { setEditSaving(false); }
+                  } catch {
+                    toast.error("Failed to update");
+                  } finally {
+                    setEditSaving(false);
+                  }
                 }}
-                className="btn-primary py-2 px-4 text-sm whitespace-nowrap order-1 sm:order-2"
+                className="btn-primary py-2 px-4 text-sm whitespace-nowrap w-full sm:w-auto"
               >
                 {editSaving ? "Saving…" : "Save Changes"}
               </button>

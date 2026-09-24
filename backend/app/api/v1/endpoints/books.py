@@ -448,6 +448,8 @@ async def update_edition(
         edition.year = int(payload["year"]) if payload["year"] else None
     if "language" in payload and payload["language"]:
         edition.language = payload["language"].strip()
+    if "edition_number" in payload and payload["edition_number"]:
+        edition.edition_number = int(payload["edition_number"])
     await db.commit()
     return {"ok": True}
 
