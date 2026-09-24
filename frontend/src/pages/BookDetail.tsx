@@ -462,9 +462,10 @@ export default function BookDetail() {
   const [editAuthor, setEditAuthor] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editSaving, setEditSaving] = useState(false);
+  const [editEditionId, setEditEditionId] = useState<number | null>(null);
   const [editPublisher, setEditPublisher] = useState("");
   const [editYear, setEditYear] = useState("");
-  const [editEditionNum, setEditEditionNum] = useState("");
+  const [editLanguage, setEditLanguage] = useState("en");
 
   if (isLoading) {
     return <BookDetailSkeleton />;
@@ -660,8 +661,10 @@ export default function BookDetail() {
                     setEditTitle(book.title);
                     setEditAuthor(book.author);
                     setEditDescription(book.description ?? "");
-                    setEditPublisher("");
-                    setEditYear("");
+                    setEditEditionId(ed.id);
+                    setEditPublisher(ed.publisher ?? "");
+                    setEditYear(ed.year ? String(ed.year) : "");
+                    setEditLanguage(ed.language ?? "en");
                     setShowEditInfo(true);
                   }}
                 />
@@ -697,41 +700,63 @@ export default function BookDetail() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Publisher</label>
-                  <input value={editPublisher} onChange={e => setEditPublisher(e.target.value)} className="input w-full" maxLength={300} placeholder="Optional" />
+                  <input value={editPublisher} onChange={e => setEditPublisher(e.target.value)} className="input w-full" maxLength={300} placeholder="e.g. McGraw-Hill Education" />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Edition Number</label>
-                    <input value={editYear} onChange={e => setEditYear(e.target.value)} className="input w-full" maxLength={4} placeholder="e.g. 6" type="number" min="1" max="99" />
+                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Year</label>
+                    <input value={editYear} onChange={e => setEditYear(e.target.value)} className="input w-full" placeholder="" type="number" min="1800" max="2099" />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Year</label>
-                    <input value={editPublisher} onChange={e => setEditPublisher(e.target.value)} className="input w-full" maxLength={4} placeholder="e.g. 2023" type="number" min="1800" max="2099" />
+                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Language</label>
+                    <select value={editLanguage} onChange={e => setEditLanguage(e.target.value)} className="input w-full">
+                      <option value="en">English</option>
+                      <option value="es">Spanish</option>
+                      <option value="fr">French</option>
+                      <option value="de">German</option>
+                      <option value="zh">Chinese</option>
+                      <option value="hi">Hindi</option>
+                      <option value="ar">Arabic</option>
+                      <option value="pt">Portuguese</option>
+                      <option value="ru">Russian</option>
+                      <option value="ja">Japanese</option>
+                      <option value="ko">Korean</option>
+                      <option value="it">Italian</option>
+                    </select>
                   </div>
                 </div>
               </div>
             </div>
-            {/* Footer -- always visible, never overflows */}
-            <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-100 dark:border-gray-800 flex-shrink-0">
-              <button onClick={() => setShowEditInfo(false)} className="btn-secondary py-2 px-4 text-sm whitespace-nowrap">Cancel</button>
+            {/* Footer -- always visible, flex-wrap so Cancel+Save stack vertically on tiny screens */}
+            <div className="flex flex-wrap items-center justify-end gap-2 px-6 py-4 border-t border-gray-100 dark:border-gray-800 flex-shrink-0">
+              <button onClick={() => setShowEditInfo(false)} className="btn-secondary py-2 px-4 text-sm whitespace-nowrap order-2 sm:order-1">Cancel</button>
               <button
                 disabled={editSaving || !editTitle.trim() || !editAuthor.trim()}
                 onClick={async () => {
                   setEditSaving(true);
                   try {
                     const token = localStorage.getItem("token");
+                    const headers: Record<string, string> = { "Content-Type": "application/json" };
+                    if (token) headers["Authorization"] = `Bearer ${token}`;
+                    // Patch book-level fields
                     await fetch(`/api/v1/books/${book.id}`, {
-                      method: "PATCH",
-                      headers: { "Content-Type": "application/json", ...(token ? { "Authorization": `Bearer ${token}` } : {}) },
+                      method: "PATCH", headers,
                       body: JSON.stringify({ title: editTitle.trim(), author: editAuthor.trim(), description: editDescription.trim() || null }),
                     });
+                    // Patch edition-level fields if we know which edition
+                    if (editEditionId) {
+                      await fetch(`/api/v1/books/${book.id}/editions/${editEditionId}`, {
+                        method: "PATCH", headers,
+                        body: JSON.stringify({ publisher: editPublisher.trim() || null, year: editYear ? Number(editYear) : null, language: editLanguage }),
+                      });
+                    }
                     toast.success("Book info updated");
                     setShowEditInfo(false);
                     qc.invalidateQueries({ queryKey: [BOOKS_KEY, Number(bookId)] });
                   } catch { toast.error("Failed to update"); }
                   finally { setEditSaving(false); }
                 }}
-                className="btn-primary py-2 px-4 text-sm whitespace-nowrap"
+                className="btn-primary py-2 px-4 text-sm whitespace-nowrap order-1 sm:order-2"
               >
                 {editSaving ? "Saving…" : "Save Changes"}
               </button>

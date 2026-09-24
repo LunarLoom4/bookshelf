@@ -68,9 +68,9 @@ export function OverlayBookCard({ book, onRemove, removeIcon }: Props) {
             </div>
           )}
 
-          {/* Gradient scrim -- purely for badge readability, not for text */}
-          <div className="absolute inset-x-0 bottom-0 h-16
-                          bg-gradient-to-t from-black/80 via-black/40 to-transparent
+          {/* Gradient scrim -- taller dark shadow rising from bottom, matching profile overlay cards */}
+          <div className="absolute inset-x-0 bottom-0 h-28
+                          bg-gradient-to-t from-black/85 via-black/50 to-transparent
                           pointer-events-none" />
 
           {/* Bottom badges row -- on the scrim */}

@@ -424,7 +424,35 @@ async def update_book(
     return response
 
 
-@router.delete("/{book_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.patch("/{book_id}/editions/{edition_id}")
+async def update_edition(
+    book_id: int,
+    edition_id: int,
+    payload: dict,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Update edition publisher, year, language. Owner only."""
+    result = await db.execute(select(Book).where(Book.id == book_id))
+    book = result.scalar_one_or_none()
+    if not book or book.uploader_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not the uploader")
+    from app.models.edition import Edition as Ed
+    ed_result = await db.execute(select(Ed).where(Ed.id == edition_id, Ed.book_id == book_id))
+    edition = ed_result.scalar_one_or_none()
+    if not edition:
+        raise HTTPException(status_code=404, detail="Edition not found")
+    if "publisher" in payload:
+        edition.publisher = payload["publisher"].strip() if payload["publisher"] else None
+    if "year" in payload:
+        edition.year = int(payload["year"]) if payload["year"] else None
+    if "language" in payload and payload["language"]:
+        edition.language = payload["language"].strip()
+    await db.commit()
+    return {"ok": True}
+
+
+
 async def delete_book(
     book_id: int,
     db: AsyncSession = Depends(get_db),
