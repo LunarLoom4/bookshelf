@@ -440,7 +440,6 @@ export default function UserProfile() {
                 href={`/u/${username}/comments/${book.book_id}`}
                 coverUrl={book.cover_url}
                 title={book.title}
-                subtitle={book.author}
                 badge={
                   <div className="flex items-center gap-1 bg-black/70 text-white text-[10px] px-1.5 py-0.5 rounded-full">
                     <MessageSquare className="w-2.5 h-2.5" />
