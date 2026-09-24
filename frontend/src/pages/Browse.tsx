@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Search, X, BookOpen, ChevronDown } from "lucide-react";
-import { useBooks, useBookSearch } from "@/hooks/useBooks";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { useBookSearch } from "@/hooks/useBooks";
+import { booksApi } from "@/api";
 import { OverlayBookCard } from "@/components/ui/OverlayBookCard";
 import { BookCardSkeleton } from "@/components/ui/Skeleton";
 import { ScrollToTop } from "@/components/ui/ScrollToTop";
@@ -23,35 +25,30 @@ export default function Browse() {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("newest");
   const debouncedQuery = useDebounce(query, 500);
-  const [limit, setLimit] = useState(PAGE_SIZE);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
-  // Reset pagination when query or sort changes
-  useEffect(() => { setLimit(PAGE_SIZE); }, [debouncedQuery, sort]);
+  const {
+    data: infiniteData,
+    isLoading: loadingAll,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: ["books", "browse", sort],
+    queryFn: ({ pageParam = 0 }) =>
+      booksApi.list(pageParam as number, PAGE_SIZE, sort).then((r) => r.data),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.length === PAGE_SIZE ? allPages.length * PAGE_SIZE : undefined,
+    staleTime: 60 * 1000,
+  });
 
-  const { data: allBooks, isLoading: loadingAll } = useBooks(0, limit, sort);
   const { data: searchResults, isLoading: loadingSearch } = useBookSearch(debouncedQuery);
 
   const isSearching = debouncedQuery.length > 0;
-  // Use allBooks as placeholder while search results are loading -- prevents skeleton flash
+  const allBooks = infiniteData?.pages.flat() ?? [];
   const books = isSearching ? (searchResults ?? allBooks) : allBooks;
   const loading = isSearching ? loadingSearch : loadingAll;
-  const hasMore = !isSearching && !!allBooks && allBooks.length >= limit;
-
-  const handleLoadMore = useCallback(() => {
-    if (!isSearching && hasMore) setLimit(prev => prev + PAGE_SIZE);
-  }, [isSearching, hasMore]);
-
-  useEffect(() => {
-    const sentinel = sentinelRef.current;
-    if (!sentinel) return;
-    const observer = new IntersectionObserver(
-      (entries) => { if (entries[0].isIntersecting && !loading) handleLoadMore(); },
-      { rootMargin: "200px" }
-    );
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [loading, handleLoadMore]);
 
   const subtitle = (() => {
     if (isSearching) {
@@ -116,9 +113,21 @@ export default function Browse() {
           <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {books.map((book) => <OverlayBookCard key={book.id} book={book} />)}
           </div>
-          {!isSearching && hasMore && (
-            <div ref={sentinelRef} className="h-10 flex items-center justify-center mt-6">
-              {loading && <div className="w-6 h-6 border-4 border-ink-200 border-t-ink-600 rounded-full animate-spin" />}
+          {!isSearching && (
+            <div
+              ref={(el) => {
+                if (!el || !hasNextPage) return;
+                const obs = new IntersectionObserver(
+                  ([entry]) => { if (entry.isIntersecting && !isFetchingNextPage) fetchNextPage(); },
+                  { rootMargin: "200px" }
+                );
+                obs.observe(el);
+              }}
+              className="h-10 flex items-center justify-center mt-6"
+            >
+              {isFetchingNextPage && (
+                <div className="w-6 h-6 border-4 border-ink-200 border-t-ink-600 rounded-full animate-spin" />
+              )}
             </div>
           )}
         </div>

@@ -124,7 +124,8 @@ export default function ReadingPage() {
   }, [pdfWidthPct]);
 
   const { data, isLoading: loadingEdition, error: editionError } = useEdition(editionId);
-  const { data: comments = [], isLoading: loadingComments } = useComments(editionId, sort);
+  const { data: commentsData, isLoading: loadingComments, fetchNextPage, hasNextPage, isFetchingNextPage } = useComments(editionId, sort);
+  const comments = commentsData?.pages.flat() ?? [];
   const { data: savedProgress } = useReadingProgress(editionId, isAuthenticated);
   const saveProgress = useSaveProgress(editionId);
   const createComment = useCreateComment(editionId);
@@ -585,6 +586,24 @@ export default function ReadingPage() {
                     />
                   ))}
                 </TargetCommentContext.Provider>
+              )}
+              {/* Load more when there are more comments */}
+              {hasNextPage && (
+                <div
+                  className="flex justify-center py-4"
+                  ref={(el) => {
+                    if (!el) return;
+                    const obs = new IntersectionObserver(
+                      ([entry]) => { if (entry.isIntersecting && !isFetchingNextPage) fetchNextPage(); },
+                      { threshold: 0.1 }
+                    );
+                    obs.observe(el);
+                  }}
+                >
+                  {isFetchingNextPage && (
+                    <div className="w-5 h-5 border-4 border-ink-100 border-t-ink-500 rounded-full animate-spin" />
+                  )}
+                </div>
               )}
             </div>
           </>

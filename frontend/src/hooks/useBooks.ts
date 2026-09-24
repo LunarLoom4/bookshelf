@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
 import { booksApi, commentsApi, progressApi, bookmarksApi, readingListsApi } from "@/api";
 import type { Comment } from "@/types";
 
@@ -68,11 +68,18 @@ export function useAddEdition(bookId: number) {
 }
 
 // ── Comments ───────────────────────────────────────────────────────────────────
+const COMMENTS_PAGE_SIZE = 30;
+
 export function useComments(editionId: number, sort: "newest" | "top" = "newest") {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: [COMMENTS_KEY, editionId, sort],
-    queryFn: () => commentsApi.list(editionId, sort).then((r) => r.data),
-    staleTime: 0,  // always refetch comments -- avatar_url and vote scores must be fresh
+    queryFn: ({ pageParam = 0 }) =>
+      commentsApi.list(editionId, sort, undefined, pageParam as number, COMMENTS_PAGE_SIZE)
+        .then((r) => r.data),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.length === COMMENTS_PAGE_SIZE ? allPages.length * COMMENTS_PAGE_SIZE : undefined,
+    staleTime: 0,
   });
 }
 

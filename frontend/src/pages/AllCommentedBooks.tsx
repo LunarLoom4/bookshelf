@@ -7,7 +7,7 @@ import type { CommentedBook } from "@/api";
 import { useAuthStore } from "@/stores/authStore";
 import { ScrollToTop } from "@/components/ui/ScrollToTop";
 
-const PAGE = 30;
+const PAGE_SIZE = 20;
 
 export default function AllCommentedBooks() {
   const { username } = useParams<{ username: string }>();
@@ -20,13 +20,11 @@ export default function AllCommentedBooks() {
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useInfiniteQuery({
     queryKey: ["all-commented-books", username],
-    queryFn: async ({ pageParam = 1 }) => {
-      const all = await userCommentsApi.commentedBooks(username!).then(r => r.data);
-      const start = ((pageParam as number) - 1) * PAGE;
-      return all.slice(start, start + PAGE);
-    },
-    initialPageParam: 1,
-    getNextPageParam: (last, all) => last.length === PAGE ? all.length + 1 : undefined,
+    queryFn: ({ pageParam = 0 }) =>
+      userCommentsApi.commentedBooks(username!, pageParam as number, PAGE_SIZE).then(r => r.data),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.length === PAGE_SIZE ? allPages.length * PAGE_SIZE : undefined,
     enabled: !!username,
     staleTime: 60 * 1000,
   });
@@ -60,7 +58,9 @@ export default function AllCommentedBooks() {
       </h1>
 
       {isLoading ? (
-        <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-ink-200 border-t-ink-600 rounded-full animate-spin" /></div>
+        <div className="flex justify-center py-20">
+          <div className="w-8 h-8 border-4 border-ink-200 border-t-ink-600 rounded-full animate-spin" />
+        </div>
       ) : books.length === 0 ? (
         <p className="text-sm text-gray-400 py-10 text-center">No comments yet.</p>
       ) : (
@@ -71,7 +71,6 @@ export default function AllCommentedBooks() {
               to={`/u/${username}/comments/${book.book_id}`}
               className="group block relative rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-shadow duration-200 aspect-[3/4]"
             >
-              {/* Cover */}
               {book.cover_url ? (
                 <img src={book.cover_url} alt={book.title} loading="lazy"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
@@ -80,16 +79,12 @@ export default function AllCommentedBooks() {
                   <BookOpen className="w-8 h-8 text-gray-300 dark:text-gray-600" />
                 </div>
               )}
-              {/* Comment count badge top-right */}
               <div className="absolute top-2 right-2 flex items-center gap-1 bg-black/70 text-white text-[10px] px-1.5 py-0.5 rounded-full">
                 <MessageSquare className="w-2.5 h-2.5" />
                 {book.total_comments}
               </div>
-              {/* Gradient scrim + text + edition pills */}
               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/50 to-transparent pt-10 px-2.5 pb-2.5">
-                <p className="text-xs font-semibold text-white line-clamp-2 leading-tight mb-0.5">
-                  {book.title}
-                </p>
+                <p className="text-xs font-semibold text-white line-clamp-2 leading-tight mb-0.5">{book.title}</p>
                 <p className="text-[10px] text-white/70 line-clamp-1 mb-1.5">{book.author}</p>
                 {book.editions.length > 0 && (
                   <div className="flex flex-col gap-1">
@@ -113,8 +108,11 @@ export default function AllCommentedBooks() {
         </div>
       )}
 
+      {/* Real server-side infinite scroll sentinel */}
       <div ref={sentinelCb} className="h-12 flex items-center justify-center mt-4">
-        {isFetchingNextPage && <div className="w-6 h-6 border-4 border-ink-200 border-t-ink-600 rounded-full animate-spin" />}
+        {isFetchingNextPage && (
+          <div className="w-6 h-6 border-4 border-ink-200 border-t-ink-600 rounded-full animate-spin" />
+        )}
       </div>
       <ScrollToTop />
     </div>

@@ -1,5 +1,5 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useUpdateReadingList } from "@/hooks/useBooks";
 import { readingListsApi } from "@/api";
@@ -9,7 +9,9 @@ import { BookCardSkeleton } from "@/components/ui/Skeleton";
 import { Lock, Trash2, ArrowLeft, BookOpen, Pencil, Check, X } from "lucide-react";
 import { timeAgo } from "@/utils/time";
 import toast from "react-hot-toast";
-import type { BookListItem, ReadingListDetail } from "@/types";
+import type { ReadingListDetail } from "@/types";
+
+const PAGE_SIZE = 20;
 
 export default function ReadingListDetail() {
   const { listId } = useParams<{ listId: string }>();
@@ -71,8 +73,25 @@ export default function ReadingListDetail() {
   }
 
   const isOwner = isAuthenticated && user?.id === list.user_id;
-  // Build BookListItem shapes from the list items (they have book embedded from API)
-  const books: BookListItem[] = (list.items as any[]).map((item) => item.book).filter(Boolean);
+
+  const {
+    data: booksData,
+    isLoading: loadingBooks,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: ["list-books", Number(listId)],
+    queryFn: ({ pageParam = 0 }) =>
+      readingListsApi.books(Number(listId), pageParam as number, PAGE_SIZE).then(r => r.data),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.length === PAGE_SIZE ? allPages.length * PAGE_SIZE : undefined,
+    enabled: !!listId && !!list,
+    staleTime: 60 * 1000,
+  });
+
+  const books = booksData?.pages.flat() ?? [];
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-10">
@@ -152,7 +171,11 @@ export default function ReadingListDetail() {
       </div>
 
       {/* Books grid */}
-      {books.length === 0 ? (
+      {loadingBooks ? (
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          {Array.from({ length: 8 }).map((_, i) => <BookCardSkeleton key={i} />)}
+        </div>
+      ) : books.length === 0 ? (
         <div className="text-center py-24 text-gray-400">
           <BookOpen className="w-12 h-12 mx-auto mb-4 opacity-30" />
           <p className="text-sm">No books in this list yet.</p>
@@ -165,7 +188,7 @@ export default function ReadingListDetail() {
           {books.map((book) => (
             <div key={book.id} className="h-full">
               <OverlayBookCard
-                book={book}
+                book={book as any}
                 onRemove={isOwner ? () => removeBook.mutate(book.id) : undefined}
                 removeIcon={<Trash2 className="w-3.5 h-3.5" />}
               />
@@ -173,6 +196,22 @@ export default function ReadingListDetail() {
           ))}
         </div>
       )}
+      {/* Infinite scroll sentinel */}
+      <div
+        ref={(el) => {
+          if (!el || !hasNextPage) return;
+          const obs = new IntersectionObserver(
+            ([entry]) => { if (entry.isIntersecting && !isFetchingNextPage) fetchNextPage(); },
+            { rootMargin: "200px" }
+          );
+          obs.observe(el);
+        }}
+        className="h-10 flex items-center justify-center mt-6"
+      >
+        {isFetchingNextPage && (
+          <div className="w-6 h-6 border-4 border-ink-200 border-t-ink-600 rounded-full animate-spin" />
+        )}
+      </div>
     </div>
   );
 }

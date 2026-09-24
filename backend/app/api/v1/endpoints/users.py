@@ -149,3 +149,90 @@ async def get_user_profile(username: str, db: AsyncSession = Depends(get_db)):
         ],
         currently_reading=currently_reading,
     )
+
+
+@router.get("/{username}/books-uploaded", response_model=list[BookListItem])
+async def user_books_uploaded_paginated(
+    username: str,
+    skip: int = 0,
+    limit: int = 20,
+    db: AsyncSession = Depends(get_db),
+):
+    """Paginated list of books uploaded by username."""
+    user_result = await db.execute(select(User).where(User.username == username))
+    user = user_result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    from app.models.edition_like import EditionLike
+    books_result = await db.execute(
+        select(Book, func.count(Edition.id).label("edition_count"))
+        .outerjoin(Edition, Edition.book_id == Book.id)
+        .where(Book.uploader_id == user.id)
+        .group_by(Book.id)
+        .order_by(Book.created_at.desc())
+        .offset(skip).limit(limit)
+    )
+    raw_books = books_result.all()
+    book_ids = [row[0].id for row in raw_books]
+
+    comment_map: dict[int, int] = {}
+    like_map: dict[int, int] = {}
+    if book_ids:
+        comment_res = await db.execute(
+            select(Edition.book_id, func.count(Comment.id).label("cnt"))
+            .join(Comment, Comment.edition_id == Edition.id)
+            .where(Edition.book_id.in_(book_ids), Comment.is_deleted.is_(False))
+            .group_by(Edition.book_id)
+        )
+        comment_map = {r.book_id: r.cnt for r in comment_res.all()}
+        like_res = await db.execute(
+            select(Edition.book_id, func.count(EditionLike.id).label("cnt"))
+            .join(EditionLike, EditionLike.edition_id == Edition.id)
+            .where(Edition.book_id.in_(book_ids))
+            .group_by(Edition.book_id)
+        )
+        like_map = {r.book_id: r.cnt for r in like_res.all()}
+
+    books = []
+    for book, edition_count in raw_books:
+        item = BookListItem.model_validate(book)
+        item.edition_count = edition_count
+        item.comment_count = comment_map.get(book.id, 0)
+        item.like_count = like_map.get(book.id, 0)
+        books.append(item)
+    return books
+
+
+@router.get("/{username}/currently-reading-paginated", response_model=list[CurrentlyReadingItem])
+async def user_currently_reading_paginated(
+    username: str,
+    skip: int = 0,
+    limit: int = 20,
+    db: AsyncSession = Depends(get_db),
+):
+    """Paginated list of books the user is currently reading."""
+    user_result = await db.execute(select(User).where(User.username == username))
+    user = user_result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    progress_result = await db.execute(
+        select(ReadingProgress, Book, Edition)
+        .join(Edition, Edition.id == ReadingProgress.edition_id)
+        .join(Book, Book.id == Edition.book_id)
+        .where(ReadingProgress.user_id == user.id)
+        .order_by(ReadingProgress.updated_at.desc())
+        .offset(skip).limit(limit)
+    )
+    return [
+        CurrentlyReadingItem(
+            edition_id=prog.edition_id,
+            last_page=prog.last_page,
+            book_id=book.id,
+            book_title=book.title,
+            book_cover_url=book.cover_url,
+            edition_number=edition.edition_number,
+        )
+        for prog, book, edition in progress_result.all()
+    ]

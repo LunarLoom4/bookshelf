@@ -129,6 +129,8 @@ def _build_sort_order(sort: str, vote_score_sq, reply_sq):
 @router.get("/{username}/commented-books", response_model=list[CommentedBook])
 async def get_commented_books(
     username: str,
+    skip: int = 0,
+    limit: int = 20,
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -180,7 +182,8 @@ async def get_commented_books(
         )
         books[row.id].total_comments += row.edition_comment_count
 
-    return sorted(books.values(), key=lambda b: b.total_comments, reverse=True)
+    sorted_books = sorted(books.values(), key=lambda b: b.total_comments, reverse=True)
+    return sorted_books[skip: skip + limit]
 
 
 @router.get("/{username}/comments", response_model=CommentFeedResponse)

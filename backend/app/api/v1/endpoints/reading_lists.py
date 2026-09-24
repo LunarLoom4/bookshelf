@@ -311,3 +311,78 @@ async def remove_book_from_list(
         await db.delete(item_obj)
         reading_list.updated_at = datetime.now(timezone.utc)
         await db.commit()
+
+
+@router.get("/{list_id}/books", response_model=list[BookSummary])
+async def get_list_books_paginated(
+    list_id: int,
+    skip: int = 0,
+    limit: int = 20,
+    db: AsyncSession = Depends(get_db),
+    current_user: User | None = Depends(get_current_user_optional),
+):
+    """Paginated list of books in a reading list."""
+    from app.models.reading_list import ReadingListItem
+    from app.models.edition import Edition
+    from app.models.comment import Comment
+    from app.models.edition_like import EditionLike
+    from sqlalchemy import func as sqlfunc
+
+    # Verify list access
+    rl_result = await db.execute(select(ReadingList).where(ReadingList.id == list_id))
+    rl = rl_result.scalar_one_or_none()
+    if not rl:
+        raise HTTPException(status_code=404, detail="Reading list not found")
+    if not rl.is_public:
+        if not current_user or current_user.id != rl.user_id:
+            raise HTTPException(status_code=403, detail="This list is private")
+
+    # Paginated books
+    books_result = await db.execute(
+        select(Book, ReadingListItem.added_at)
+        .join(ReadingListItem, ReadingListItem.book_id == Book.id)
+        .where(ReadingListItem.list_id == list_id)
+        .order_by(ReadingListItem.added_at.desc())
+        .offset(skip).limit(limit)
+    )
+    rows = books_result.all()
+    if not rows:
+        return []
+
+    book_ids = [r[0].id for r in rows]
+
+    ed_res = await db.execute(
+        select(Edition.book_id, sqlfunc.count(Edition.id).label("cnt"))
+        .where(Edition.book_id.in_(book_ids)).group_by(Edition.book_id)
+    )
+    ed_map = {r.book_id: r.cnt for r in ed_res.all()}
+
+    comment_res = await db.execute(
+        select(Edition.book_id, sqlfunc.count(Comment.id).label("cnt"))
+        .join(Comment, Comment.edition_id == Edition.id)
+        .where(Edition.book_id.in_(book_ids), Comment.is_deleted.is_(False))
+        .group_by(Edition.book_id)
+    )
+    comment_map = {r.book_id: r.cnt for r in comment_res.all()}
+
+    like_res = await db.execute(
+        select(Edition.book_id, sqlfunc.count(EditionLike.id).label("cnt"))
+        .join(EditionLike, EditionLike.edition_id == Edition.id)
+        .where(Edition.book_id.in_(book_ids)).group_by(Edition.book_id)
+    )
+    like_map = {r.book_id: r.cnt for r in like_res.all()}
+
+    return [
+        BookSummary(
+            id=book.id,
+            title=book.title,
+            author=book.author,
+            description=book.description,
+            cover_url=book.cover_url,
+            created_at=book.created_at,
+            edition_count=ed_map.get(book.id, 0),
+            comment_count=comment_map.get(book.id, 0),
+            like_count=like_map.get(book.id, 0),
+        )
+        for book, _ in rows
+    ]

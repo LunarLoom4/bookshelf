@@ -1,6 +1,7 @@
 import api from "./client";
 import type { Book, BookListItem, Comment, TokenResponse, User,
-              ReadingProgress, Bookmark, ReadingList, ReadingListDetail } from "@/types";
+              ReadingProgress, Bookmark, ReadingList, ReadingListDetail,
+              CurrentlyReadingItem, BookSummary } from "@/types";
 
 // ── Auth ───────────────────────────────────────────────────────────────────────
 export const authApi = {
@@ -117,9 +118,9 @@ export const commentsApi = {
   delete: (editionId: number, commentId: number) =>
     api.delete(`/editions/${editionId}/comments/${commentId}`),
 
-  list: (editionId: number, sort: "newest" | "top" = "newest", parentId?: number) =>
+  list: (editionId: number, sort: "newest" | "top" = "newest", parentId?: number, skip = 0, limit = 30) =>
     api.get<Comment[]>(`/editions/${editionId}/comments/`, {
-      params: { sort, ...(parentId !== undefined ? { parent_id: parentId } : {}) },
+      params: { sort, skip, limit, ...(parentId !== undefined ? { parent_id: parentId } : {}) },
     }),
 
   create: (editionId: number, body: string, pageNumber?: number, parentId?: number) =>
@@ -155,6 +156,10 @@ export const notificationsApi = {
 
 export const usersApi = {
   profile: (username: string) => api.get(`/users/${username}`),
+  booksUploaded: (username: string, skip = 0, limit = 20) =>
+    api.get<BookListItem[]>(`/users/${username}/books-uploaded`, { params: { skip, limit } }),
+  currentlyReading: (username: string, skip = 0, limit = 20) =>
+    api.get<CurrentlyReadingItem[]>(`/users/${username}/currently-reading-paginated`, { params: { skip, limit } }),
 };
 
 // ── Reading Progress ───────────────────────────────────────────────────────────
@@ -213,6 +218,9 @@ export const readingListsApi = {
 
   byUser: (username: string) =>
     api.get<ReadingList[]>(`/lists/by-user/${username}`),
+
+  books: (listId: number, skip = 0, limit = 20) =>
+    api.get<BookSummary[]>(`/lists/${listId}/books`, { params: { skip, limit } }),
 };
 
 // ── Account Settings ───────────────────────────────────────────────────────────
@@ -286,8 +294,8 @@ export interface CommentFeedResponse {
 }
 
 export const userCommentsApi = {
-  commentedBooks: (username: string) =>
-    api.get<CommentedBook[]>(`/users/${username}/commented-books`),
+  commentedBooks: (username: string, skip = 0, limit = 20) =>
+    api.get<CommentedBook[]>(`/users/${username}/commented-books`, { params: { skip, limit } }),
 
   feed: (
     username: string,

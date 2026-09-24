@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { ArrowLeft, BookOpen } from "lucide-react";
 import { usersApi } from "@/api";
@@ -7,6 +7,8 @@ import { useAuthStore } from "@/stores/authStore";
 import { OverlayBookCard } from "@/components/ui/OverlayBookCard";
 import { ScrollToTop } from "@/components/ui/ScrollToTop";
 import { BookCardSkeleton } from "@/components/ui/Skeleton";
+
+const PAGE_SIZE = 20;
 
 export default function AllBooksUploaded() {
   const { username } = useParams<{ username: string }>();
@@ -16,14 +18,18 @@ export default function AllBooksUploaded() {
 
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["user", username],
-    queryFn: () => usersApi.profile(username!).then(r => r.data),
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
+    queryKey: ["user-books-uploaded", username],
+    queryFn: ({ pageParam = 0 }) =>
+      usersApi.booksUploaded(username!, pageParam as number, PAGE_SIZE).then(r => r.data),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.length === PAGE_SIZE ? allPages.length * PAGE_SIZE : undefined,
     enabled: !!username,
     staleTime: 60 * 1000,
   });
 
-  const books = data?.books_uploaded ?? [];
+  const books = data?.pages.flat() ?? [];
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
@@ -47,11 +53,26 @@ export default function AllBooksUploaded() {
         <p className="text-sm text-gray-400 py-10 text-center">No books uploaded yet.</p>
       ) : (
         <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-          {books.map((book) => (
-            <OverlayBookCard key={book.id} book={book} />
-          ))}
+          {books.map((book) => <OverlayBookCard key={book.id} book={book} />)}
         </div>
       )}
+
+      {/* Infinite scroll sentinel */}
+      <div
+        ref={(el) => {
+          if (!el || !hasNextPage) return;
+          const obs = new IntersectionObserver(
+            ([entry]) => { if (entry.isIntersecting && !isFetchingNextPage) fetchNextPage(); },
+            { rootMargin: "200px" }
+          );
+          obs.observe(el);
+        }}
+        className="h-10 flex items-center justify-center mt-6"
+      >
+        {isFetchingNextPage && (
+          <div className="w-6 h-6 border-4 border-ink-200 border-t-ink-600 rounded-full animate-spin" />
+        )}
+      </div>
       <ScrollToTop />
     </div>
   );
