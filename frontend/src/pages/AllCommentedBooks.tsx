@@ -94,7 +94,7 @@ export default function AllCommentedBooks() {
                       </span>
                     ))}
                     {book.editions.length > 2 && (
-                      <span className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-500/70 text-white font-semibold whitespace-nowrap ml-auto">
+                      <span className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/70 text-white font-semibold whitespace-nowrap ml-auto">
                         +{book.editions.length - 2}
                       </span>
                     )}

@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { ScrollToTop } from "@/components/ui/ScrollToTop";
 import { HorizontalScrollRow, SCROLL_CARD_W } from "@/components/ui/HorizontalScrollRow";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { BookOpen, MessageSquare, List, LockKeyhole, Globe2, Trash2, Plus, BookMarked, Pencil, Check, X, MoreVertical, Heart, Layers } from "lucide-react";
+import { BookOpen, MessageSquare, List, LockKeyhole, Globe2, Trash2, Plus, BookMarked, Pencil, Check, X, MoreVertical, Heart, Layers, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { timeAgo } from "@/utils/time";
 import { usersApi, progressApi, userCommentsApi } from "@/api";
@@ -239,7 +239,7 @@ function ReadingListsSection({ username }: { username: string }) {
             <div className="flex justify-end mt-3">
               <Link to={`/u/${username}/lists`} className="text-sm text-ink-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
                 +{overflow} more {overflow === 1 ? "list" : "lists"}
-                <ViewAll className="w-3.5 h-3.5" />
+                <ChevronRight className="w-3.5 h-3.5" />
               </Link>
             </div>
           )}
@@ -250,6 +250,33 @@ function ReadingListsSection({ username }: { username: string }) {
 }
 
 const OVERLAY_CARD_W = SCROLL_CARD_W;
+
+// ── Section header with optional "View All" pill ──────────────────────────────
+function SectionHeader({ icon, title, viewAllHref }: {
+  icon: React.ReactNode;
+  title: React.ReactNode;
+  viewAllHref?: string;
+}) {
+  return (
+    <div className="flex items-center justify-between mb-4">
+      <h2 className="font-serif text-xl font-semibold text-ink-900 dark:text-gray-100 flex items-center gap-2">
+        {icon}
+        {title}
+      </h2>
+      {viewAllHref && (
+        <Link
+          to={viewAllHref}
+          className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium
+                     bg-ink-50 dark:bg-gray-800 text-ink-600 dark:text-indigo-400
+                     hover:bg-ink-100 dark:hover:bg-gray-700 transition-colors no-underline"
+        >
+          View All
+          <ChevronRight className="w-3 h-3" />
+        </Link>
+      )}
+    </div>
+  );
+}
 
 function OverlayCard({ coverUrl, title, subtitle, badge, pills, href, onRemove }: {
   coverUrl?: string | null;
@@ -429,7 +456,7 @@ export default function UserProfile() {
                         </span>
                       ))}
                       {book.editions.length > 2 && (
-                        <span className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full bg-indigo-500/70 text-white font-semibold whitespace-nowrap ml-auto">
+                        <span className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/70 text-white font-semibold whitespace-nowrap ml-auto">
                           +{book.editions.length - 2}
                         </span>
                       )}
