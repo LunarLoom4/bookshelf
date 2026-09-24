@@ -511,7 +511,7 @@ async def delete_edition(
     await db.commit()
 
 
-
+@router.get("/", response_model=list[BookListItem])
 async def list_books(
     skip: int = 0,
     limit: int = 20,
