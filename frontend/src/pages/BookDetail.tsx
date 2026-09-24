@@ -140,6 +140,7 @@ function EditionRow({ edition, bookId, isOwner, onDelete, onEditInfo, totalEditi
   const likeCount = likeStatus?.count ?? 0;
 
   return (
+    <>
     <div className="card flex items-center justify-between p-4 hover:shadow-md hover:border-ink-200 transition-all duration-150">
       <div className="flex items-center gap-4 flex-1 min-w-0">
         <div className="w-9 h-9 bg-ink-50 dark:bg-ink-900/40 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -316,6 +317,7 @@ function EditionRow({ edition, bookId, isOwner, onDelete, onEditInfo, totalEditi
         </div>
       </div>
     )}
+    </>
   );
 }
 
