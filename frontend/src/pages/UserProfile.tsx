@@ -508,7 +508,7 @@ export default function UserProfile() {
                         </span>
                       ))}
                       {book.editions.length > 2 && (
-                        <span className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full bg-white/15 text-white/80 whitespace-nowrap">
+                        <span className="inline-flex items-center text-[10px] px-1.5 py-0.5 rounded-full bg-white/20 text-white font-semibold whitespace-nowrap ml-0.5">
                           +{book.editions.length - 2}
                         </span>
                       )}

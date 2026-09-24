@@ -324,8 +324,11 @@ function AddEditionPanel({ bookId, existingNums }: { bookId: number; existingNum
   const [year, setYear] = useState("");
   const [publisher, setPublisher] = useState("");
   const [language, setLanguage] = useState("en");
+  const [uploadPct, setUploadPct] = useState(0);
+  const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
-  const addEdition = useAddEdition(bookId);
+  const qc = useQueryClient();
+  const { accessToken } = useAuthStore();
 
   if (!open) {
     return (
@@ -354,8 +357,17 @@ function AddEditionPanel({ bookId, existingNums }: { bookId: number; existingNum
     if (publisher) fd.append("publisher", publisher);
     fd.append("language", language || "en");
     fd.append("pdf_file", pdfFile);
+
+    setUploading(true);
+    setUploadPct(0);
     try {
-      await addEdition.mutateAsync(fd);
+      await booksApi.addEditionWithProgress(
+        bookId,
+        fd,
+        (pct) => setUploadPct(pct),
+        accessToken || "",
+      );
+      qc.invalidateQueries({ queryKey: [BOOKS_KEY, bookId] });
       toast.success("Edition added");
       setOpen(false);
       setPdfFile(null);
@@ -364,6 +376,9 @@ function AddEditionPanel({ bookId, existingNums }: { bookId: number; existingNum
       setPublisher("");
     } catch (err: any) {
       toast.error(err.response?.data?.detail || "Upload failed");
+    } finally {
+      setUploading(false);
+      setUploadPct(0);
     }
   };
 
@@ -437,17 +452,32 @@ function AddEditionPanel({ bookId, existingNums }: { bookId: number; existingNum
           </div>
         </div>
 
+        {/* Progress bar -- shown while uploading */}
+        {uploading && (
+          <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+            <div
+              className="bg-ink-600 h-2 rounded-full transition-all duration-200"
+              style={{ width: `${uploadPct}%` }}
+            />
+          </div>
+        )}
+
         <button
           type="submit"
-          disabled={addEdition.isPending || !pdfFile}
+          disabled={uploading || !pdfFile}
           className="btn-primary justify-center py-2"
         >
-          {addEdition.isPending ? "Uploading…" : "Upload Edition"}
+          {uploading
+            ? uploadPct < 100
+              ? `Uploading... ${uploadPct}%`
+              : "Processing..."
+            : "Upload Edition"}
         </button>
       </form>
     </div>
   );
 }
+
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function BookDetail() {
@@ -681,7 +711,7 @@ export default function BookDetail() {
       {/* ── Edit Info modal (owner only) ── */}
       {showEditInfo && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-lg flex flex-col max-h-[90vh] min-w-0 overflow-hidden">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-2xl flex flex-col max-h-[90vh] min-w-0 overflow-hidden">
             <div className="flex items-center justify-between px-6 pt-6 pb-4 flex-shrink-0">
               <h2 className="font-serif text-lg font-semibold text-ink-900 dark:text-gray-100">Edit Info</h2>
               <button onClick={() => setShowEditInfo(false)} className="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
@@ -700,7 +730,7 @@ export default function BookDetail() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Description</label>
-                  <textarea value={editDescription} onChange={e => setEditDescription(e.target.value)} className="input w-full resize-y min-h-[80px] max-h-48" maxLength={2000} />
+                  <textarea value={editDescription} onChange={e => setEditDescription(e.target.value)} className="input w-full resize-y" style={{ minHeight: 160, maxHeight: 250 }} maxLength={2000} />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Publisher</label>

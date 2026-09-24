@@ -82,6 +82,31 @@ export const booksApi = {
     api.post<Book>(`/books/${bookId}/editions`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     }),
+
+  addEditionWithProgress: (
+    bookId: number,
+    formData: FormData,
+    onProgress: (pct: number) => void,
+    token: string,
+  ): Promise<Book> =>
+    new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", `/api/v1/books/${bookId}/editions`);
+      xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+      };
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve(JSON.parse(xhr.responseText) as Book);
+        } else {
+          try { reject({ response: { status: xhr.status, data: JSON.parse(xhr.responseText) } }); }
+          catch { reject({ response: { status: xhr.status, data: { detail: "Upload failed" } } }); }
+        }
+      };
+      xhr.onerror = () => reject({ response: { status: 0, data: { detail: "Network error" } } });
+      xhr.send(formData);
+    }),
 };
 
 // ── Comments ───────────────────────────────────────────────────────────────────

@@ -197,7 +197,7 @@ export default function Upload() {
           <textarea
             id="description"
             rows={3}
-            className="input resize-y min-h-[80px] max-h-48"
+            className="input resize-y min-h-[150px] max-h-[240px]"
             autoComplete="off"
             {...register("description")}
           />

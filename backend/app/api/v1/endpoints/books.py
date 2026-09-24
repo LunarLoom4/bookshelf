@@ -454,7 +454,7 @@ async def update_edition(
     return {"ok": True}
 
 
-
+@router.delete("/{book_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_book(
     book_id: int,
     db: AsyncSession = Depends(get_db),
