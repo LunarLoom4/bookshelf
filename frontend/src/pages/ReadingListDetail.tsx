@@ -50,6 +50,24 @@ export default function ReadingListDetail() {
     onError: () => toast.error("Failed to delete list"),
   });
 
+  // MUST be before any early return (Rules of Hooks)
+  const {
+    data: booksData,
+    isLoading: loadingBooks,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
+    queryKey: ["list-books", Number(listId)],
+    queryFn: ({ pageParam = 0 }) =>
+      readingListsApi.books(Number(listId), pageParam as number, PAGE_SIZE).then(r => r.data),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.length === PAGE_SIZE ? allPages.length * PAGE_SIZE : undefined,
+    enabled: !!listId && !!list,
+    staleTime: 60 * 1000,
+  });
+
   if (isLoading) {
     return (
       <div className="max-w-5xl mx-auto px-4 py-10">
@@ -73,23 +91,6 @@ export default function ReadingListDetail() {
   }
 
   const isOwner = isAuthenticated && user?.id === list.user_id;
-
-  const {
-    data: booksData,
-    isLoading: loadingBooks,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useInfiniteQuery({
-    queryKey: ["list-books", Number(listId)],
-    queryFn: ({ pageParam = 0 }) =>
-      readingListsApi.books(Number(listId), pageParam as number, PAGE_SIZE).then(r => r.data),
-    initialPageParam: 0,
-    getNextPageParam: (lastPage, allPages) =>
-      lastPage.length === PAGE_SIZE ? allPages.length * PAGE_SIZE : undefined,
-    enabled: !!listId && !!list,
-    staleTime: 60 * 1000,
-  });
 
   const books = booksData?.pages.flat() ?? [];
 

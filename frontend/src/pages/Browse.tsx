@@ -104,11 +104,11 @@ export default function Browse() {
         </div>
       </div>
 
-      {loading && !books ? (
+      {loading && books.length === 0 ? (
         <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {Array.from({ length: PAGE_SIZE }).map((_, i) => <BookCardSkeleton key={i} />)}
         </div>
-      ) : books && books.length > 0 ? (
+      ) : books.length > 0 ? (
         <div className="min-h-[400px]">
           <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {books.map((book) => <OverlayBookCard key={book.id} book={book} />)}

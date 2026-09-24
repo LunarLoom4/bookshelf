@@ -105,52 +105,6 @@ export function useCreateComment(editionId: number) {
       parentId?: number;
     }) => commentsApi.create(editionId, body, pageNumber, parentId).then((r) => r.data),
 
-    // Optimistic update: add the new comment to the cache immediately
-    // so it appears in the UI before the server responds
-    onMutate: async ({ body, pageNumber, parentId }) => {
-      await qc.cancelQueries({ queryKey: [COMMENTS_KEY, editionId] });
-      const previousData = qc.getQueriesData({ queryKey: [COMMENTS_KEY, editionId] });
-
-      // Build a temporary comment object
-      const tempComment: Comment = {
-        id: -Date.now(), // negative temp id to avoid conflicts
-        body,
-        page_number: pageNumber ?? null,
-        parent_id: parentId ?? null,
-        user_id: 0,
-        edition_id: editionId,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        vote_score: 0,
-        user_vote: null,
-        is_deleted: false,
-        edited_at: null,
-        author: null,
-        reply_count: 0,
-      };
-
-      // Add to the correct query cache (top-level or replies)
-      const queryKey = parentId
-        ? [COMMENTS_KEY, editionId, "replies", parentId]
-        : [COMMENTS_KEY, editionId, "newest"];
-
-      qc.setQueryData(queryKey, (old: Comment[] | undefined) =>
-        old ? [...old, tempComment] : [tempComment]
-      );
-
-      return { previousData };
-    },
-
-    // On error, roll back optimistic update
-    onError: (_err, _vars, context) => {
-      if (context?.previousData) {
-        context.previousData.forEach(([queryKey, data]) => {
-          qc.setQueryData(queryKey, data);
-        });
-      }
-    },
-
-    // Always refetch to sync with server (replaces temp comment with real one)
     onSettled: () => {
       qc.invalidateQueries({ queryKey: [COMMENTS_KEY, editionId] });
     },
@@ -165,46 +119,6 @@ export function useVoteComment(editionId: number) {
 
     // Optimistic update: change score and user_vote INSTANTLY in cache before
     // the server responds. If the server fails, roll back to previous state.
-    onMutate: async ({ commentId, value }) => {
-      // Cancel any in-flight refetches so they don't overwrite our optimistic update
-      await qc.cancelQueries({ queryKey: [COMMENTS_KEY, editionId] });
-
-      // Snapshot the current cache for rollback
-      const previousData = qc.getQueriesData({ queryKey: [COMMENTS_KEY, editionId] });
-
-      // Apply optimistic update to all matching cache entries (top-level + replies)
-      qc.setQueriesData(
-        { queryKey: [COMMENTS_KEY, editionId], exact: false },
-        (old: Comment[] | undefined) => {
-          if (!old) return old;
-          return old.map((c) => {
-            if (c.id !== commentId) return c;
-            const prevVote = c.user_vote;
-            // Toggle: same value = remove vote; different value = change vote
-            const newVote = prevVote === value ? null : value;
-            const scoreDelta = newVote === null
-              ? -(prevVote ?? 0)          // removing vote
-              : prevVote === null
-                ? value                   // new vote
-                : value * 2;              // switching vote direction
-            return { ...c, user_vote: newVote, vote_score: c.vote_score + scoreDelta };
-          });
-        }
-      );
-
-      return { previousData };
-    },
-
-    // On server error, roll back to snapshot
-    onError: (_err, _vars, context) => {
-      if (context?.previousData) {
-        context.previousData.forEach(([queryKey, data]) => {
-          qc.setQueryData(queryKey, data);
-        });
-      }
-    },
-
-    // Always refetch after mutation settles to sync with server truth
     onSettled: () => qc.invalidateQueries({ queryKey: [COMMENTS_KEY, editionId] }),
   });
 }
