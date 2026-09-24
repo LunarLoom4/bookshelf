@@ -85,7 +85,6 @@ export default function AllCommentedBooks() {
               </div>
               <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/50 to-transparent pt-10 px-2.5 pb-2.5">
                 <p className="text-xs font-semibold text-white line-clamp-2 leading-tight mb-0.5">{book.title}</p>
-                <p className="text-[10px] text-white/70 line-clamp-1 mb-1.5">{book.author}</p>
                 {book.editions.length > 0 && (
                   <div className="flex items-center gap-1 flex-wrap">
                     {book.editions.slice(0, 2).map(ed => (
