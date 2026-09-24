@@ -462,6 +462,9 @@ export default function BookDetail() {
   const [editAuthor, setEditAuthor] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editSaving, setEditSaving] = useState(false);
+  const [editPublisher, setEditPublisher] = useState("");
+  const [editYear, setEditYear] = useState("");
+  const [editEditionNum, setEditEditionNum] = useState("");
 
   if (isLoading) {
     return <BookDetailSkeleton />;
@@ -657,6 +660,8 @@ export default function BookDetail() {
                     setEditTitle(book.title);
                     setEditAuthor(book.author);
                     setEditDescription(book.description ?? "");
+                    setEditPublisher("");
+                    setEditYear("");
                     setShowEditInfo(true);
                   }}
                 />
@@ -667,29 +672,48 @@ export default function BookDetail() {
       {/* ── Edit Info modal (owner only) ── */}
       {showEditInfo && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-lg p-6">
-            <div className="flex items-center justify-between mb-5">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-lg flex flex-col max-h-[90vh]">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 pt-6 pb-4 flex-shrink-0">
               <h2 className="font-serif text-lg font-semibold text-ink-900 dark:text-gray-100">Edit Info</h2>
               <button onClick={() => setShowEditInfo(false)} className="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <div className="flex flex-col gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Title</label>
-                <input value={editTitle} onChange={e => setEditTitle(e.target.value)} className="input w-full" maxLength={500} />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Author</label>
-                <input value={editAuthor} onChange={e => setEditAuthor(e.target.value)} className="input w-full" maxLength={500} />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Description</label>
-                <textarea value={editDescription} onChange={e => setEditDescription(e.target.value)} className="input w-full resize-none" rows={4} maxLength={2000} />
+            {/* Scrollable body */}
+            <div className="overflow-y-auto flex-1 px-6 pb-2">
+              <div className="flex flex-col gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Title</label>
+                  <input value={editTitle} onChange={e => setEditTitle(e.target.value)} className="input w-full" maxLength={500} />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Author</label>
+                  <input value={editAuthor} onChange={e => setEditAuthor(e.target.value)} className="input w-full" maxLength={500} />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Description</label>
+                  <textarea value={editDescription} onChange={e => setEditDescription(e.target.value)} className="input w-full resize-y min-h-[80px] max-h-48" maxLength={2000} />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Publisher</label>
+                  <input value={editPublisher} onChange={e => setEditPublisher(e.target.value)} className="input w-full" maxLength={300} placeholder="Optional" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Edition Number</label>
+                    <input value={editYear} onChange={e => setEditYear(e.target.value)} className="input w-full" maxLength={4} placeholder="e.g. 6" type="number" min="1" max="99" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Year</label>
+                    <input value={editPublisher} onChange={e => setEditPublisher(e.target.value)} className="input w-full" maxLength={4} placeholder="e.g. 2023" type="number" min="1800" max="2099" />
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="flex justify-end gap-2 mt-6">
-              <button onClick={() => setShowEditInfo(false)} className="btn-secondary py-2 text-sm">Cancel</button>
+            {/* Footer -- always visible, never overflows */}
+            <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-100 dark:border-gray-800 flex-shrink-0">
+              <button onClick={() => setShowEditInfo(false)} className="btn-secondary py-2 px-4 text-sm whitespace-nowrap">Cancel</button>
               <button
                 disabled={editSaving || !editTitle.trim() || !editAuthor.trim()}
                 onClick={async () => {
@@ -707,7 +731,7 @@ export default function BookDetail() {
                   } catch { toast.error("Failed to update"); }
                   finally { setEditSaving(false); }
                 }}
-                className="btn-primary py-2 text-sm"
+                className="btn-primary py-2 px-4 text-sm whitespace-nowrap"
               >
                 {editSaving ? "Saving…" : "Save Changes"}
               </button>

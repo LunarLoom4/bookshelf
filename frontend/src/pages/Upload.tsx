@@ -155,7 +155,7 @@ export default function Upload() {
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
         {/* PDF upload */}
         <div>
-          <label className="label">PDF file <span className="text-red-400">*</span></label>
+          <label className="label">PDF File <span className="text-red-400">*</span></label>
           <FileDrop
             label="Upload PDF (max 100 MB)"
             accept="application/pdf"
@@ -167,9 +167,9 @@ export default function Upload() {
 
         {/* Cover upload */}
         <div>
-          <label className="label">Cover image <span className="text-gray-400 font-normal">(optional)</span></label>
+          <label className="label">Cover Image <span className="text-gray-400 font-normal">(optional)</span></label>
           <FileDrop
-            label="Upload cover (JPEG, PNG, WebP, max 5 MB)"
+            label="Upload Cover (JPEG, PNG, WebP, max 5 MB)"
             accept="image/jpeg,image/png,image/webp"
             file={coverFile}
             onFile={setCoverFile}
@@ -197,7 +197,7 @@ export default function Upload() {
           <textarea
             id="description"
             rows={3}
-            className="input resize-none"
+            className="input resize-y min-h-[80px] max-h-48"
             autoComplete="off"
             {...register("description")}
           />
