@@ -508,6 +508,21 @@ async def delete_edition(
     if edition.pdf_r2_key:
         storage.delete_object(edition.pdf_r2_key)
     await db.delete(edition)
+    await db.flush()  # flush so the count below is accurate
+
+    # If this was the last edition, delete the whole book too
+    from sqlalchemy import func as sqlfunc
+    remaining = await db.execute(
+        select(sqlfunc.count()).select_from(Edition).where(Edition.book_id == book_id)
+    )
+    if remaining.scalar() == 0:
+        result2 = await db.execute(select(Book).options(selectinload(Book.editions)).where(Book.id == book_id))
+        orphan = result2.scalar_one_or_none()
+        if orphan:
+            if orphan.cover_r2_key:
+                storage.delete_object(orphan.cover_r2_key)
+            await db.delete(orphan)
+
     await db.commit()
 
 
