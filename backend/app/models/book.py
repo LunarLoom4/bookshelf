@@ -10,7 +10,7 @@ class Book(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     title: Mapped[str] = mapped_column(String(500), nullable=False, index=True)
-    author: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    author: Mapped[str] = mapped_column(String(500), nullable=False, index=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     cover_url: Mapped[str | None] = mapped_column(String(1000), nullable=True)
     cover_r2_key: Mapped[str | None] = mapped_column(String(500), nullable=True)

@@ -52,7 +52,7 @@ export default function ReadingListDetail() {
     return (
       <div className="max-w-5xl mx-auto px-4 py-10">
         <div className="h-8 w-48 bg-gray-200 animate-pulse rounded mb-8" />
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {Array.from({ length: 8 }).map((_, i) => <BookCardSkeleton key={i} />)}
         </div>
       </div>
@@ -161,7 +161,7 @@ export default function ReadingListDetail() {
           </Link>
         </div>
       ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {books.map((book) => (
             <div key={book.id} className="h-full">
               <OverlayBookCard

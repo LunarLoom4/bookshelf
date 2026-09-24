@@ -528,6 +528,7 @@ export default function UserProfile() {
         <SectionHeader
           icon={<BookOpen className="w-5 h-5 text-ink-400" />}
           title={<>Books Uploaded <span className="count-pill">{books_uploaded.length}</span></>}
+          viewAllHref={books_uploaded.length > 0 ? `/u/${username}/books` : undefined}
         />
         {books_uploaded.length === 0 ? (
           <p className="text-sm text-gray-400">No books uploaded yet.</p>

@@ -13,7 +13,7 @@ import { BOOKS_KEY } from "@/hooks/useBooks";
 
 const schema = z.object({
   title: z.string().min(1, "Required").max(500),
-  author: z.string().min(1, "Required").max(255),
+  author: z.string().min(1, "Required").max(500),
   description: z.string().max(2000).optional(),
   edition_number: z.coerce.number().int().min(1).default(1),
   year: z.coerce.number().int().min(1000).max(2100).optional().or(z.literal("")),
