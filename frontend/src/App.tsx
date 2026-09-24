@@ -1,4 +1,4 @@
-import { Suspense, lazy, Component, useState, useEffect } from "react";
+import { Suspense, lazy, Component } from "react";
 import type { ReactNode, ErrorInfo } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
@@ -107,21 +107,6 @@ function PageLoader() {
 
 function InnerApp() {
   const { pathname } = useLocation();
-  const [hydrated, setHydrated] = useState(false);
-
-  // Zustand's persist rehydrates from localStorage synchronously before the
-  // first render, but only after React commits. A single useEffect fires after
-  // the first paint, by which time rehydration is complete. This prevents
-  // auth-dependent queries from firing with no token during the hydration gap.
-  useEffect(() => { setHydrated(true); }, []);
-
-  if (!hydrated) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="w-6 h-6 border-4 border-ink-200 border-t-ink-600 rounded-full animate-spin" />
-      </div>
-    );
-  }
 
   return (
     <>
