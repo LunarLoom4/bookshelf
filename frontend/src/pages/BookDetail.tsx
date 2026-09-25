@@ -94,7 +94,6 @@ function EditionRow({ edition, bookId, isOwner, onDelete, onEditInfo, totalEditi
     },
     onError: () => toast.error("Failed to delete book"),
   });
-  const { isAuthenticated } = useAuthStore();
   const qc = useQueryClient();
 
   useEffect(() => {
