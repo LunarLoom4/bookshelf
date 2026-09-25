@@ -369,16 +369,18 @@ async def add_edition(
 async def proxy_pdf(
     book_id: int,
     edition_id: int,
+    download: int = 0,
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Redirect the browser directly to the R2 public URL for the PDF.
-    This is much faster than proxying -- the browser fetches straight from
-    Cloudflare's CDN edge without going through our API server.
-    R2 sets immutable cache headers so subsequent loads are instant.
+    download=0 (default): redirect browser directly to R2 CDN (fast, cached).
+    download=1: stream PDF bytes through our server so the browser gets a
+                same-origin response with Content-Disposition: attachment,
+                triggering the OS save dialog with the correct filename.
     """
-    from fastapi.responses import RedirectResponse
+    from fastapi.responses import RedirectResponse, StreamingResponse
     from app.models.edition import Edition as EditionModel
+    from app.models.book import Book as BookModel
 
     result = await db.execute(
         select(EditionModel).where(
@@ -390,8 +392,28 @@ async def proxy_pdf(
     if not edition:
         raise HTTPException(status_code=404, detail="Edition not found")
 
-    # 301 permanent redirect -- browser caches this so repeat visits are instant
-    return RedirectResponse(url=edition.pdf_url, status_code=302)
+    if not download:
+        return RedirectResponse(url=edition.pdf_url, status_code=302)
+
+    # Download mode: fetch from R2 and stream through, adding attachment header
+    book_result = await db.execute(select(BookModel).where(BookModel.id == book_id))
+    book = book_result.scalar_one_or_none()
+    book_title = book.title if book else "Book"
+    safe_title = "".join(c if c.isalnum() or c in " -_." else "_" for c in book_title)
+    filename = f"{safe_title} - Edition {edition.edition_number}.pdf"
+
+    import httpx
+    async def stream_pdf():
+        async with httpx.AsyncClient(follow_redirects=True) as client:
+            async with client.stream("GET", edition.pdf_url) as r:
+                async for chunk in r.aiter_bytes(65536):
+                    yield chunk
+
+    return StreamingResponse(
+        stream_pdf(),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @router.patch("/{book_id}", response_model=BookResponse)

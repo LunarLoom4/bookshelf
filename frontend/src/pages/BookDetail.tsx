@@ -43,10 +43,9 @@ function TotalLikesBadge({ bookId }: { bookId: number }) {
   );
 }
 
-function EditionRow({ edition, bookId, bookTitle, isOwner, onDelete, onEditInfo, totalEditions }: {
+function EditionRow({ edition, bookId, isOwner, onDelete, onEditInfo, totalEditions }: {
   edition: Edition;
   bookId: number;
-  bookTitle: string;
   isOwner: boolean;
   onDelete: () => void;
   onEditInfo: () => void;
@@ -252,29 +251,14 @@ function EditionRow({ edition, bookId, bookTitle, isOwner, onDelete, onEditInfo,
                       <div className="border-t border-gray-100 dark:border-gray-700 my-1" />
                     </>
                   )}
-                  <button
-                    onClick={async () => {
-                      setMenuOpen(false);
-                      try {
-                        const resp = await fetch(`/api/v1/books/${bookId}/editions/${edition.id}/pdf`);
-                        if (!resp.ok) throw new Error("Download failed");
-                        const blob = await resp.blob();
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement("a");
-                        a.href = url;
-                        a.download = `${bookTitle} - Edition ${edition.edition_number}.pdf`;
-                        document.body.appendChild(a);
-                        a.click();
-                        setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
-                      } catch {
-                        toast.error("Download failed. Please try again.");
-                      }
-                    }}
+                  <a
+                    href={`/api/v1/books/${bookId}/editions/${edition.id}/pdf?download=1`}
+                    onClick={() => setMenuOpen(false)}
                     className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-paper-100 dark:hover:bg-gray-800 transition-colors"
                   >
                     <Download className="w-3.5 h-3.5 text-gray-400" />
                     Download PDF
-                  </button>
+                  </a>
                   {!isOwner && (
                     <>
                       <div className="border-t border-gray-100 dark:border-gray-700 my-1" />
@@ -833,8 +817,8 @@ export default function BookDetail() {
           {isOwner && <CoverUploadPanel bookId={book.id} />}
         </div>
 
-        {/* Meta */}
-        <div className="flex flex-col flex-1 min-h-0">
+        {/* Meta -- min-height matches cover so "Added on" always sits at cover foot */}
+        <div className="flex flex-col flex-1" style={{ minHeight: "min(256px, 40vw)" }}>
           <div className="flex items-start gap-2">
             <h1 className="font-serif text-3xl font-semibold text-ink-900 leading-tight flex-1">
               {book.title}
@@ -972,7 +956,6 @@ export default function BookDetail() {
                   key={ed.id}
                   edition={ed}
                   bookId={book.id}
-                  bookTitle={book.title}
                   isOwner={isOwner}
                   totalEditions={book.editions.length}
                   onDelete={() => { /* edition removed, query already invalidated */ }}
