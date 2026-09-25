@@ -202,7 +202,7 @@ function ReadingListsSection({ username }: { username: string }) {
                         <MoreVertical className="w-4 h-4" />
                       </button>
                       {openMenuId === list.id && (
-                        <div className="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-20 overflow-hidden py-1">
+                        <div className="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-20 overflow-hidden">
                           <button onClick={() => { setEditingListId(list.id); setEditingName(list.name); setOpenMenuId(null); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-paper-100 dark:hover:bg-gray-800 transition-colors">
                             <Pencil className="w-3.5 h-3.5 text-gray-400" />Rename
                           </button>
