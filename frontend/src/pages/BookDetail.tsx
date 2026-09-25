@@ -783,10 +783,19 @@ export default function BookDetail() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-10">
-      {/* Book header */}
-      <div className="flex flex-col sm:flex-row gap-8 mb-10">
+      {/* Book header -- CSS grid so "Added on" row is always at the cover foot */}
+      {/*
+        Layout: [cover col] [meta col]
+        Meta col is a sub-grid with 4 rows:
+          1. title (auto)
+          2. author (auto)
+          3. description (1fr -- scrolls, never grows beyond its track)
+          4. "Added on" (auto -- always at the bottom, level with cover foot)
+        The outer grid min-height = cover height (w-48 × 4/3 = 256px on sm).
+      */}
+      <div className="mb-10 grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-8 items-start">
         {/* Cover */}
-        <div className="flex-shrink-0 w-40 sm:w-48">
+        <div className="flex-shrink-0 w-40 sm:w-48 sm:row-span-2">
           <div className="relative group overflow-hidden rounded-lg shadow-md">
             {book.cover_url ? (
               <img
@@ -817,10 +826,20 @@ export default function BookDetail() {
           {isOwner && <CoverUploadPanel bookId={book.id} />}
         </div>
 
-        {/* Meta -- min-height matches cover so "Added on" always sits at cover foot */}
-        <div className="flex flex-col flex-1" style={{ minHeight: "min(256px, 40vw)" }}>
+        {/*
+          Meta: 4-row sub-grid.
+          Row 3 (description) uses min-h-0 + overflow so it scrolls rather than expanding.
+          Row 4 (Added on) is always the last row -- never moves.
+          The sub-grid height = cover height because both sit in the same outer grid row
+          and the cover's aspect-[3/4] defines the row height.
+        */}
+        <div
+          className="grid grid-rows-[auto_auto_1fr_auto] h-full"
+          style={{ minHeight: "calc(192px * 4 / 3)" }}
+        >
+          {/* Row 1: title + copy link */}
           <div className="flex items-start gap-2">
-            <h1 className="font-serif text-3xl font-semibold text-ink-900 leading-tight flex-1">
+            <h1 className="font-serif text-3xl font-semibold text-ink-900 dark:text-gray-100 leading-tight flex-1">
               {book.title}
             </h1>
             <button
@@ -838,28 +857,34 @@ export default function BookDetail() {
               }
             </button>
           </div>
-          <div className="flex items-center gap-3">
-            <p className="text-gray-500 flex items-center gap-1.5">
+
+          {/* Row 2: author */}
+          <div className="mt-1">
+            <p className="text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
               <User className="w-4 h-4" />
               {book.author}
             </p>
           </div>
-          {/* Description: scrollable, max ~7 lines, never pushes content below */}
-          {book.description && (
-            <div className="mt-2 max-h-[10.5rem] overflow-y-auto pr-1">
-              <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed max-w-xl">
-                {book.description}
-              </p>
-            </div>
-          )}
-          {/* Fixed bottom row: Added on + commenter avatars pinned, same line */}
-          <div className="flex items-center justify-between flex-wrap gap-x-4 gap-y-1 mt-auto pt-3">
-            <p className="text-xs text-gray-400">
-              Added on {format(new Date(book.created_at), "MMMM d, yyyy")}
+
+          {/* Row 3: description (scrollable, never pushes row 4) */}
+          <div className="min-h-0 overflow-hidden">
+            {book.description && (
+              <div className="mt-3 h-full max-h-[9rem] overflow-y-auto pr-1">
+                <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                  {book.description}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Row 4: Added on + commenter avatars -- ALWAYS at the bottom */}
+          <div className="flex items-center justify-between flex-wrap gap-x-4 gap-y-1 pt-3 border-t border-gray-100 dark:border-gray-800 mt-2">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Added on <span className="font-medium text-ink-700 dark:text-gray-300">{format(new Date(book.created_at), "MMMM d, yyyy")}</span>
               {book.uploader_username && (
                 <> by <Link
                   to={`/u/${book.uploader_username}`}
-                  className="inline-flex items-center gap-1 font-semibold text-ink-600 dark:text-indigo-400 hover:text-ink-800 dark:hover:text-indigo-300 hover:underline transition-colors"
+                  className="font-semibold text-ink-600 dark:text-indigo-400 hover:text-ink-800 dark:hover:text-indigo-300 hover:underline transition-colors"
                 >
                   {book.uploader_username}
                 </Link></>
@@ -867,7 +892,7 @@ export default function BookDetail() {
             </p>
             {book.recent_commenters?.length > 0 && (
               <div className="flex items-center -space-x-1.5">
-                {book.recent_commenters.slice(0, 8).map((c) => (
+                {book.recent_commenters.slice(0, 5).map((c) => (
                   <Link
                     key={c.username}
                     to={`/u/${c.username}`}
@@ -877,8 +902,8 @@ export default function BookDetail() {
                     <Avatar username={c.username} avatarUrl={c.avatar_url} size="xs" />
                   </Link>
                 ))}
-                {book.recent_commenters.length > 8 && (
-                  <span className="text-xs text-gray-400 pl-2">+{book.recent_commenters.length - 8}</span>
+                {book.recent_commenters.length > 5 && (
+                  <span className="text-xs text-gray-400 pl-2">+{book.recent_commenters.length - 5}</span>
                 )}
               </div>
             )}
