@@ -1,9 +1,9 @@
-import React from "react";
+import React, { useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { progressApi, likesApi, bookLikesApi, reportsApi } from "@/api";
 import api from "@/api/client";
-import { RichTextEditor } from "@/components/ui/RichTextEditor";
+import { RichTextEditor, type RichTextEditorRef } from "@/components/ui/RichTextEditor";
 import { LanguagePicker } from "@/components/ui/LanguagePicker";
 import { useAuthStore } from "@/stores/authStore";
 import { BookDetailSkeleton } from "@/components/ui/Skeleton";
@@ -57,19 +57,25 @@ function EditionRow({ edition, bookId, isOwner, onDelete, onEditInfo, totalEditi
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const [reportSubject, setReportSubject] = useState("");
   const [reportHtml, setReportHtml] = useState("");
+  const editorRef = useRef<RichTextEditorRef>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const { isAuthenticated } = useAuthStore();
 
   const sendReport = useMutation({
     mutationFn: () => reportsApi.send(bookId, edition.id, reportSubject, reportHtml),
     onSuccess: () => {
-      setShowNotifyModal(false);
-      setReportSubject("");
-      setReportHtml("");
+      closeNotifyModal();
       toast.success("Report sent to the uploader");
     },
     onError: (e: any) => toast.error(e?.response?.data?.detail || "Failed to send report"),
   });
+
+  const closeNotifyModal = () => {
+    setShowNotifyModal(false);
+    setReportSubject("");
+    setReportHtml("");
+    editorRef.current?.clear();
+  };
   const menuRef = useRef<HTMLDivElement>(null);
   const isLastEdition = totalEditions === 1;
   const navigate = useNavigate();
@@ -236,7 +242,7 @@ function EditionRow({ edition, bookId, isOwner, onDelete, onEditInfo, totalEditi
             <MoreVertical className="w-4 h-4" />
           </button>
           {menuOpen && (
-            <div className="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-20 overflow-hidden py-1">
+            <div className="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-20 overflow-hidden">
               <>
                   {isOwner && (
                     <>
@@ -339,7 +345,7 @@ function EditionRow({ edition, bookId, isOwner, onDelete, onEditInfo, totalEditi
     {showNotifyModal && (
       <div
         className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-        onClick={() => setShowNotifyModal(false)}
+        onClick={closeNotifyModal}
       >
         <div
           className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-2xl flex flex-col max-h-[90vh] overflow-hidden"
@@ -353,7 +359,7 @@ function EditionRow({ edition, bookId, isOwner, onDelete, onEditInfo, totalEditi
               </h2>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Edition {edition.edition_number} · Sent to email</p>
             </div>
-            <button onClick={() => setShowNotifyModal(false)}
+            <button onClick={closeNotifyModal}
               className="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
               <X className="w-4 h-4" />
             </button>
@@ -383,9 +389,11 @@ function EditionRow({ edition, bookId, isOwner, onDelete, onEditInfo, totalEditi
                 Details <span className="text-red-400">*</span>
               </label>
               <RichTextEditor
+                ref={editorRef}
                 placeholder="Describe the issue clearly. You can attach screenshots, paste links, use bold for emphasis, or add bullet points."
                 onHtmlChange={setReportHtml}
                 minHeight={180}
+                maxHeight={280}
               />
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 Supports bold, italic, lists, links, and inline images (max 2 MB each).
@@ -404,7 +412,7 @@ function EditionRow({ edition, bookId, isOwner, onDelete, onEditInfo, totalEditi
           {/* Footer */}
           <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
             <button
-              onClick={() => setShowNotifyModal(false)}
+              onClick={closeNotifyModal}
               className="btn-secondary py-2 px-4 text-sm w-full sm:w-auto"
             >
               Cancel
