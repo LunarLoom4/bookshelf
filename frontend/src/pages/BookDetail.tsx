@@ -43,9 +43,10 @@ function TotalLikesBadge({ bookId }: { bookId: number }) {
   );
 }
 
-function EditionRow({ edition, bookId, isOwner, onDelete, onEditInfo, totalEditions }: {
+function EditionRow({ edition, bookId, bookTitle, isOwner, onDelete, onEditInfo, totalEditions }: {
   edition: Edition;
   bookId: number;
+  bookTitle: string;
   isOwner: boolean;
   onDelete: () => void;
   onEditInfo: () => void;
@@ -251,13 +252,29 @@ function EditionRow({ edition, bookId, isOwner, onDelete, onEditInfo, totalEditi
                       <div className="border-t border-gray-100 dark:border-gray-700 my-1" />
                     </>
                   )}
-                  <a href={`/api/v1/books/${bookId}/editions/${edition.id}/pdf`}
-                    download={`Edition-${edition.edition_number}.pdf`}
-                    onClick={() => setMenuOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-paper-100 dark:hover:bg-gray-800 transition-colors">
+                  <button
+                    onClick={async () => {
+                      setMenuOpen(false);
+                      try {
+                        const resp = await fetch(`/api/v1/books/${bookId}/editions/${edition.id}/pdf`);
+                        if (!resp.ok) throw new Error("Download failed");
+                        const blob = await resp.blob();
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = `${bookTitle} - Edition ${edition.edition_number}.pdf`;
+                        document.body.appendChild(a);
+                        a.click();
+                        setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
+                      } catch {
+                        toast.error("Download failed. Please try again.");
+                      }
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-paper-100 dark:hover:bg-gray-800 transition-colors"
+                  >
                     <Download className="w-3.5 h-3.5 text-gray-400" />
                     Download PDF
-                  </a>
+                  </button>
                   {!isOwner && (
                     <>
                       <div className="border-t border-gray-100 dark:border-gray-700 my-1" />
@@ -817,7 +834,7 @@ export default function BookDetail() {
         </div>
 
         {/* Meta */}
-        <div className="flex flex-col gap-2 flex-1">
+        <div className="flex flex-col flex-1 min-h-0">
           <div className="flex items-start gap-2">
             <h1 className="font-serif text-3xl font-semibold text-ink-900 leading-tight flex-1">
               {book.title}
@@ -843,33 +860,35 @@ export default function BookDetail() {
               {book.author}
             </p>
           </div>
+          {/* Description: scrollable, max ~7 lines, never pushes content below */}
           {book.description && (
-            <p className="text-sm text-gray-600 leading-relaxed mt-2 max-w-xl">
-              {book.description}
-            </p>
+            <div className="mt-2 max-h-[10.5rem] overflow-y-auto pr-1">
+              <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed max-w-xl">
+                {book.description}
+              </p>
+            </div>
           )}
-          <p className="text-xs text-gray-400 mt-auto pt-3">
-            Added on {format(new Date(book.created_at), "MMMM d, yyyy")}
-            {book.uploader_username && (
-              <> by <Link
-                to={`/u/${book.uploader_username}`}
-                className="inline-flex items-center gap-1 font-semibold text-ink-600 dark:text-indigo-400 hover:text-ink-800 dark:hover:text-indigo-300 hover:underline transition-colors"
-              >
-                {book.uploader_username}
-              </Link></>
-            )}
-          </p>
-          {/* 19: Recent commenters avatars */}
-          {book.recent_commenters?.length > 0 && (
-            <div className="flex items-center gap-2 mt-2 flex-wrap">
-              <span className="text-xs text-gray-400 leading-none">Discussed by</span>
+          {/* Fixed bottom row: Added on + commenter avatars pinned, same line */}
+          <div className="flex items-center justify-between flex-wrap gap-x-4 gap-y-1 mt-auto pt-3">
+            <p className="text-xs text-gray-400">
+              Added on {format(new Date(book.created_at), "MMMM d, yyyy")}
+              {book.uploader_username && (
+                <> by <Link
+                  to={`/u/${book.uploader_username}`}
+                  className="inline-flex items-center gap-1 font-semibold text-ink-600 dark:text-indigo-400 hover:text-ink-800 dark:hover:text-indigo-300 hover:underline transition-colors"
+                >
+                  {book.uploader_username}
+                </Link></>
+              )}
+            </p>
+            {book.recent_commenters?.length > 0 && (
               <div className="flex items-center -space-x-1.5">
                 {book.recent_commenters.slice(0, 8).map((c) => (
                   <Link
                     key={c.username}
                     to={`/u/${c.username}`}
                     title={c.username}
-                    className="ring-1.5 ring-white dark:ring-gray-900 rounded-full hover:z-10 hover:scale-110 transition-transform duration-150 flex-shrink-0"
+                    className="ring-2 ring-white dark:ring-gray-900 rounded-full hover:z-10 hover:scale-110 transition-transform duration-150 flex-shrink-0"
                   >
                     <Avatar username={c.username} avatarUrl={c.avatar_url} size="xs" />
                   </Link>
@@ -878,9 +897,9 @@ export default function BookDetail() {
                   <span className="text-xs text-gray-400 pl-2">+{book.recent_commenters.length - 8}</span>
                 )}
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        </div>        </div>
       </div>
 
       {/* Editions */}
@@ -953,6 +972,7 @@ export default function BookDetail() {
                   key={ed.id}
                   edition={ed}
                   bookId={book.id}
+                  bookTitle={book.title}
                   isOwner={isOwner}
                   totalEditions={book.editions.length}
                   onDelete={() => { /* edition removed, query already invalidated */ }}
