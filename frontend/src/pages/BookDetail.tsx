@@ -12,7 +12,7 @@ import { useRef, useState, useEffect } from "react";
 import {
   BookOpen, Layers, User, Globe,
   Upload, Plus, X, CheckCircle, Link2, Download, Table2,
-  Heart, MoreVertical, Trash2, MessageSquare, Pencil, Flag,
+  Heart, MoreVertical, Trash2, MessageSquare, Pencil, Info,
 } from "lucide-react";
 import { useBook, useUploadCover, useAddEdition, BOOKS_KEY } from "@/hooks/useBooks";
 import { format } from "date-fns";
@@ -270,9 +270,9 @@ function EditionRow({ edition, bookId, isOwner, onDelete, onEditInfo, totalEditi
                             setShowNotifyModal(true);
                           }
                         }}
-                        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors"
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-ink-600 dark:text-indigo-300 hover:bg-paper-100 dark:hover:bg-gray-800 transition-colors"
                       >
-                        <Flag className="w-3.5 h-3.5" />
+                        <Info className="w-3.5 h-3.5" />
                         Notify Uploader
                       </button>
                     </>
@@ -351,7 +351,7 @@ function EditionRow({ edition, bookId, isOwner, onDelete, onEditInfo, totalEditi
               <h2 className="font-serif text-lg font-semibold text-ink-900 dark:text-gray-100">
                 Notify Uploader
               </h2>
-              <p className="text-xs text-gray-400 mt-0.5">Edition {edition.edition_number} · This will be sent to the uploader's email</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Edition {edition.edition_number} · Sent to email</p>
             </div>
             <button onClick={() => setShowNotifyModal(false)}
               className="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
@@ -387,16 +387,16 @@ function EditionRow({ edition, bookId, isOwner, onDelete, onEditInfo, totalEditi
                 onHtmlChange={setReportHtml}
                 minHeight={180}
               />
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 Supports bold, italic, lists, links, and inline images (max 2 MB each).
               </p>
             </div>
 
             {/* What happens note */}
-            <div className="flex gap-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg px-3 py-2.5">
-              <Flag className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
-              <p className="text-xs text-amber-700 dark:text-amber-300 leading-relaxed">
-                Your report will be emailed directly to the uploader. They can then update the book information via Edit Info. Your identity (username) will be included.
+            <div className="flex gap-2.5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700/50 rounded-lg px-3 py-2.5">
+              <Info className="w-4 h-4 text-blue-500 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
+                Your report is sent directly to the uploader. Your username will be included.
               </p>
             </div>
           </div>
@@ -412,9 +412,9 @@ function EditionRow({ edition, bookId, isOwner, onDelete, onEditInfo, totalEditi
             <button
               disabled={!reportSubject.trim() || !reportHtml.trim() || sendReport.isPending}
               onClick={() => sendReport.mutate()}
-              className="py-2 px-4 text-sm font-medium rounded-md bg-amber-500 hover:bg-amber-600 text-white transition-colors disabled:opacity-50 w-full sm:w-auto flex items-center justify-center gap-2"
+              className="py-2 px-4 text-sm font-medium rounded-md bg-ink-700 hover:bg-ink-800 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white transition-colors disabled:opacity-50 w-full sm:w-auto flex items-center justify-center gap-2"
             >
-              <Flag className="w-3.5 h-3.5" />
+              <Info className="w-3.5 h-3.5" />
               {sendReport.isPending ? "Sending..." : "Send Report"}
             </button>
           </div>
