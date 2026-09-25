@@ -278,7 +278,7 @@ function EditionRow({ edition, bookId, isOwner, onDelete, onEditInfo, totalEditi
         >
           <button
             onClick={() => setShowEditionDeleteModal(false)}
-            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+            className="absolute top-4 right-4 p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           >
             <X className="w-4 h-4" />
           </button>
@@ -324,7 +324,7 @@ function EditionRow({ edition, bookId, isOwner, onDelete, onEditInfo, totalEditi
         >
           <button
             onClick={() => setShowBookDeleteModal(false)}
-            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
+            className="absolute top-4 right-4 p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           >
             <X className="w-4 h-4" />
           </button>

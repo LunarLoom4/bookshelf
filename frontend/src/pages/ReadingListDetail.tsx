@@ -28,6 +28,7 @@ export default function ReadingListDetail() {
   const updateList = useUpdateReadingList();
   const [editingName, setEditingName] = useState(false);
   const [nameValue, setNameValue] = useState("");
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const removeBook = useMutation({
     mutationFn: (bookId: number) =>
@@ -157,11 +158,7 @@ export default function ReadingListDetail() {
         </div>
         {isOwner && (
           <button
-            onClick={() => {
-              if (window.confirm("Delete this reading list? This cannot be undone.")) {
-                deleteList.mutate();
-              }
-            }}
+            onClick={() => setShowDeleteModal(true)}
             disabled={deleteList.isPending}
             className="flex items-center gap-1.5 text-sm text-red-400 hover:text-red-600 border border-red-200 hover:border-red-400 rounded-md px-3 py-1.5 transition-colors flex-shrink-0"
           >
@@ -213,6 +210,52 @@ export default function ReadingListDetail() {
           <div className="w-6 h-6 border-4 border-ink-200 border-t-ink-600 rounded-full animate-spin" />
         )}
       </div>
+
+      {/* Centered modal: Delete Reading List */}
+      {showDeleteModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          onClick={() => setShowDeleteModal(false)}
+        >
+          <div
+            className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-md p-6 relative"
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowDeleteModal(false)}
+              className="absolute top-4 right-4 p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <div className="mb-5">
+              <h2 className="font-serif text-lg font-semibold text-ink-900 dark:text-gray-100 mb-2">
+                Delete this reading list?
+              </h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                The list and all its entries will be permanently removed. Books themselves are not affected.
+              </p>
+              <p className="text-xs text-red-500 dark:text-red-400 mt-2 font-medium">
+                This action cannot be undone.
+              </p>
+            </div>
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="btn-secondary py-2 px-4 text-sm w-full sm:w-auto"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={deleteList.isPending}
+                onClick={() => deleteList.mutate()}
+                className="py-2 px-4 text-sm font-medium rounded-md bg-red-600 hover:bg-red-700 text-white transition-colors disabled:opacity-50 w-full sm:w-auto"
+              >
+                {deleteList.isPending ? "Deleting..." : "Delete List"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -73,7 +73,7 @@ function ReadingListsSection({ username }: { username: string }) {
   const [editingListId, setEditingListId] = useState<number | null>(null);
   const [editingName, setEditingName] = useState("");
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
-  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [deleteListId, setDeleteListId] = useState<number | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -203,29 +203,17 @@ function ReadingListsSection({ username }: { username: string }) {
                       </button>
                       {openMenuId === list.id && (
                         <div className="absolute right-0 top-full mt-1 w-44 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-20 overflow-hidden py-1">
-                          {confirmDeleteId === list.id ? (
-                            <div className="px-3 py-2.5">
-                              <p className="text-xs font-medium text-gray-700 dark:text-gray-200 mb-2">Delete this list?</p>
-                              <div className="flex gap-2">
-                                <button onClick={() => { deleteList.mutate(list.id); setOpenMenuId(null); setConfirmDeleteId(null); }} disabled={deleteList.isPending} className="flex-1 py-1 text-xs font-medium rounded bg-red-600 hover:bg-red-700 text-white transition-colors disabled:opacity-50">Delete</button>
-                                <button onClick={() => setConfirmDeleteId(null)} className="flex-1 py-1 text-xs font-medium rounded bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 transition-colors">Cancel</button>
-                              </div>
-                            </div>
-                          ) : (
-                            <>
-                              <button onClick={() => { setEditingListId(list.id); setEditingName(list.name); setOpenMenuId(null); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-paper-100 dark:hover:bg-gray-800 transition-colors">
-                                <Pencil className="w-3.5 h-3.5 text-gray-400" />Rename
-                              </button>
-                              <button onClick={() => { updateList.mutate({ listId: list.id, isPublic: !list.is_public }); setOpenMenuId(null); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-paper-100 dark:hover:bg-gray-800 transition-colors">
-                                {list.is_public ? <LockKeyhole className="w-3.5 h-3.5 text-amber-500" /> : <Globe2 className="w-3.5 h-3.5 text-ink-500" />}
-                                {list.is_public ? "Make Private" : "Make Public"}
-                              </button>
-                              <div className="border-t border-gray-100 dark:border-gray-700 my-1" />
-                              <button onClick={() => setConfirmDeleteId(list.id)} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
-                                <Trash2 className="w-3.5 h-3.5" />Delete List
-                              </button>
-                            </>
-                          )}
+                          <button onClick={() => { setEditingListId(list.id); setEditingName(list.name); setOpenMenuId(null); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-paper-100 dark:hover:bg-gray-800 transition-colors">
+                            <Pencil className="w-3.5 h-3.5 text-gray-400" />Rename
+                          </button>
+                          <button onClick={() => { updateList.mutate({ listId: list.id, isPublic: !list.is_public }); setOpenMenuId(null); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-paper-100 dark:hover:bg-gray-800 transition-colors">
+                            {list.is_public ? <LockKeyhole className="w-3.5 h-3.5 text-amber-500" /> : <Globe2 className="w-3.5 h-3.5 text-ink-500" />}
+                            {list.is_public ? "Make Private" : "Make Public"}
+                          </button>
+                          <div className="border-t border-gray-100 dark:border-gray-700 my-1" />
+                          <button onClick={() => { setOpenMenuId(null); setDeleteListId(list.id); }} className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                            <Trash2 className="w-3.5 h-3.5" />Delete List
+                          </button>
                         </div>
                       )}
                     </div>
@@ -244,6 +232,52 @@ function ReadingListsSection({ username }: { username: string }) {
             </div>
           )}
         </>
+      )}
+
+      {/* Centered modal: Delete Reading List */}
+      {deleteListId !== null && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          onClick={() => setDeleteListId(null)}
+        >
+          <div
+            className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-md p-6 relative"
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setDeleteListId(null)}
+              className="absolute top-4 right-4 p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <div className="mb-5">
+              <h2 className="font-serif text-lg font-semibold text-ink-900 dark:text-gray-100 mb-2">
+                Delete this reading list?
+              </h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                The list and all its entries will be permanently removed. Books themselves are not affected.
+              </p>
+              <p className="text-xs text-red-500 dark:text-red-400 mt-2 font-medium">
+                This action cannot be undone.
+              </p>
+            </div>
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+              <button
+                onClick={() => setDeleteListId(null)}
+                className="btn-secondary py-2 px-4 text-sm w-full sm:w-auto"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={deleteList.isPending}
+                onClick={() => { deleteList.mutate(deleteListId); setDeleteListId(null); }}
+                className="py-2 px-4 text-sm font-medium rounded-md bg-red-600 hover:bg-red-700 text-white transition-colors disabled:opacity-50 w-full sm:w-auto"
+              >
+                {deleteList.isPending ? "Deleting..." : "Delete List"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </section>
   );
