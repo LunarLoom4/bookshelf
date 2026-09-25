@@ -101,7 +101,6 @@ function EditionRow({ edition, bookId, isOwner, onDelete, onEditInfo, totalEditi
     const handler = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setMenuOpen(false);
-        setConfirmDelete(false);
       }
     };
     document.addEventListener("mousedown", handler);
