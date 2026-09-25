@@ -325,3 +325,9 @@ export const bookLikesApi = {
   total: (bookId: number) =>
     api.get<number>(`/books/${bookId}/likes`),
 };
+
+// ── Reports (Notify Uploader) ─────────────────────────────────────────────────
+export const reportsApi = {
+  send: (bookId: number, editionId: number, subject: string, messageHtml: string) =>
+    api.post(`/books/${bookId}/editions/${editionId}/report`, { subject, message_html: messageHtml }),
+};

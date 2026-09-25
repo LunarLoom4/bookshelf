@@ -120,3 +120,6 @@ async def rate_limit_vote(user_id: int) -> None:
 
 async def rate_limit_like(user_id: int) -> None:
     await _limiter.check(f"like:user:{user_id}", 60, 3600, "Like limit reached (60 per hour).")
+
+async def rate_limit_report(user_id: int) -> None:
+    await _limiter.check(f"report:user:{user_id}", 10, 3600, "Report limit reached (10 per hour).")

@@ -1,8 +1,9 @@
 import React from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { progressApi, likesApi, bookLikesApi } from "@/api";
+import { progressApi, likesApi, bookLikesApi, reportsApi } from "@/api";
 import api from "@/api/client";
+import { RichTextEditor } from "@/components/ui/RichTextEditor";
 import { LanguagePicker } from "@/components/ui/LanguagePicker";
 import { useAuthStore } from "@/stores/authStore";
 import { BookDetailSkeleton } from "@/components/ui/Skeleton";
@@ -11,7 +12,7 @@ import { useRef, useState, useEffect } from "react";
 import {
   BookOpen, Layers, User, Globe,
   Upload, Plus, X, CheckCircle, Link2, Download, Table2,
-  Heart, MoreVertical, Trash2, MessageSquare, Pencil,
+  Heart, MoreVertical, Trash2, MessageSquare, Pencil, Flag,
 } from "lucide-react";
 import { useBook, useUploadCover, useAddEdition, BOOKS_KEY } from "@/hooks/useBooks";
 import { format } from "date-fns";
@@ -52,7 +53,23 @@ function EditionRow({ edition, bookId, isOwner, onDelete, onEditInfo, totalEditi
 }) {
   const [showEditionDeleteModal, setShowEditionDeleteModal] = useState(false);
   const [showBookDeleteModal, setShowBookDeleteModal] = useState(false);
+  const [showNotifyModal, setShowNotifyModal] = useState(false);
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
+  const [reportSubject, setReportSubject] = useState("");
+  const [reportHtml, setReportHtml] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
+  const { isAuthenticated } = useAuthStore();
+
+  const sendReport = useMutation({
+    mutationFn: () => reportsApi.send(bookId, edition.id, reportSubject, reportHtml),
+    onSuccess: () => {
+      setShowNotifyModal(false);
+      setReportSubject("");
+      setReportHtml("");
+      toast.success("Report sent to the uploader");
+    },
+    onError: (e: any) => toast.error(e?.response?.data?.detail || "Failed to send report"),
+  });
   const menuRef = useRef<HTMLDivElement>(null);
   const isLastEdition = totalEditions === 1;
   const navigate = useNavigate();
@@ -242,6 +259,25 @@ function EditionRow({ edition, bookId, isOwner, onDelete, onEditInfo, totalEditi
                     <Download className="w-3.5 h-3.5 text-gray-400" />
                     Download PDF
                   </a>
+                  {!isOwner && (
+                    <>
+                      <div className="border-t border-gray-100 dark:border-gray-700 my-1" />
+                      <button
+                        onClick={() => {
+                          setMenuOpen(false);
+                          if (!isAuthenticated) {
+                            setShowAuthPrompt(true);
+                          } else {
+                            setShowNotifyModal(true);
+                          }
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors"
+                      >
+                        <Flag className="w-3.5 h-3.5" />
+                        Notify Uploader
+                      </button>
+                    </>
+                  )}
                   {isOwner && (
                     <>
                       <div className="border-t border-gray-100 dark:border-gray-700 my-1" />
@@ -265,6 +301,127 @@ function EditionRow({ edition, bookId, isOwner, onDelete, onEditInfo, totalEditi
         </div>
       </div>
     </div>
+
+    {/* Auth prompt modal -- shown when non-logged-in user clicks Notify Uploader */}
+    {showAuthPrompt && (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+        onClick={() => setShowAuthPrompt(false)}
+      >
+        <div
+          className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-sm p-6 relative"
+          onClick={e => e.stopPropagation()}
+        >
+          <button onClick={() => setShowAuthPrompt(false)}
+            className="absolute top-4 right-4 p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+            <X className="w-4 h-4" />
+          </button>
+          <h2 className="font-serif text-lg font-semibold text-ink-900 dark:text-gray-100 mb-2">
+            Sign in to notify the uploader
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+            You need an account to send a report. It only takes a minute.
+          </p>
+          <div className="flex flex-col gap-2">
+            <a href="/login"
+              className="flex items-center justify-center py-2 px-4 rounded-md bg-ink-700 text-white text-sm font-medium hover:bg-ink-800 transition-colors text-center">
+              Sign In
+            </a>
+            <a href="/register"
+              className="flex items-center justify-center py-2 px-4 rounded-md border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-center">
+              Create Account
+            </a>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* Notify Uploader modal -- rich text report form */}
+    {showNotifyModal && (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+        onClick={() => setShowNotifyModal(false)}
+      >
+        <div
+          className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-2xl flex flex-col max-h-[90vh] overflow-hidden"
+          onClick={e => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+            <div>
+              <h2 className="font-serif text-lg font-semibold text-ink-900 dark:text-gray-100">
+                Notify Uploader
+              </h2>
+              <p className="text-xs text-gray-400 mt-0.5">Edition {edition.edition_number} · This will be sent to the uploader's email</p>
+            </div>
+            <button onClick={() => setShowNotifyModal(false)}
+              className="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Body */}
+          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+            {/* Subject */}
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">
+                Subject <span className="text-red-400">*</span>
+              </label>
+              <input
+                type="text"
+                value={reportSubject}
+                onChange={e => setReportSubject(e.target.value)}
+                maxLength={200}
+                placeholder="e.g. Wrong author name / Incorrect edition year / Missing publisher"
+                className="input w-full text-sm"
+              />
+              <p className="text-xs text-gray-400 mt-1">{reportSubject.length}/200</p>
+            </div>
+
+            {/* Rich text message */}
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1.5">
+                Details <span className="text-red-400">*</span>
+              </label>
+              <RichTextEditor
+                placeholder="Describe the issue clearly. You can attach screenshots, paste links, use bold for emphasis, or add bullet points."
+                onHtmlChange={setReportHtml}
+                minHeight={180}
+              />
+              <p className="text-xs text-gray-400 mt-1">
+                Supports bold, italic, lists, links, and inline images (max 2 MB each).
+              </p>
+            </div>
+
+            {/* What happens note */}
+            <div className="flex gap-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg px-3 py-2.5">
+              <Flag className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-amber-700 dark:text-amber-300 leading-relaxed">
+                Your report will be emailed directly to the uploader. They can then update the book information via Edit Info. Your identity (username) will be included.
+              </p>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
+            <button
+              onClick={() => setShowNotifyModal(false)}
+              className="btn-secondary py-2 px-4 text-sm w-full sm:w-auto"
+            >
+              Cancel
+            </button>
+            <button
+              disabled={!reportSubject.trim() || !reportHtml.trim() || sendReport.isPending}
+              onClick={() => sendReport.mutate()}
+              className="py-2 px-4 text-sm font-medium rounded-md bg-amber-500 hover:bg-amber-600 text-white transition-colors disabled:opacity-50 w-full sm:w-auto flex items-center justify-center gap-2"
+            >
+              <Flag className="w-3.5 h-3.5" />
+              {sendReport.isPending ? "Sending..." : "Send Report"}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
 
     {/* Centered modal: delete one edition (book has multiple) */}
     {showEditionDeleteModal && (

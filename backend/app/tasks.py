@@ -57,6 +57,74 @@ def send_reply_notification(self, commenter_email: str, commenter_username: str,
         raise self.retry(exc=exc, countdown=2 ** self.request.retries * 30)
 
 
+@celery_app.task(name="tasks.send_uploader_report", bind=True, max_retries=3)
+def send_uploader_report(
+    self,
+    uploader_email: str,
+    uploader_username: str,
+    reporter_username: str,
+    book_title: str,
+    edition_number: int,
+    subject_line: str,
+    message_html: str,
+    book_id: int,
+    edition_id: int,
+) -> None:
+    """
+    Email the uploader when another user submits a report about one of their editions.
+    """
+    if not settings.RESEND_API_KEY:
+        logger.info("RESEND_API_KEY not set -- skipping uploader report email")
+        return
+
+    try:
+        import resend
+        resend.api_key = settings.RESEND_API_KEY
+
+        book_url = f"https://bookshelf-app.up.railway.app/books/{book_id}"
+
+        resend.Emails.send({
+            "from": settings.FROM_EMAIL,
+            "to": uploader_email,
+            "subject": f"[Bookshelf] Report on \"{book_title}\" (Ed. {edition_number}): {subject_line}",
+            "html": f"""
+            <div style="font-family: sans-serif; max-width: 580px; margin: 0 auto; padding: 32px;">
+              <h2 style="font-size: 20px; color: #1c3089; margin-bottom: 4px;">
+                Report on your book edition
+              </h2>
+              <p style="color: #6b7280; font-size: 13px; margin-top: 0;">
+                {reporter_username} sent a report about
+                <strong>{book_title}</strong> &mdash; Edition {edition_number}
+              </p>
+              <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;" />
+              <p style="font-size: 14px; color: #374151; margin-bottom: 4px;">
+                <strong>Subject:</strong> {subject_line}
+              </p>
+              <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px;
+                          padding: 16px; font-size: 14px; color: #374151; line-height: 1.7;
+                          margin-top: 12px;">
+                {message_html}
+              </div>
+              <a href="{book_url}"
+                 style="display: inline-block; margin-top: 24px; background: #1c3089;
+                         color: white; padding: 10px 20px; border-radius: 6px;
+                         text-decoration: none; font-size: 14px;">
+                View book &rarr;
+              </a>
+              <p style="color: #9ca3af; font-size: 12px; margin-top: 28px;">
+                This report was submitted via Bookshelf by user
+                <strong>{reporter_username}</strong>. You can edit the book's
+                information using the Edit Info option on the book page.
+              </p>
+            </div>
+            """,
+        })
+        logger.info("Uploader report email sent to %s", uploader_email)
+    except Exception as exc:
+        logger.error("send_uploader_report failed: %s", exc)
+        raise self.retry(exc=exc, countdown=2 ** self.request.retries * 30)
+
+
 @celery_app.task(name="tasks.generate_cover_for_edition", bind=True, max_retries=2)
 def generate_cover_for_edition(self, edition_id: int, pdf_r2_key: str, book_id: int) -> None:
     """

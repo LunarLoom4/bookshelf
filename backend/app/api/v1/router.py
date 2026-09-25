@@ -12,6 +12,7 @@ from app.api.v1.endpoints.users import router as users_router
 from app.api.v1.endpoints.notifications import router as notifications_router
 from app.api.v1.endpoints.user_comments import router as user_comments_router
 from app.api.v1.endpoints.likes import router as likes_router
+from app.api.v1.endpoints.reports import router as reports_router
 
 api_router = APIRouter(prefix="/api/v1")
 
@@ -27,3 +28,4 @@ api_router.include_router(users_router)
 api_router.include_router(notifications_router)
 api_router.include_router(user_comments_router)
 api_router.include_router(likes_router)
+api_router.include_router(reports_router)
