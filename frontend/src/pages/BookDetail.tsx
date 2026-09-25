@@ -1,4 +1,13 @@
 import React, { useRef, useState, useEffect } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { progressApi, likesApi, bookLikesApi, reportsApi } from "@/api";
+import api from "@/api/client";
+import { RichTextEditor, type RichTextEditorRef } from "@/components/ui/RichTextEditor";
+import { LanguagePicker } from "@/components/ui/LanguagePicker";
+import { useAuthStore } from "@/stores/authStore";
+import { BookDetailSkeleton } from "@/components/ui/Skeleton";
+import { Avatar } from "@/components/ui/Avatar";
 import {
   BookOpen, Layers, User, Globe,
   Upload, Plus, X, CheckCircle, Link2, Download, Table2,
